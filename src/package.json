@@ -12,6 +12,7 @@
     "fixme": "^0.5.0",
     "gulp": "^3.9.1",
     "gulp-babel": "^7.0.0",
+    "gulp-noop": "^1.0.0",
     "gulp-plumber": "^1.2.0",
     "gulp-prettier": "^1.1.0",
     "gulp-sass": "^3.1.0",

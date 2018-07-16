@@ -17,6 +17,7 @@
             "isEditable": { "type": "boolean" },
             "isSingular": { "type": "boolean" },
             "isSystemModel": { "type": "boolean" },
+            "disableMeta": { "type": "boolean" },
             "editJs": { "type": "string" },
             "editCss": { "type": "string" },
             "listJs": { "type": "string" },

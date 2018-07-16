@@ -2,6 +2,7 @@ var babel    = require('gulp-babel');
 var fixme    = require('fixme');
 var fs       = require('fs');
 var gulp     = require('gulp');
+var noop     = require('gulp-noop');
 var plumber  = require('gulp-plumber'); // better error handling; don't totally break on an error, but still show it
 var prettier = require('gulp-prettier');
 var sass     = require('gulp-sass');
@@ -40,7 +41,6 @@ gulp.task('prettier', function() {
 });
 
 gulp.task('copy-vendor', function() {
-  // @todo -- concat vendor items to minified vendor.js and vendor.css
   for (var i = 0; i < vendorJs.length; i ++) {
     var dest = './public/js' + (/fontawesome/i.test(vendorJs[i]) ? '/fontawesome' : '');
     gulp.src(vendorJs[i])
@@ -58,7 +58,7 @@ gulp.task('js', function() {
     .pipe(babel())
     .pipe(uglify())
     .pipe(gulp.dest('./public/js'))
-    .pipe(gulp.dest('../../../../public/laramie/admin/js')); // @todo -- remove -- for dev only
+    .pipe(process.env.LIVE_COPY ? gulp.dest('../../../../public/laramie/admin/js') : noop());
 });
 
 gulp.task('sass', function() {
@@ -66,7 +66,7 @@ gulp.task('sass', function() {
     .pipe(plumber())
     .pipe(sass({outputStyle: 'compressed'}).on('error', sass.logError))
     .pipe(gulp.dest('./public/css'))
-    .pipe(gulp.dest('../../../../public/laramie/admin/css')); // @todo -- remove -- for dev only
+    .pipe(process.env.LIVE_COPY ? gulp.dest('../../../../public/laramie/admin/cs') : noop());
 });
 
 gulp.task('notes', function() {

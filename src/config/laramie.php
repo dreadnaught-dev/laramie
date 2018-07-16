@@ -57,6 +57,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Disable Meta (tags/comments)
+    |--------------------------------------------------------------------------
+    |
+    | By default, meta is enabled in Laramie. Set this to true to disable meta
+    | admin-wide (may also disable meta on a model-by-model basis by setting
+    | `"disableMeta": true` on a model.
+    |
+    */
+    'disable_meta' => false,
+
+    /*
+    |--------------------------------------------------------------------------
     | Admin URL
     |--------------------------------------------------------------------------
     |

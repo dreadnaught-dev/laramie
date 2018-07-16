@@ -151,8 +151,7 @@ class ModelLoader
                 $fields->_created_at = (object) ['type' => 'computed', 'dataType' => 'date', 'label' => 'Created at', 'sql' => '(created_at)', 'listByDefault' => true, 'weight' => 900];
                 $fields->_updated_at = (object) ['type' => 'computed', 'dataType' => 'date', 'label' => 'Updated at', 'sql' => '(updated_at)', 'listByDefault' => false, 'weight' => 910];
 
-                // @todo -- make note of these two methods to disable meta in documentation
-                if (config('laramie.disableMeta') !== true && object_get($model, 'disableMeta', false) !== true) {
+                if (config('laramie.disable_meta') !== true && object_get($model, 'disableMeta', false) !== true) {
                     //$fields->_version = (object) ['type' => 'computed', 'label' => 'Version', 'sql' => '(select (count(*) + 1) from laramie_data_archive as lda where lda.laramie_data_id = laramie_data.id)', 'listByDefault' => false, 'weight' => 920];
                     // @optimize -- can we dynamically add a sort-by that hooks into the query to allow sorting? Maybe at list-level.
                     $fields->_versions = (object) ['type' => 'computed', 'isMetaField' => true, 'label' => 'Versions', 'sql' => '(select \'{*count*}\')', 'listByDefault' => false, 'sortBy' => null, 'weight' => 920];
