@@ -66,7 +66,7 @@ gulp.task('sass', function() {
     .pipe(plumber())
     .pipe(sass({outputStyle: 'compressed'}).on('error', sass.logError))
     .pipe(gulp.dest('./public/css'))
-    .pipe(process.env.LIVE_COPY ? gulp.dest('../../../../public/laramie/admin/cs') : noop());
+    .pipe(process.env.LIVE_COPY ? gulp.dest('../../../../public/laramie/admin/css') : noop());
 });
 
 gulp.task('notes', function() {

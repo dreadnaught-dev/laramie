@@ -229,7 +229,7 @@
                 </p>
             </div>
 
-            <div class="responsive-table-wrapper">
+            <div class="responsive-table-wrapper has-margin-bottom">
                 <table id="main-list-table" class="table is-bordered is-striped is-fullwidth">
                     <thead>
                         <tr>

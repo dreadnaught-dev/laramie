@@ -181,6 +181,10 @@ thead .fa-sort {
     padding-bottom: .5rem;
 }
 
+.has-margin-bottom:not(:last-child) {
+    margin-bottom: 1.5rem;
+}
+
 #filter-holder {
     .level {
         margin: .5rem 0;
