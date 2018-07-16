@@ -1,0 +1,26 @@
+# For more information about the properties used in
+# this file, please see the EditorConfig documentation:
+# http://editorconfig.org/
+
+# Attempt to follow the following guidelines where possible:
+# php: http://www.php-fig.org/psr/psr-2/
+# css: https://github.com/airbnb/css
+# js: https://github.com/airbnb/javascript
+
+# top-most EditorConfig file
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.js]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 2

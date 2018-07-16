@@ -1,0 +1,32 @@
+{
+  "name": "Laramie",
+  "version": "1.0.0",
+  "author": "Preston Clark",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "@fortawesome/fontawesome-free": "^5.1.0",
+    "babel-core": "^6.26.0",
+    "bulma": "^0.7.1",
+    "cropperjs": "^1.2.2",
+    "dragula": "^3.7.2",
+    "fixme": "^0.5.0",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^7.0.0",
+    "gulp-plumber": "^1.2.0",
+    "gulp-prettier": "^1.1.0",
+    "gulp-sass": "^3.1.0",
+    "gulp-uglify": "^3.0.0",
+    "gulp-watch": "^5.0.0",
+    "handlebars": "^4.0.11",
+    "jquery": "^3.2.1",
+    "prettier": "^1.10.2",
+    "tributejs": "^3.2.0",
+    "trix": "^0.11.1"
+  },
+  "scripts": {
+    "watch": "gulp watch",
+    "copy-vendor": "gulp copy-vendor",
+    "prettier": "gulp prettier",
+    "notes": "gulp notes"
+  }
+}

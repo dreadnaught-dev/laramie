@@ -1,0 +1,931 @@
+<?php
+
+namespace Laramie\Services;
+
+use DB;
+use Exception;
+use Storage;
+use Ramsey\Uuid\Uuid;
+use Laramie\Lib\LaramieHelpers;
+use Laramie\Lib\LaramieModel;
+use Laramie\Lib\ModelLoader;
+use Laramie\Events\PreSave;
+use Laramie\Events\PostSave;
+use Laramie\Events\PreList;
+use JsonSchema\Validator;
+
+class LaramieDataService
+{
+    protected $jsonConfig;
+
+    public function __construct()
+    {
+        $this->jsonConfig = ModelLoader::load();
+    }
+
+    public function getMenu()
+    {
+        return $this->jsonConfig->menu;
+    }
+
+    public function getModelByKey($model)
+    {
+        if (is_string($model)) {
+            $modelToReturn = object_get($this->jsonConfig->models, $model, null);
+            if ($modelToReturn == null) {
+                throw new Exception(sprintf('Model type does not exist: `%s`.', $model));
+            }
+
+            return $modelToReturn;
+        } elseif (object_get($model, '_type')) {
+            return $model;
+        }
+        throw new Exception(sprintf('Model type does not exist: `%s`.', $model));
+    }
+
+    public function getAllModels()
+    {
+        return $this->jsonConfig->models;
+    }
+
+    public function getUser()
+    {
+        if (!app()->runningInConsole()) {
+            return object_get(auth()->user(), '_laramie', (request()->hasSession() ? request()->session()->get('_laramie') : null));
+        }
+
+        return null;
+    }
+
+    public function getUserPrefs()
+    {
+        return object_get($this->getUser(), 'prefs', (object) []);
+    }
+
+    public function getUserUuid()
+    {
+        return object_get($this->getUser(), 'id', null);
+    }
+
+    public function saveUserPrefs($prefs)
+    {
+        $user = $this->getUser();
+        $user->prefs = $prefs;
+        if (request()->hasSession()) {
+            request()->session()->put('_laramie', $user);
+        }
+        DB::statement('update laramie_data set data = jsonb_set(data, \'{prefs}\', \''.json_encode($prefs).'\', true) where id = ?', [$user->id]);
+
+        return $user;
+    }
+
+    public function findTypeByTag($model, $tag)
+    {
+        return $this->findByType($model, ['results-per-page' => 0]);
+    }
+
+    // NOTE: For now, we're only diving into aggregate relationships for single
+    // item selection. Aggregate references WILL NOT be hydrated by this query.
+    public function findByType($model, $options = null, $queryCallback = null, $maxPrefetchDepth = 1, $curDepth = 0)
+    {
+        $model = $this->getModelByKey($model);
+
+        $query = $this->getBaseQuery($model);
+        $query = $this->augmentListQuery($query, $model, $options, $queryCallback);
+        $resultsPerPage = array_get($options, 'results-per-page', 15);
+        $laramieModels = LaramieModel::load($resultsPerPage === 0 ? $query->get() : $query->paginate($resultsPerPage));
+
+        // If we're not running in the console, whitelist qs params we need to be appended to pagination links
+        if (!app()->runningInConsole() && $resultsPerPage > 0) {
+            $qs = collect(request()->all())
+                ->filter(function ($e, $key) {
+                    return !in_array($key, ['page']);
+                })
+                ->all();
+            $laramieModels->appends($qs);
+        }
+
+        $this->prefetchRelationships($model, $laramieModels, $maxPrefetchDepth, $curDepth);
+
+        return $laramieModels;
+    }
+
+    public function getSingularItemId($model)
+    {
+        $model = $this->getModelByKey($model);
+
+        $query = DB::table('laramie_data')
+            ->where('type', $model->_type)
+            ->addSelect('id')
+            ->orderBy('created_at', 'asc')
+            ->limit(1);
+        $item = $query->first();
+
+        if ($item && object_get($item, 'id')) {
+            return $item->id;
+        }
+
+        $modelData = [
+            'id' => Uuid::uuid1()->toString(),
+            'user_id' => $this->getUserUuid(),
+            'type' => $model->_type,
+            'created_at' => 'now()',
+            'updated_at' => 'now()',
+        ];
+        DB::table('laramie_data')->insert($modelData);
+
+        return $modelData['id'];
+    }
+
+    public function getSingularItem($model)
+    {
+        return $this->findById($model, $this->getSingularItemId($model));
+    }
+
+    public function augmentListQuery($query, $model, $options = null, $queryCallback = null)
+    {
+        $model = $this->getModelByKey($model);
+
+        if ($queryCallback && is_callable($queryCallback)) {
+            $queryCallback($query);
+        }
+
+        /*
+         * Fire pre-list event: listeners MUST be synchronous. This event enables
+         * the ability to dynamically change the query that retrieves items based
+         * on the injected arguments.
+         */
+        if (array_get($options, 'preList', true) !== false) {
+            event(new PreList($model, $query, $this->getUser()));
+        }
+
+        $fieldCollection = collect($model->fields);
+
+        $computedFields = $fieldCollection
+            ->filter(function ($field) {
+                return $field->type == 'computed';
+            })
+            ->all();
+
+        $timestampFields = $fieldCollection
+            ->filter(function ($field) {
+                return $field->type == 'timestamp';
+            })
+            ->all();
+
+        $markdownFields = $fieldCollection
+            ->filter(function ($field) {
+                return $field->type == 'markdown';
+            })
+            ->all();
+
+        $sort = array_get($options, 'sort', $model->defaultSort);
+        $sortDirection = array_get($options, 'sort-direction', $model->defaultSortDirection);
+        if ($sort) {
+            if (in_array($sort, array_keys($computedFields))
+                || in_array($sort, ['id', 'created_at', 'updated_at'])
+            ) {
+                // If it's a computed field or one of the table's non-json fields, sort by the field name provided
+                $query->orderBy($sort, $sortDirection);
+            } elseif (in_array($sort, array_keys($timestampFields))) {
+                $timestampSort = $sortDirection.' nulls '.($sortDirection == 'asc' ? 'first' : 'last');
+                $query->orderByRaw(DB::raw('(data #>> \'{'.$sort.',timestamp}\')::integer '.$timestampSort));
+            } elseif (in_array($sort, array_keys($markdownFields))) {
+                // Sort markdown fields by inner markdown
+                $query->orderBy(DB::raw('(data #>> \'{"'.$sort.'","markdown"}\')'), array_get($options, 'sort-direction', 'asc'));
+            } elseif (object_get($model->fields, $sort)) {
+                // Otherwise, check to see if the sort is part one of the model's dynamic fields:
+                $query->orderBy(DB::raw('data #>> \'{"'.$sort.'"}\''), array_get($options, 'sort-direction', 'asc'));
+            }
+        }
+
+        $filters = array_get($options, 'filters', []);
+        foreach ($filters as $filter) {
+            $field = $filter->field;
+            $modelField = object_get($model->fields, $field);
+
+            if ($field == '_tag') {
+                $field = '(select string_agg(ldm.data->>\'text\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
+            } elseif ($field == '_comment') {
+                $field = '(select string_agg(ldm.data->>\'markdown\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
+            } elseif ($modelField->type == 'aggregate') {
+                // Aggregate fields aren't eligible to take part in filters --
+                // if a fitler is needed on an aggreate, a computed field should
+                // be created to selecte the aggregate property that can then be
+                // listed/searched be searched.
+                continue;
+            } elseif ($modelField->type == 'computed') {
+                $field = $modelField->sql;
+            } elseif ($modelField->type == 'reference') {
+                $field = 'data->>\''.$field.'\'';
+                $relatedModel = $this->getModelByKey($modelField->relatedModel);
+                $relatedAlias = object_get($relatedModel->fields, $relatedModel->alias);
+                $tmp = $relatedAlias->type == 'computed' ? $relatedAlias->sql : sprintf('data->>\'%s\'', $relatedAlias->_fieldName);
+
+                if ($modelField->subtype == 'many') {
+                    // @optimize -- this subselect takes a long time for large tables. Change to something like `data->>'field' in (select id::text from laramie_data where type='$relatedType' and data->>'$field' ilike 'keywords%')
+                    $field = '(select string_agg('.$tmp.', \'|\') from laramie_data as n2 where n2.id::text in (select * from json_array_elements_text((laramie_data.data->>\''.$modelField->_fieldName.'\')::json)))';
+                } else {
+                    $field = '(select string_agg('.$tmp.', \'|\') from laramie_data as n2 where n2.id::text in (laramie_data.data->>\''.$modelField->_fieldName.'\'))';
+                }
+            } else {
+                $field = 'data->>\''.$field.'\'';
+            }
+
+            $operation = $filter->operation;
+            $value = $filter->value;
+            switch ($operation) {
+                case 'contains':
+                    $query->where(DB::raw($field), 'ilike', '%'.$value.'%');
+                    break;
+                case 'does not contain':
+                    $query->where(DB::raw($field), 'not ilike', '%'.$value.'%');
+                    break;
+                case 'is equal to':
+                    $query->where(DB::raw($field), '=', $value);
+                    break;
+                case 'is not equal to':
+                    $query->where(DB::raw($field), '!=', $value);
+                    break;
+                case 'starts with':
+                    $query->where(DB::raw($field), 'ilike', $value.'%');
+                    break;
+                case 'does not start with':
+                    $query->where(DB::raw($field), 'not ilike', $value.'%');
+                    break;
+                case 'is less than':
+                    $query->where(DB::raw($field), '<', $value);
+                    break;
+                case 'is less than or equal':
+                    $query->where(DB::raw($field), '<=', $value);
+                    break;
+                case 'is greater than':
+                    $query->where(DB::raw($field), '>', $value);
+                    break;
+                case 'is greater than or equal':
+                    $query->where(DB::raw($field), '>=', $value);
+                    break;
+                case 'is null':
+                    $query->whereNull(DB::raw($field));
+                    break;
+                case 'is not null':
+                    $query->whereNotNull(DB::raw($field));
+                    break;
+            }
+        }
+
+        return $query;
+    }
+
+    public function getUserReportsForModel($model)
+    {
+        $model = $this->getModelByKey($model);
+
+        $modelKey = $model->_type;
+        $userUuid = $this->getUserUuid();
+
+        return $this->findByType($this->getModelByKey('LaramieSavedReport'), ['results-per-page' => 0], function ($query) use ($modelKey, $userUuid) {
+            $query->where(DB::raw('data->>\'relatedModel\''), $modelKey)
+                ->where(function ($query) use ($userUuid) {
+                    $query->where(DB::raw('data->>\'user\''), $userUuid)
+                        ->orWhere(DB::raw('data->>\'isShared\''), 'true');
+                });
+        });
+    }
+
+    // Note that we aren't preventing cyclic relationships (on save or on fetch). We do enforce a max recursion depth, however, which will prevent infinite loops
+    private function prefetchRelationships($model, $laramieModels, $maxPrefetchDepth, $curDepth)
+    {
+        // Set a convenience `_alias` attribute -- will be useful to save on logic where we'd otherwise be looking the alias up.
+        foreach ($laramieModels as $laramieModel) {
+            $laramieModel->_alias = object_get($laramieModel, $model->alias);
+        }
+
+        if ($maxPrefetchDepth < 0 || $curDepth < $maxPrefetchDepth) {
+            // Get a list of all references. We're breaking the references up by type so that we can run a find by type on them (so if an alias is a computed field, we'll have access to it).
+            $referencedUuids = [];
+            $referenceFields = collect($model->fields)
+                ->filter(function ($field) {
+                    return in_array($field->type, ['reference', 'file']);
+                })
+                ->all();
+
+            // First, build up a list of related laramieModels we'll need to pull down.
+            foreach ($laramieModels as $laramieModel) {
+                foreach ($referenceFields as $fieldKey => $field) {
+                    $refs = object_get($laramieModel, $fieldKey);
+                    $refs = ($refs && is_array($refs)) ? $refs : [$refs];
+                    $refs = collect($refs)
+                        ->filter(function ($item) {
+                            return $item && Uuid::isValid($item);
+                        })
+                        ->all();
+                    $referencedUuids[$field->relatedModel] = array_merge(array_get($referencedUuids, $field->relatedModel, []), $refs);
+                }
+            }
+
+            // Next, pull those relationships
+            $relatedModelHash = [];
+            foreach ($referencedUuids as $modelKey => $uuidList) {
+                $relatedModels = $this->findByType(
+                    $this->getModelByKey($modelKey),
+                    [
+                        'results-per-page' => 0,
+                        'preList' => false,
+                    ],
+                    function ($query) use ($uuidList) {
+                        $query->whereIn('id', array_unique($uuidList));
+                    },
+                    $maxPrefetchDepth,
+                    $curDepth + 1
+                );
+                foreach ($relatedModels as $relatedModel) {
+                    $relatedModelHash[$relatedModel->id] = $relatedModel;
+                }
+            }
+
+            // Finally, swap out the uuid references with concrete laramieModels.
+            foreach ($laramieModels as $laramieModel) {
+                foreach ($referenceFields as $fieldKey => $field) {
+                    $refs = object_get($laramieModel, $fieldKey);
+                    if (is_array($refs)) {
+                        $newRefs = [];
+                        foreach ($refs as $ref) {
+                            $newRefs[] = array_get($relatedModelHash, $ref, null);
+                        }
+                        array_filter($newRefs);
+                        $laramieModel->{$fieldKey} = $newRefs;
+                    } elseif ($refs) {
+                        $laramieModel->{$fieldKey} = array_get($relatedModelHash, $refs, null);
+                    }
+                }
+            }
+        }
+
+        return $laramieModels;
+    }
+
+    public function getMetaInformation($modelName)
+    {
+        $meta = (object) [];
+        $meta->count = DB::table('laramie_data')
+            ->where('type', $modelName)
+            ->count();
+
+        $lastRecord = DB::table('laramie_data as ld')
+            ->leftJoin('laramie_data as ld2', 'ld.user_id', '=', 'ld2.id')
+            ->where('ld.type', $modelName)
+            ->orderBy('ld.updated_at', 'desc')
+            ->select(['ld.updated_at', DB::raw('ld2.data->>\'user\' as user')])
+            ->first();
+
+        $meta->user = object_get($lastRecord, 'user');
+        $meta->updatedAt = object_get($lastRecord, 'updated_at');
+
+        return $meta;
+    }
+
+    public function getNumVersions($modelIds)
+    {
+        return DB::table('laramie_data_archive')
+            ->whereIn('laramie_data_id', $modelIds)
+            ->select(['laramie_data_id', DB::raw('count(*) as count')])
+            ->groupBy('laramie_data_id')
+            ->get();
+    }
+
+    public function getNumComments($modelIds)
+    {
+        return $this->getNumMeta($modelIds, 'Comment');
+    }
+
+    public function getNumTags($modelIds)
+    {
+        return $this->getNumMeta($modelIds, 'Tag');
+    }
+
+    private function getNumMeta($modelIds, $metaType)
+    {
+        return DB::table('laramie_data_meta')
+            ->where('type', '=', $metaType)
+            ->whereIn('laramie_data_id', $modelIds)
+            ->select(['laramie_data_id', DB::raw('count(*) as count')])
+            ->groupBy('laramie_data_id')
+            ->get();
+    }
+
+    public function getComments($id)
+    {
+        return $this->getMeta($id, 'Comment')
+            ->map(function ($item) { return LaramieHelpers::transformCommentForDisplay($item); });
+    }
+
+    public function updateMetaIds($oldLaramieId, $newLaramieId)
+    {
+        return DB::table('laramie_data_meta')
+            ->where('laramie_data_id', $oldLaramieId)
+            ->update(['laramie_data_id' => $newLaramieId]);
+    }
+
+    public function getTags($id)
+    {
+        return $this->getMeta($id, 'Tag', \DB::raw('laramie_data_meta.data->>\'text\''), 'asc');
+    }
+
+    public function getMeta($id, $metaType, $order = 'laramie_data_meta.created_at', $orderDirection = 'desc')
+    {
+        $rows = DB::table('laramie_data_meta')
+            ->leftJoin('laramie_data', 'laramie_data_meta.user_id', '=', 'laramie_data.id')
+            ->where('laramie_data_id', $id)
+            ->where('laramie_data_meta.type', $metaType)
+            ->select(['laramie_data_meta.*', DB::raw('laramie_data.data->>\'user\' as _user')])
+            //->orderBy('laramie_data_meta.created_at', 'desc')
+            ->orderBy($order, $orderDirection)
+            ->get();
+
+        return LaramieModel::load($rows);
+    }
+
+    public function getEditInfoForMetaItem($metaId)
+    {
+        return DB::table('laramie_data_meta')
+            ->leftJoin('laramie_data', 'laramie_data_meta.laramie_data_id', '=', 'laramie_data.id')
+            ->where('laramie_data_meta.id', $metaId)
+            ->select(['laramie_data.id', 'laramie_data.type'])
+            ->first();
+    }
+
+    public function deleteMeta($id)
+    {
+        if (Uuid::isValid($id)) {
+            $item = DB::table('laramie_data_meta')
+                ->where('id', $id)
+                ->first();
+            DB::table('laramie_data_meta')
+                ->where('id', $id)
+                ->delete();
+
+            return $item;
+        }
+
+        return false;
+    }
+
+    public function createTag($modelId, $tag)
+    {
+        $success = true;
+        $tags = array_filter(preg_split('/\s*,\s*/', $tag));
+        foreach ($tags as $tag) {
+            $success = $success && $this->createMeta($modelId, 'Tag', (object) ['text' => $tag]);
+        }
+
+        return $success;
+    }
+
+    public function createComment($modelId, $comment)
+    {
+        $comment = $this->createMeta($modelId, 'Comment', $comment);
+        if ($comment) {
+            // @note: the `_laramieComment` model does not exist, it is simply being used pass info on to a listener
+            event(new PostSave((object) ['model' => 'LaramieMeta', '_type' => '_laramieComment'], LaramieModel::load((object) ['metaId' => $comment['id'], 'comment' => json_decode($comment['data'])]), $this->getUser()));
+        }
+    }
+
+    private function createMeta($modelId, $type, $data)
+    {
+        if (Uuid::isValid($modelId)) {
+            $modelData = [
+                'id' => Uuid::uuid1()->toString(),
+                'user_id' => $this->getUserUuid(),
+                'laramie_data_id' => $modelId,
+                'type' => $type,
+                'data' => json_encode($data),
+                'created_at' => 'now()',
+                'updated_at' => 'now()',
+            ];
+            DB::table('laramie_data_meta')->insert($modelData);
+
+            return $modelData;
+        }
+
+        return false;
+    }
+
+    public function findById($model, $id, $maxPrefetchDepth = 5)
+    {
+        $model = $this->getModelByKey($model);
+
+        if ($id == 'new') {
+            return new LaramieModel();
+        }
+
+        $query = $this->getBaseQuery($model)
+            ->where('id', $id);
+
+        $dbItem = $query->first();
+
+        if ($dbItem === null) {
+            return null;
+        }
+
+        $item = array_first($this->prefetchRelationships($model, [LaramieModel::load($query->first())], $maxPrefetchDepth, 0));
+
+        // NOTE: we're only diving into aggregate relationships for single item
+        // selection. What this means is that reference fields within deeply
+        // nested aggregates won't be returned by `findByType`.
+        $this->spiderAggregates($model, $item);
+
+        return $item;
+    }
+
+    private function spiderAggregates($model, $item)
+    {
+        $aggregateFields = collect($model->fields)
+            ->filter(function ($e) {
+                return $e->type == 'aggregate';
+            })
+            ->all();
+
+        // Recursively dive into aggregate fields defined on the model (e.g.,
+        // aggregate1 -> aggregate2 -> aggregate3 -> ...) `spiderAggregatesHelper`
+        // is slightly different. It finds reference fields within aggregates and
+        // hydrantes them (which in turn is a recursive process).
+        foreach ($aggregateFields as $aggregateKey => $aggregateField) {
+            $tmpData = object_get($item, $aggregateKey);
+            $tmpData = ($tmpData && is_array($tmpData)) ? $tmpData : [$tmpData];
+            foreach ($tmpData as $data) {
+                $this->spiderAggregates($aggregateField, $data);
+            }
+        }
+
+        try {
+            $this->spiderAggregatesHelper($aggregateFields, $item);
+        } catch (Exception $e) { /* Might have gotten here because the schema of the model changed between edits. */ }
+    }
+
+    private function spiderAggregatesHelper($aggregateFields, $item)
+    {
+        foreach ($aggregateFields as $aggregateKey => $aggregateField) {
+            $aggregateData = object_get($item, $aggregateKey, null);
+            if ($aggregateData !== null) {
+                $aggregateReferenceFields = collect($aggregateField->fields)
+                    ->filter(function ($e) {
+                        return in_array($e->type, ['reference', 'file']);
+                    })
+                    ->all();
+                foreach ($aggregateReferenceFields as $aggregateReferenceFieldKey => $aggregateReferenceField) {
+                    if (is_array($aggregateData)) {
+                        // If `$aggregateData` is an array, we're processing a repeatable aggregate. @optimize -- should we refactor all aggregates to be essentially repeatable? Simpler handling, conversion of one type to the other...
+                        for ($i = 0; $i < count($aggregateData); ++$i ) {
+                            $aggregateReferenceFieldData = object_get($aggregateData[$i], $aggregateReferenceFieldKey);
+                            if (is_array($aggregateReferenceFieldData)) {
+                                // If `$aggregateReferenceFieldData` is an array, we're processing a `reference-many` field
+                                for ($j = 0; $j < count($aggregateReferenceFieldData); ++$j ) {
+                                    $aggregateReferenceFieldData[$j] = $this->findById($this->getModelByKey($aggregateReferenceField->relatedModel), $aggregateReferenceFieldData[$j]);
+                                }
+                            } else {
+                                $aggregateReferenceFieldData = $this->findById($this->getModelByKey($aggregateReferenceField->relatedModel), $aggregateReferenceFieldData);
+                            }
+                            $aggregateData[$i]->{$aggregateReferenceFieldKey} = $aggregateReferenceFieldData;
+                        }
+                    } else {
+                        // Otherwise, it's not repeatable. @optimize -- should we refactor all aggregates to be essentially repeatable? Simpler handling, conversion of one type to the other...
+                        $aggregateReferenceFieldData = object_get($aggregateData, $aggregateReferenceFieldKey);
+                        if (is_array($aggregateReferenceFieldData)) {
+                            // If `$aggregateReferenceFieldData` is an array, we're processing a `reference-many` field
+                            for ($i = 0; $i < count($aggregateReferenceFieldData); ++$i ) {
+                                $aggregateReferenceFieldData[$i] = $this->findById($this->getModelByKey($aggregateReferenceField->relatedModel), $aggregateReferenceFieldData[$i]);
+                            }
+                        } else {
+                            $aggregateReferenceFieldData = $this->findById($this->getModelByKey($aggregateReferenceField->relatedModel), $aggregateReferenceFieldData);
+                        }
+                        $aggregateData->{$aggregateReferenceFieldKey} = $aggregateReferenceFieldData;
+                    }
+                }
+            }
+            $item->{$aggregateKey} = $aggregateData;
+        }
+    }
+
+    public function findByIdSuperficial($model, $id)
+    {
+        $model = $this->getModelByKey($model);
+
+        if ($id == 'new') {
+            return new LaramieModel();
+        }
+
+        $query = $this->getBaseQuery($model)
+            ->where('id', $id);
+
+        return array_first([LaramieModel::load($query->first())]);
+    }
+
+    public function findItemRevisions($id)
+    {
+        if (Uuid::isValid($id)) {
+            return DB::table('laramie_data_archive as a')
+                ->leftJoin('laramie_data as ld', 'a.user_id', '=', 'ld.id')
+                ->where('laramie_data_id', $id)
+                ->select(['a.id', 'a.updated_at', DB::raw('ld.data#>>\'{user}\' as user')])
+                ->orderBy('a.created_at', 'desc')
+                ->get();
+        }
+
+        return [];
+    }
+
+    public function findPreviousItem($itemId, $olderThanRevisionId)
+    {
+        if (Uuid::isValid($itemId)) {
+            $query = DB::table('laramie_data_archive')
+                ->where('laramie_data_id', '=', $itemId)
+                ->orderBy('created_at', 'desc');
+
+            if ($olderThanRevisionId) {
+                $query->whereRaw(DB::raw('created_at < (select created_at from laramie_data_archive lda where lda.id = ?)'), [$olderThanRevisionId]);
+            }
+
+            return LaramieModel::load($query->first());
+        }
+        throw new Exception('Invalid item id');
+    }
+
+    public function getItemRevision($id)
+    {
+        if (Uuid::isValid($id)) {
+            return LaramieModel::load(DB::table('laramie_data_archive')
+                ->where('id', $id)
+                ->first());
+        }
+        throw new Exception('Invalid item id');
+    }
+
+    public function restoreRevision($id)
+    {
+        $archivedItem = $this->getItemRevision($id);
+        if (!$archivedItem->id) {
+            throw new Exception('Could not find archived item.');
+        }
+
+        // Check to see if we need to archive the primary item (we could be trying to restore the same thing just restored)
+        $shouldArchive = array_get(DB::select('select count(*) as count from laramie_data where id = ? and data != (select data from laramie_data_archive lda where laramie_data_id = laramie_data.id order by created_at desc limit 1)', [$archivedItem->laramie_data_id]), 0)->count > 0;
+        if ($shouldArchive) {
+            // Archive the primary item
+            DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [Uuid::uuid1()->toString(), $archivedItem->laramie_data_id]);
+        }
+        // Update the primary item with the data from the revision we're restoring
+        DB::statement('update laramie_data set updated_at = now(), user_id = (select user_id from laramie_data_archive where id = ?), data = (select data from laramie_data_archive where id = ?) where id = ?', [$id, $id, $archivedItem->laramie_data_id]);
+
+        // Return the _archived_ item -- we'll use it in an alert message
+        return $archivedItem;
+    }
+
+    public function deleteRevision($id)
+    {
+        if (Uuid::isValid($id)) {
+            DB::table('laramie_data_archive')
+                ->where('id', $id)
+                ->delete();
+        }
+    }
+
+    private function getBaseQuery($model)
+    {
+        // Create the base query
+        $query = DB::table('laramie_data')
+            ->where('type', $model->_type)
+            ->addSelect('*');
+
+        $computedFields = collect($model->fields)
+            ->filter(function ($field) {
+                return $field->type == 'computed';
+            })
+            ->each(function ($field, $key) use ($query) {
+                $query->addSelect(DB::raw($field->sql.' as "'.$key.'"'));
+            });
+
+        return $query;
+    }
+
+    private function flattenRelationships($fieldHolder, $data)
+    {
+        foreach ($fieldHolder->fields as $key => $field) {
+            if ($field->type == 'reference') {
+                if ($field->subtype == 'single') {
+                    $data->{$key} = object_get($data->{$key}, 'id');
+                } else {
+                    $data->{$key} = collect($data->{$key})
+                        ->map(function ($e) {
+                            return object_get($e, 'id');
+                        })
+                        ->filter()
+                        ->values()
+                        ->all();
+                }
+            } elseif ($field->type == 'file') {
+                $data->{$key} = object_get($data->{$key}, 'uploadKey');
+            } elseif ($field->type == 'aggregate') {
+                $aggregateData = object_get($data, $key, null);
+                if (is_array($aggregateData)) {
+                    for ($i = 0; $i < count($aggregateData); ++$i ) {
+                        $aggregateData[$i] = $this->flattenRelationships($field, $aggregateData[$i]);
+                    }
+                } else {
+                    $aggregateData = $this->flattenRelationships($field, $aggregateData);
+                }
+                $data->{$key} = $aggregateData;
+            }
+        }
+
+        return $data;
+    }
+
+    public function save($model, LaramieModel $laramieModel, $validate = true)
+    {
+        $model = $this->getModelByKey($model);
+        // Save a record of the original id. After saving, we'll reset the item's id back to the original so we have
+        // context as to if the item is new in the PostSave event.
+        $origId = object_get($laramieModel, '_origId');
+
+        /*
+         * Fire pre-save event: listeners MUST be synchronous. This event
+         * enables the ability to dynamically alter the model that will be
+         * saved based on the injected arguments.
+         */
+        event(new PreSave($model, $laramieModel, $this->getUser()));
+
+        $data = clone $laramieModel;
+        $data->id = $data->id ?: Uuid::uuid1()->toString();
+        $data->updated_at = \Carbon\Carbon::now()->toDateTimeString();
+        if (!object_get($data, '_origId')) {
+            // Insert
+            $data->type = $model->_type;
+            $data->created_at = object_get($data, 'created_at', \Carbon\Carbon::now()->toDateTimeString());
+        }
+
+        // Relation fields are transformed into the id(s) of the items they
+        // represent before being persisted in the db.
+        $data = $this->flattenRelationships($model, $data);
+
+        // Remove fields that aren't part of the the schema (old attributes
+        // that may have been removed will still exist in archived versions of the
+        // data). Basically what this means is that what gets saved in the db must
+        // comply with the schema.
+        $allowedFields = ['id', 'type', 'created_at', 'updated_at'];
+        foreach ($model->fields as $key => $field) {
+            if (!in_array($field->type, ['computed', 'html'])) {
+                // Don't save computed/html fields (these will be calculated every time the item is accessed).
+                $allowedFields[] = $key;
+            }
+        }
+
+        // Flip the array so we can do O(1) lookups rather than O(N) ones
+        $allowedFields = array_flip($allowedFields);
+        foreach ($data as $key => $field) {
+            if (!preg_match('/^_/', $key) && !array_key_exists($key, $allowedFields)) {
+                unset($data->{$key});
+            }
+        }
+
+        if ($validate) {
+            // Perform JSON schema validation on the model. The real benefit of
+            // this is when users are creating data outside of the admin (and saving
+            // through this method). Validation is still happening to ensure that
+            // what's getting saved adheres to a particular schema.
+            $errors = [];
+            $validator = new Validator();
+            $validator->check($data, object_get($model, '_jsonValidator', ModelLoader::getValidationSchema($model)));
+            if (!$validator->isValid()) {
+                foreach ($validator->getErrors() as $error) {
+                    $errors[] = sprintf('%s: %s', $error['property'], $error['message']);
+                }
+            }
+
+            if ($errors) {
+                throw new Exception(implode('<br>', $errors));
+            }
+        }
+
+        $modelData = $data->toArray();
+        $modelData['user_id'] = $this->getUserUuid();
+
+        if (object_get($data, '_origId')) {
+            // Update
+            $archiveId = Uuid::uuid1()->toString();
+            DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [$archiveId, $data->id]);
+            DB::table('laramie_data')->where('id', $data->id)->update($modelData);
+            // Delete the newly inserted archived version if it exactly matches
+            // the updated version. We can potentially mitigate this step by
+            // leveraging the _origData attribute on $data before inserting
+            // the archive version in the first place, but whitespace doesn't
+            // match up between $data->_origData and $modelData['data']...
+            DB::statement('delete from laramie_data_archive where id = ? and data = (select data from laramie_data where id = ?)', [$archiveId, $data->id]);
+        } else {
+            // Insert
+            $modelData['type'] = $model->_type;
+            DB::table('laramie_data')->insert($modelData);
+        }
+
+        // Refresh the data from the db (because computed fields may have changed, etc):
+        $item = $this->findById($model, $data->id);
+        $item->_origId = $origId;
+
+        /*
+         * Fire post-save event: listeners MAY be asynchronous. This event
+         * enables the ability to perform actions _after_ an item is saved,
+         * such as deliver email or implement a custom workflow for a model. To
+         * aid serialization, we're only injecting the string of the model type
+         * and the id of the item saved.
+         */
+        event(new PostSave($model, $item, $this->getUser()));
+
+        return $item;
+    }
+
+    // isFullDelete specifies whether or not to remove the item's history as well. If set to false, we'll create a snapshot of it in the archive table before deletion.
+    public function deleteById($id, $isFullDelete = false)
+    {
+        if (Uuid::isValid($id)) {
+            if ($isFullDelete) {
+                DB::table('laramie_data_archive')
+                    ->where('laramie_data_id', $id)
+                    ->delete();
+            } else {
+                DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [Uuid::uuid1()->toString(), $id]);
+            }
+            DB::table('laramie_data')
+                ->where('id', $id)
+                ->delete();
+        }
+    }
+
+    // isFullDelete specifies whether or not to remove the item's history as well. If set to false, we'll create a snapshot of it in the archive table before deletion.
+    public function cloneById($id)
+    {
+        DB::statement('insert into laramie_data (id, user_id, type, data, created_at, updated_at) select ?, ?, type, data, now(), now() from laramie_data where id = ?', [Uuid::uuid1()->toString(), $this->getUser()->id, $id]);
+    }
+
+    public function saveFile($field, $file)
+    {
+        $storageDisk = config('laramie.storage_disk');
+        $storageDriver = config('filesystems.disks.'.$storageDisk.'.driver');
+
+        $id = Uuid::uuid1()->toString();
+        $laramieUpload = new LaramieModel();
+        $laramieUpload->id = $id;
+        $laramieUpload->uploadKey = $id;
+        $laramieUpload->name = $file->getClientOriginalName();
+        $laramieUpload->extension = $file->getClientOriginalExtension();
+        $laramieUpload->mimeType = $file->getClientMimeType();
+        $laramieUpload->path = $file->store('laramie', $storageDisk); // this is our master copy, it should always be private (with the exception of its admin-generated thumbs; we'll make those public if the file is public).
+        $laramieUpload->isPublic = $field->isPublic;
+
+        $laramieUpload->fullPath = Storage::disk($storageDisk)->url($laramieUpload->path);
+        if ($storageDriver == 'local') {
+            $laramieUpload->fullPath = Storage::disk($storageDisk)->getDriver()->getAdapter()->applyPathPrefix($laramieUpload->path);
+        }
+
+        $model = $this->getModelByKey('LaramieUpload');
+
+        // Save and get the Laramie model
+        $tmp = $this->save($model, $laramieUpload);
+
+        // But really, we're only interested in the `data` attribute of the model, so get that:
+        $tmp = $this->getBaseQuery($model)
+            ->where('id', $tmp->id)
+            ->first();
+
+        return json_decode($tmp->data);
+    }
+
+    public function getFileInfo($id)
+    {
+        if (Uuid::isValid($id)) {
+            $tmp = $this->getBaseQuery($this->getModelByKey('LaramieUpload'))
+                ->where('id', $id)
+                ->first();
+
+            return object_get($tmp, 'id') ? json_decode($tmp->data) : null;
+        }
+
+        return null;
+    }
+
+    public function removeFile($fileInfo)
+    {
+        // If there is no file to remove, return
+        if (!$fileInfo || !object_get($fileInfo, 'uploadKey')) {
+            return;
+        }
+
+        $storageDisk = config('laramie.storage_disk');
+        try {
+            Storage::disk($storageDisk)->delete($fileInfo->path);
+        } catch (Exception $e) {
+            // swallow errors for now -- do we really want to cause a stir if the file can't be deleted from disk?
+        }
+
+        $this->deleteById($fileInfo->uploadKey);
+    }
+}

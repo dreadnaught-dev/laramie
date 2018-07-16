@@ -1,0 +1,106 @@
+{
+    "models": {
+        "LaramieRole": {
+            "isSystemModel": true,
+            "alias": "name",
+            "defaultSort": "_created_at",
+            "defaultSortDirection": "asc",
+            "fields": {
+                "name": { "type": "text", "required": true }
+            }
+        },
+        "LaramieUpload": {
+            "name": "Upload",
+            "namePlural": "Uploads",
+            "isSystemModel": true,
+            "isListable": false,
+            "alias": "preview",
+            "defaultSort": "_created_at",
+            "defaultSortDirection": "desc",
+            "editJs": "<script>if ($('#uploadKey').val() && /^(png|gif|jpg)$/i.test($('#extension').val())) { $('h1 .tag').after('&nbsp;<em class=\"is-size-6 has-text-grey\">To crop or resize the image, <a href=\"javascript:void(0);\" onclick=\"location.href=(globals.cropperBase + $(\\'#uploadKey\\').val())\">click here</a></em>') }</script>",
+            "fields": {
+                "preview": { "type": "computed", "sql": "(concat('<img class=\"filetype-icon\" src=\"/admin/assets/icon/', data->>'uploadKey', '_50\">', data->>'name'))", "sortBy": "name" },
+                "uploadKey": { "type": "text", "required": true, "listByDefault": true },
+                "name": { "type": "text", "required": true, "listByDefault": false },
+                "alt": { "type": "text", "required": false, "helpText": "Useful for specifying alt text for images / videos", "listByDefault": true },
+                "path": { "type": "text", "@note": "remove or rename to fullPath and refactor", "required": true, "listByDefault": false },
+                "fullPath": { "type": "text", "@note": "full path to private asset if local or full path to s3 asset", "required": false, "listByDefault": false },
+                "publicPath": { "type": "text", "@note": "relative path to asset (from public directory) if local, or full path to s3 asset", "required": false, "listByDefault": false },
+                "mimeType": { "type": "text", "required": false, "listByDefault": false },
+                "extension": { "type": "text", "required": false, "listByDefault": false },
+                "isPublic": { "type": "boolean", "listByDefault": false }
+            }
+        },
+        "LaramieUser": {
+            "isSystemModel": true,
+            "alias": "user",
+            "defaultSort": "_created_at",
+            "defaultSortDirection": "asc",
+            "fields": {
+                "user": { "type": "text", "required": true },
+                "password": { "type": "password", "label": "password" },
+                "role": {
+                    "type": "reference-many",
+                    "relatedModel": "LaramieRole"
+                },
+                "api": {
+                    "type": "aggregate",
+                    "fields": {
+                        "enabled": { "type": "boolean", "label": "Enable API access" },
+                        "username": { "type": "hidden", "label": "API username" },
+                        "password": { "type": "hidden", "label": "API password" }
+                    }
+                },
+                "twoFactorAuthentication": {
+                    "type": "aggregate",
+                    "fields": {
+                        "enabled": { "type": "boolean", "label": "Enabled?" },
+                        "provider": { "type": "select", "options": ["DUO"] },
+                        "id": { "type": "text", "label": "ID / Username", "extra": "placeholder=\"Will be set set during first login attempt\"" }
+                    }
+                },
+                "filters": { "type": "text", "isListable": false, "isEditable": false },
+                "status": {
+                    "type": "select",
+                    "options": [
+                        "Active", "Inactive"
+                    ]
+                }
+            }
+        },
+        "LaramieAlert": {
+            "name": "Notification",
+            "namePlural": "Notifications",
+            "isSystemModel": true,
+            "alias": "_authorName",
+            "defaultSort": "_created_at",
+            "defaultSortDirection": "desc",
+            "fields": {
+                "metaId": { "type": "hidden", "isListable": false, "isEditable": false },
+                "author": { "type": "reference-single", "relatedModel": "LaramieUser", "isListable": false, "isEditable": false },
+                "_authorName": { "type": "computed", "label": "From", "sql": "(select data->>'user' from laramie_data as ld2 where ld2.type = 'LaramieUser' and ld2.id::text = laramie_data.data->>'author')" },
+                "recipient": { "type": "reference-single", "relatedModel": "LaramieUser", "isListable": false, "isEditable": false },
+                "message": { "type": "markdown", "required": true },
+                "status": {
+                    "type": "select",
+                    "options": [
+                        "Unread", "Read"
+                    ]
+                }
+            }
+        },
+        "LaramieSavedReport": {
+            "isSystemModel": true,
+            "isListable": false,
+            "isEditable": false,
+            "fields": {
+                "user": { "type": "reference-single", "relatedModel": "LaramieUser" },
+                "relatedModel": { "type": "text", "required": true },
+                "name": { "type": "text", "required": true },
+                "key": { "type": "text", "required": true },
+                "filterString": { "type": "text", "required": true }
+            }
+        }
+    }
+}
+

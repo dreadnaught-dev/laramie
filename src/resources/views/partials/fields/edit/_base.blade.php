@@ -1,0 +1,17 @@
+@php
+    $hasError = $errors->has($field->id);
+@endphp
+
+<div class="field {{ $hasError ? 'is-danger' : '' }}">
+    <label class="label" for="{{ $fieldKey }}">{!! $field->label !!}</label>
+    <div class="control {{ $hasError ? 'has-icon has-icon-right' : '' }}">
+        @yield('input')
+        @if ($hasError)
+        <span class="icon is-small is-right">
+          <i class="fas fa-exclamation-triangle"></i>
+        </span>
+        @endif
+    </div>
+    @include('laramie::partials.fields.edit._help-text')
+    @include('laramie::partials.fields.edit._errors')
+</div>

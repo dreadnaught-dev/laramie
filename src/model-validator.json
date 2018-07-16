@@ -1,0 +1,159 @@
+{
+    "modelSchema": {
+        "$schema": "http:\/\/json-schema.org\/draft-04\/schema#",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+            "fields"
+        ],
+        "properties": {
+            "alias": { "type": "string" },
+            "mainTabLabel": { "type": "string" },
+            "defaultSort": { "type": "string" },
+            "defaultSortDirection": { "type": "string" },
+            "name": { "type": "string" },
+            "namePlural": { "type": "string" },
+            "isListable": { "type": "boolean" },
+            "isEditable": { "type": "boolean" },
+            "isSingular": { "type": "boolean" },
+            "isSystemModel": { "type": "boolean" },
+            "editJs": { "type": "string" },
+            "editCss": { "type": "string" },
+            "listJs": { "type": "string" },
+            "listCss": { "type": "string" },
+            "fields": {
+                "oneOf": [
+                    { "type": "object" },
+                    { "type": "string" }
+                ]
+            }
+        },
+        "patternProperties": {
+            "^_" : [ ]
+        }
+    },
+    "@todo": [
+        "convert base `type` to enum and remove empty field types below?"
+    ],
+    "fields": {
+        "_base": {
+            "$schema": "http:\/\/json-schema.org\/draft-04\/schema#",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": { "type": "string" },
+                "listByDefault": { "type": "boolean" },
+                "required": { "type": "boolean" },
+                "id": { "type": "string" },
+                "label": { "type": "string" },
+                "labelPlural": { "type": "string" },
+                "weight": { "type": "integer" },
+                "extra": { "type": "string" },
+                "helpText": { "type": "string" },
+                "validation": { "type": "string" },
+                "isEditable": { "type": "boolean" },
+                "isListable": { "type": "boolean" },
+                "sortBy": { "type": "string" },
+                "sortBy": {
+                    "oneOf": [
+                        { "type": "string" },
+                        { "type": "null" }
+                    ]
+                },
+                "isSortable": { "type": "boolean" },
+                "isMetaField": { "type": "boolean" }
+            },
+            "patternProperties": {
+                "^_" : [ ],
+                "^@" : [ ]
+            }
+        },
+        "_note": "----- GENERIC HTML INPUTS -----",
+        "color": {},
+        "date": {},
+        "datetime-local": {},
+        "email": {},
+        "month": {},
+        "tel": {},
+        "text": {},
+        "time": {},
+        "url": {},
+        "week": {},
+        "_note": "----- CUSTOM Fields -----",
+        "computed": {
+            "required": [
+                "sql"
+            ],
+            "properties": {
+                "dataType": { "type": "string" },
+                "sql": { "type": "string" }
+            }
+        },
+        "boolean": {},
+        "checkbox": {},
+        "file": {
+            "properties": {
+                "isPublic": { "type": "boolean" },
+                "subtype": { "enum": [ "file", "image" ] }
+            }
+        },
+        "hidden": {},
+        "html": {},
+        "markdown": {},
+        "hidden": {},
+        "currency": {
+            "properties": {
+                "sign": { "enum": [ "dollar", "euro", "pound", "yen" ] },
+                "min": { "type": "number" },
+                "max": { "type": "number" },
+                "step": { "type": "number" },
+                "isIntegerOnly": { "type": "boolean" }
+            }
+        },
+        "number": {
+            "properties": {
+                "min": { "type": "number" },
+                "max": { "type": "number" },
+                "step": { "type": "number" },
+                "isIntegerOnly": { "type": "boolean" }
+            }
+        },
+        "password": {},
+        "radio": {},
+        "range": {
+            "properties": {
+                "min": { "type": "number" },
+                "max": { "type": "number" },
+                "step": { "type": "number" }
+            }
+        },
+        "reference": {
+            "properties": {
+                "relatedModel": { "type": "string" },
+                "subtype": { "enum": [ "single", "many" ] }
+            }
+        },
+        "select": {
+            "properties": {
+                "options": { "type": "array" }
+            }
+        },
+        "textarea": {},
+        "range": {},
+        "timestamp": {},
+        "wysiwyg": {},
+        "aggregate": {
+            "properties": {
+                "asTab": { "type": "boolean" },
+                "fields": { "type": "object" },
+                "isRepeatable": { "type": "boolean" },
+                "minItems": { "type": "integer" },
+                "maxItems": { "type": "integer" }
+            }
+        }
+    }
+}
+

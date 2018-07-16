@@ -1,0 +1,161 @@
+{
+    "menu": {
+        "Blog": {
+            "Comments": "Comment",
+            "Posts": "Post"
+        },
+        "Contacts": "Contact",
+        "Homepage": "Homepage"
+    },
+    "models": {
+        "Comment": {
+            "alias": "excerpt",
+            "fields": {
+                "content": {
+                    "listByDefault": true,
+                    "type": "markdown"
+                },
+                "email": {
+                    "listByDefault": true,
+                    "required": true,
+                    "type": "email"
+                },
+                "excerpt": {
+                    "listByDefault": true,
+                    "sql": "(select count(*) from laramie_data as nd where type = 'Comment' and nd.data->>'post' = laramie_data.id::text)",
+                    "type": "computed",
+                    "weight": 5
+                },
+                "ipAddress": {
+                    "listByDefault": false,
+                    "type": "text"
+                },
+                "karma": {
+                    "listByDefault": false,
+                    "type": "number"
+                },
+                "post": {
+                    "listByDefault": true,
+                    "relatedModel": "Post",
+                    "type": "reference-single"
+                },
+                "status": {
+                    "listByDefault": true,
+                    "options": [
+                        "Active",
+                        "Inactive"
+                    ],
+                    "type": "select"
+                },
+                "url": {
+                    "listByDefault": false,
+                    "type": "text"
+                }
+            }
+        },
+        "Contact": {
+            "alias": "message",
+            "fields": {
+                "email": {
+                    "listByDefault": true,
+                    "required": true,
+                    "type": "email"
+                },
+                "message": {
+                    "listByDefault": true,
+                    "type": "markdown"
+                },
+                "name": {
+                    "listByDefault": true,
+                    "type": "text"
+                }
+            }
+        },
+        "Homepage": {
+            "fields": {
+                "featuredImage": {
+                    "label": "Featured Image/Video",
+                    "listByDefault": false,
+                    "type": "file",
+                    "weight": 3
+                },
+                "section": {
+                    "fields": {
+                        "background": {
+                            "options": [
+                                "light",
+                                "dark"
+                            ],
+                            "required": true,
+                            "type": "select"
+                        },
+                        "content": {
+                            "type": "markdown"
+                        },
+                        "image": {
+                            "type": "file"
+                        },
+                        "sectionTitle": {
+                            "type": "text"
+                        }
+                    },
+                    "isRepeatable": "true",
+                    "type": "aggregate"
+                },
+                "title": {
+                    "listByDefault": true,
+                    "required": true,
+                    "type": "text",
+                    "weight": 1
+                }
+            },
+            "isSingular": true
+        },
+        "Post": {
+            "alias": "title",
+            "fields": {
+                "allowComments": {
+                    "listByDefault": true,
+                    "type": "boolean",
+                    "weight": 4
+                },
+                "content": {
+                    "listByDefault": true,
+                    "type": "markdown",
+                    "weight": 2
+                },
+                "featuredImage": {
+                    "listByDefault": false,
+                    "type": "file",
+                    "weight": 3
+                },
+                "numComments": {
+                    "listByDefault": true,
+                    "sql": "(select count(*) from laramie_data as nd where type = 'Comment' and nd.data->>'post' = laramie_data.id::text)",
+                    "type": "computed",
+                    "weight": 5
+                },
+                "slug": {
+                    "listByDefault": false,
+                    "required": true,
+                    "type": "text"
+                },
+                "status": {
+                    "listByDefault": true,
+                    "options": [
+                        "Active",
+                        "Inactive"
+                    ],
+                    "type": "select",
+                    "weight": 6
+                },
+                "title": {
+                    "listByDefault": true,
+                    "required": false,
+                    "type": "text",
+                    "weight": 1
+                }
+            }
+        }
+    }
+}
