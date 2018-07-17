@@ -139,7 +139,8 @@
         },
         "select": {
             "properties": {
-                "options": { "type": "array" }
+                "options": { "type": "array" },
+                "isMultiple": { "type": "boolean" }
             }
         },
         "textarea": {},

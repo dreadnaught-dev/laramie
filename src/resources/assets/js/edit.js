@@ -440,6 +440,7 @@ function loadAggregateFieldsHelper(data, $newItem) {
   for (var inputKey in data) {
     var inputValue = data[inputKey];
     // All file fields will have an extension (true? what about files without?):
+    // @todo -- instead of relying on the format of the data, we should attach some context of input type to the html via data attributes
     if (hasProperty(inputValue, "extension")) {
       window.tmp = $newItem;
       $newItem
@@ -498,6 +499,11 @@ function loadAggregateFieldsHelper(data, $newItem) {
           }).join(", "),
         );
       }
+    } else if (Array.isArray(inputValue) && inputValue.length > 0) {
+      for (var i = 0; i < inputValue.length; i ++) {
+        $newItem.find("[name$=" + inputKey + "\\[\\]] option[value=\""+inputValue[i]+"\"]").prop('selected', true);
+      }
+      $newItem.find("[name$=" + inputKey + "\\[\\]]").trigger("change");
     } else {
       $newItem.find("[name$=" + inputKey + "]").val(inputValue).trigger("change");
     }

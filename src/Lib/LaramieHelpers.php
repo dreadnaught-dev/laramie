@@ -58,7 +58,6 @@ class LaramieHelpers
         $dataType = object_get($field, 'dataType', $field->type);
         switch ($dataType) {
             case 'text':
-            case 'select':
             case 'hidden':
             case 'phone':
             case 'email':
@@ -73,6 +72,11 @@ class LaramieHelpers
             case 'time':
             case 'checkbox':
             case 'computed':
+                return $value;
+            case 'select':
+                if (is_array($value)) {
+                    return implode(', ', $value);
+                }
                 return $value;
             case 'color':
                 return sprintf('<span style="color:%s">%s</span>', $value, $value);
