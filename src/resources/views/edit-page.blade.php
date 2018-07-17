@@ -131,7 +131,7 @@
                                     <a href="javascript:void(0);" class="button is-primary js-save is-fullwidth">Save{{ $item->_isUpdate ? ' changes' : ''}}</a>
                                 </p>
                                 <p class="control {{ $item->_isNew ? 'is-expanded' : '' }}">
-                                    <a href="javascript:void(0);" class="button is-light js-cancel">Cancel</a>
+                                    <a href="javascript:void(0);" class="button is-light js-cancel-edit">Cancel</a>
                                 </p>
                                 @if ($item->_isUpdate)
                                     <p class="control">

@@ -242,7 +242,7 @@ $(document).ready(function() {
     $("#edit-form").submit();
   });
 
-  $(".js-cancel").click(function() {
+  $(".js-cancel-edit").click(function() {
     if (confirm("Cancel edit? Any unsaved changes will be lost.")) {
       history.back();
     }
