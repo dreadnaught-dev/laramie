@@ -519,6 +519,10 @@ class LaramieDataService
             return new LaramieModel();
         }
 
+        if (!Uuid::isValid($id)) {
+            throw new Exception('Id must be a valid UUID');
+        }
+
         $query = $this->getBaseQuery($model)
             ->where('id', $id);
 
@@ -866,7 +870,7 @@ class LaramieDataService
         DB::statement('insert into laramie_data (id, user_id, type, data, created_at, updated_at) select ?, ?, type, data, now(), now() from laramie_data where id = ?', [Uuid::uuid1()->toString(), $this->getUser()->id, $id]);
     }
 
-    public function saveFile($field, $file)
+    public function saveFile($file, $isPublic)
     {
         $storageDisk = config('laramie.storage_disk');
         $storageDriver = config('filesystems.disks.'.$storageDisk.'.driver');
@@ -879,7 +883,7 @@ class LaramieDataService
         $laramieUpload->extension = $file->getClientOriginalExtension();
         $laramieUpload->mimeType = $file->getClientMimeType();
         $laramieUpload->path = $file->store('laramie', $storageDisk); // this is our master copy, it should always be private (with the exception of its admin-generated thumbs; we'll make those public if the file is public).
-        $laramieUpload->isPublic = $field->isPublic;
+        $laramieUpload->isPublic = $isPublic;
 
         $laramieUpload->fullPath = Storage::disk($storageDisk)->url($laramieUpload->path);
         if ($storageDriver == 'local') {

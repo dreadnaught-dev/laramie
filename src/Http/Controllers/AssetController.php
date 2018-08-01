@@ -201,7 +201,7 @@ class AssetController extends Controller
         try {
             $fileInfo = $this->dataService->getFileInfo($assetKey);
 
-            return \Storage::disk(config('laramie.storate_disk'))->download($fileInfo->path, $fileInfo->name);
+            return \Storage::disk(config('laramie.storage_disk'))->download($fileInfo->path, $fileInfo->name);
         } catch (\Exception $e) {
             abort(404);
         }

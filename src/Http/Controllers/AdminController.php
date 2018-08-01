@@ -611,7 +611,10 @@ class AdminController extends Controller
                         }
                     }
 
-                    return $this->dataService->saveFile($field, $request->file($fieldName));
+                    return $this->dataService->saveFile(
+                        $request->file($fieldName),
+                        object_get($field, 'isPublic', config('laramie.files_are_public_by_default', false))
+                    );
                 } elseif ($request->get('_'.$fieldName)) {
                     // The 'keep' checkbox was checked.
                     return $this->dataService->getFileInfo($request->get('_'.$fieldName));
