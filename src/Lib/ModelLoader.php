@@ -148,8 +148,9 @@ class ModelLoader
                 }
 
                 // Add some utility computed fields
-                $fields->_created_at = (object) ['type' => 'computed', 'dataType' => 'date', 'label' => 'Created at', 'sql' => '(created_at)', 'listByDefault' => true, 'weight' => 900];
-                $fields->_updated_at = (object) ['type' => 'computed', 'dataType' => 'date', 'label' => 'Updated at', 'sql' => '(updated_at)', 'listByDefault' => false, 'weight' => 910];
+                $fields->_id = (object) ['type' => 'computed', 'dataType' => 'string', 'label' => 'Id', 'sql' => '(id::text)', 'listByDefault' => false, 'weight' => 900];
+                $fields->_created_at = (object) ['type' => 'computed', 'dataType' => 'date', 'label' => 'Created at', 'sql' => '(created_at)', 'listByDefault' => true, 'weight' => 910];
+                $fields->_updated_at = (object) ['type' => 'computed', 'dataType' => 'date', 'label' => 'Updated at', 'sql' => '(updated_at)', 'listByDefault' => false, 'weight' => 920];
 
                 if (config('laramie.disable_meta') !== true && object_get($model, 'disableMeta', false) !== true) {
                     //$fields->_version = (object) ['type' => 'computed', 'label' => 'Version', 'sql' => '(select (count(*) + 1) from laramie_data_archive as lda where lda.laramie_data_id = laramie_data.id)', 'listByDefault' => false, 'weight' => 920];
