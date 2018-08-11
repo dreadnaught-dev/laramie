@@ -833,7 +833,6 @@ class LaramieDataService
 
         // Refresh the data from the db (because computed fields may have changed, etc):
         $item = $this->findById($model, $data->id);
-        $item->_origId = $origId;
 
         /*
          * Fire post-save event: listeners MAY be asynchronous. This event
