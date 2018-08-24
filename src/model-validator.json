@@ -30,7 +30,8 @@
             }
         },
         "patternProperties": {
-            "^_" : [ ]
+            "^_" : [ ],
+            "^@" : [ ]
         }
     },
     "@todo": [
@@ -47,6 +48,7 @@
             "properties": {
                 "type": { "type": "string" },
                 "listByDefault": { "type": "boolean" },
+                "isRequired": { "type": "boolean" },
                 "required": { "type": "boolean" },
                 "id": { "type": "string" },
                 "label": { "type": "string" },
@@ -102,7 +104,11 @@
             }
         },
         "hidden": {},
-        "html": {},
+        "html": {
+            "properties": {
+                "html": { "type": "string" }
+            }
+        },
         "markdown": {},
         "hidden": {},
         "currency": {

@@ -522,6 +522,9 @@ class ModelLoader
                     $validationType->maximum = object_get($field, 'max');
                 }
                 break;
+            case 'hidden': // hidden fields can be any type: string, int, null, etc
+                $validationType = (object) ['type' => ['string', 'boolean', 'number', 'integer', 'null']];
+                break;
             case 'integer':
                 $validationType = (object) ['type' => 'integer'];
                 break;
