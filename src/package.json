@@ -29,5 +29,8 @@
     "copy-vendor": "gulp copy-vendor",
     "prettier": "gulp prettier",
     "notes": "gulp notes"
+  },
+  "dependencies": {
+    "select2": "^4.0.6-rc.1"
   }
 }

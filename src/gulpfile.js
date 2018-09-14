@@ -17,6 +17,7 @@ var vendorJs = [
   './node_modules/tributejs/dist/tribute.min.js',
   './node_modules/trix/dist/trix.js',
   './node_modules/@fortawesome/fontawesome-free/js/all.js',
+  './node_modules/select2/dist/js/select2.min.js',
 ];
 
 var vendorCss = [
@@ -24,6 +25,7 @@ var vendorCss = [
   './node_modules/cropper/dist/cropper.min.css',
   './node_modules/tributejs/dist/tribute.css',
   './node_modules/trix/dist/trix.css',
+  './node_modules/select2/dist/css/select2.min.css',
 ];
 
 /* META TASKS (TASKS THAT WRAP OTHERS) */

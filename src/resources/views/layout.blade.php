@@ -6,10 +6,10 @@
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <meta content="Laramie is an open source, headless CMS built on Laravel and modern web technologies. Npm-install it and you're good to go" name="description">
     <title>Laramie - control your content</title>
-	<link href="https://fonts.googleapis.com/css?family=Lobster" rel="stylesheet">
     <link href="/laramie/admin/css/main.css" rel="stylesheet">
     <link href="/laramie/admin/css/dragula.min.css" rel="stylesheet">
     <link href="/laramie/admin/css/tribute.css" rel="stylesheet">
+    <link href="/laramie/admin/css/select2.min.css" rel="stylesheet">
     <meta content="#00d1b2" name="theme-color">
     <script>
         window.globals = window.globals || {};
@@ -39,7 +39,7 @@
         </form>
         <div class="container is-fluid">
             <div class="has-text-centered">
-                Powered by <a href="https://github.com/dreadnaught-dev/laramie" style="font-family: Lobster; font-size: 1.25rem"><strong style="text-decoration: underline; text-decoration-skip: ink;">Laramie</strong></a>
+                Powered by <a href="https://github.com/dreadnaught-dev/laramie"><strong style="text-decoration: underline; text-decoration-skip: ink;">Laramie</strong></a>
                 <a style="margin-left: 1.5rem;" href="https://github.com/dreadnaught-dev/laramie" target="_blank">
                     <span class="icon" style="color: #333;">
                         <i class="fab fa-github"></i>
@@ -52,6 +52,7 @@
     <script src="/laramie/admin/js/handlebars.min.js"></script>
     <script src="/laramie/admin/js/dragula.min.js"></script>
     <script src="/laramie/admin/js/tribute.min.js"></script>
+    <script src="/laramie/admin/js/select2.min.js"></script>
     <script src="/laramie/admin/js/main.js"></script>
     <script src="/laramie/admin/js/fontawesome/all.js"></script>
     @stack('scripts')

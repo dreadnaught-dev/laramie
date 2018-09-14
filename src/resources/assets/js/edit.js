@@ -179,6 +179,7 @@ $(document).ready(function() {
     // Tap into the recursive loadAggregateFields function to add additional aggregates.
     loadAggregateFields($holder, {}, keys, true);
     defaultEmptyTimezonesToBrowserValue();
+    transformSelectsToSelect2();
   });
 
   $("#edit-form").on("click.remove-aggregate", ".js-remove-aggregate", function(e) {
@@ -286,6 +287,7 @@ $(document).ready(function() {
   });
 
   defaultEmptyTimezonesToBrowserValue();
+  transformSelectsToSelect2();
 });
 
 function getQS(querystring) {
@@ -518,6 +520,11 @@ function defaultEmptyTimezonesToBrowserValue() {
       $timezone.val(Intl.DateTimeFormat().resolvedOptions().timeZone);
     }
   });
+}
+
+// Transform multiple selects (or selects with class `select2`) into select2 elements:
+function transformSelectsToSelect2() {
+  $('select[multiple]:not(.select2-hidden-accessible), select.select2:not(.select2-hidden-accessible)').select2();
 }
 
 function getKey() {

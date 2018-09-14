@@ -23,7 +23,7 @@
 <nav class="navbar has-shadow">
     <div class="navbar-brand">
         <a class="navbar-item" href="{{ route('laramie::dashboard') }}">
-            <span class="title is-3" style="font-family: Lobster, cursive">Laramie</span>
+            <span class="title is-2">{{ config('laramie.site_name') }}</span>
         </a>
         <?php /*
         <a class="navbar-item is-hidden-desktop" href="https://github.com/laramie-cms/laramie" target="_blank">

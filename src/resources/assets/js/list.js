@@ -51,13 +51,18 @@ $(document).ready(function() {
 
   $(".js-select-all, .js-item-id").click(function() {
     var isChecked = $(this).is(":checked");
+
     if ($(this).is(".js-select-all")) {
       $("#main-list-table .js-item-id").prop("checked", isChecked);
     } else if (!isChecked) {
       $(".js-select-all").prop("checked", false);
     }
 
-    if (isChecked && $("#bulk-action-helper").data("hasAdditionalPages") == "1") {
+    var isAllSelected = $('.js-select-all').is(':checked')
+      || $('.js-item-id').length == $('.js-item-id:checked').length;
+
+    if (isAllSelected && $("#bulk-action-helper").data("hasAdditionalPages") == "1") {
+      $(".js-select-all").prop('checked', true);
       $("#bulk-action-helper").show();
     } else {
       $("#bulk-action-helper").hide().removeClass("all-selected");
