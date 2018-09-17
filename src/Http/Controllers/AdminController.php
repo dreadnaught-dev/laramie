@@ -562,6 +562,9 @@ class AdminController extends Controller
             case 'range':
                 return $value === null ? null : (float) $request->get($fieldName);
 
+            case 'checkbox':
+                return $value === '1';
+
             case 'boolean':
                 if ($value === '1') {
                     return true;

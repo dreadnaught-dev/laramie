@@ -477,7 +477,11 @@ function loadAggregateFieldsHelper(data, $newItem) {
         .find(".markdown-html")
         .html(inputValue.html);
     } else if (typeof inputValue == "boolean") {
-      $newItem.find("[id$=" + inputKey + "-" + (inputValue ? "yes" : "no") + "]").prop("checked", true);
+      if ($newItem.find("[name$=" + inputKey + "]:checkbox").length > 0) {
+        $newItem.find("[name$=" + inputKey + "]:checkbox").prop("checked", inputValue);
+      } else {
+        $newItem.find("[id$=" + inputKey + "-" + (inputValue ? "yes" : "no") + "]").prop("checked", true);
+      }
     } else if (
       hasProperty(inputValue, "id") ||
         Array.isArray(inputValue) && inputValue.length > 0 && hasProperty(inputValue[0], "id")
