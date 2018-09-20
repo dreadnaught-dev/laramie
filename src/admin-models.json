@@ -45,18 +45,21 @@
                 },
                 "api": {
                     "type": "aggregate",
+                    "asTab": true,
                     "fields": {
                         "enabled": { "type": "boolean", "label": "Enable API access" },
                         "username": { "type": "hidden", "label": "API username" },
                         "password": { "type": "hidden", "label": "API password" }
                     }
                 },
-                "twoFactorAuthentication": {
+                "mfa": {
                     "type": "aggregate",
+                    "label": "Multifactor Authentication",
+                    "asTab": true,
                     "fields": {
-                        "enabled": { "type": "boolean", "label": "Enabled?" },
-                        "provider": { "type": "select", "options": ["DUO"] },
-                        "id": { "type": "text", "label": "ID / Username", "extra": "placeholder=\"Will be set set during first login attempt\"" }
+                        "enabled": { "type": "checkbox", "label": "Enabled?" },
+                        "registrationCompleted": { "type": "checkbox", "label": "MFA registration completed?" },
+                        "secret": { "type": "text" }
                     }
                 },
                 "filters": { "type": "text", "isListable": false, "isEditable": false },

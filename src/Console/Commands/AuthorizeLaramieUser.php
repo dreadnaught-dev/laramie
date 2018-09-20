@@ -9,6 +9,8 @@ use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
 use Laramie\Services\LaramieDataService;
 
+use PragmaRX\Google2FA\Google2FA;
+
 class AuthorizeLaramieUser extends Command
 {
     protected $signature = 'laramie:authorize-user {user} {--password=} {--role=}';
@@ -87,10 +89,15 @@ class AuthorizeLaramieUser extends Command
                 'username' => str_random(Globals::API_TOKEN_LENGTH),
                 'password' => str_random(Globals::API_TOKEN_LENGTH),
             ];
-            $laramieModel->twoFactorAuthentication = (object) [
+
+            $google2fa = new Google2FA();
+
+            $laramieModel->mfa = (object) [
                 'enabled' => true,
-                'provider' => 'DUO',
+                'registrationCompleted' => false,
+                'secret' => $google2fa->generateSecretKey(),
             ];
+
             $laramieModel->_isFromConsole = true;
             $laramieModel->password = $laramiePassword;
         } else {

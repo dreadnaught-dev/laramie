@@ -85,13 +85,7 @@ return [
     | Set whether or not dual authentication is enabled by default.
     |
     */
-    'enable_dual_auth' => false,
-
-    'duo' => [
-        'integrationKey' => env('DUO_INTEGRATION_KEY'),
-        'secretKey' => env('DUO_SECRET_KEY'),
-        'apiHostname' => env('DUO_API_HOSTNAME'),
-    ],
+    'enable_mfa' => false,
 
     /*
     |--------------------------------------------------------------------------

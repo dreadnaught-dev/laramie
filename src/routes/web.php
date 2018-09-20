@@ -40,9 +40,10 @@ Route::group(
         Route::post('/save-report/{modelKey}', 'AdminController@saveReport')->name('save-report')->middleware(LaramieAuthorize::class);
         Route::post('/bulk-actions/{modelKey}', 'AdminController@bulkActionHandler')->name('bulk-action-handler')->middleware(LaramieAuthorize::class);
 
-        Route::get('/two-factor/duo/register', 'TwoFactorController@duoRegistration')->name('duo-register');
-        Route::get('/two-factor/duo/login', 'TwoFactorController@duoLogin')->name('duo-login');
-        Route::post('/two-factor/duo/login', 'TwoFactorController@postDuoLogin')->name('post-duo-login');
+        Route::get('/mfa-register', 'MFAController@getRegister')->name('mfa-register');
+        Route::post('/mfa-register', 'MFAController@postRegister');
+        Route::get('/mfa-login', 'MFAController@getLogin')->name('mfa-login');
+        Route::post('/mfa-login', 'MFAController@postLogin');
 
         Route::get('/assets/icon/{imageKey}', 'AssetController@showIcon')->name('icon');
         Route::get('/assets/image/{imageKey}', 'AssetController@showImage')->name('image');

@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Blade;
 
 use Laramie\Http\Middleware\RequestLogger;
 use Laramie\Lib\LaramieHelpers;
-use Laramie\Services\DuoService;
 use Laramie\Services\LaramieDataService;
 
 /*
@@ -49,14 +48,6 @@ class LaramieServiceProvider extends ServiceProvider
         // Create a request logger singleton -- otherwise [Laravel will resolve a fresh instance of the middleware from the service container](https://laravel.com/docs/middleware#terminable-middleware).
         $this->app->singleton(RequestLogger::class, function ($app) {
             return new RequestLogger();
-        });
-
-        $this->app->singleton(DuoService::class, function ($app) {
-            return new DuoService(
-                config('laramie.duo.integrationKey'),
-                config('laramie.duo.secretKey'),
-                config('laramie.duo.apiHostname')
-            );
         });
 
         // Create a LaramieDataService singleton

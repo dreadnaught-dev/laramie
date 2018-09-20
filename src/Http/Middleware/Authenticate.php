@@ -44,13 +44,13 @@ class Authenticate
      */
     public function handle($request, Closure $next)
     {
-        // If we're on a two-factor/* route, skip. We need to allow those routes through.
-        if (strpos($request->url(), 'two-factor') !== false) {
-            return $next($request);
-        }
-
         $linkedField = config('laramie.username');
         $userUuid = null;
+
+        // If we're on a mfa route, skip. We need to allow those routes through.
+        if (strpos($request->route()->getActionName(), 'MFAController') !== false) {
+            return $next($request);
+        }
 
         // If the user is already logged, we don't need go any further
         if (!$request->session()->has('_laramie')) {
@@ -66,18 +66,18 @@ class Authenticate
                 $user = $laramieDataService->findById($laramieDataService->getModelByKey('LaramieUser'), $userRecord->id);
 
                 // Check two-factor authentication (can be enabled/disabled at the application or user level)
-                $dualAuthEnabled = config('laramie.enable_dual_auth') &&
-                    config('laramie.duo.integrationKey') &&
-                    config('laramie.duo.secretKey') &&
-                    config('laramie.duo.apiHostname');
+                $mfaGloballyEnabled = config('laramie.enable_mfa', false);
 
-                if ($dualAuthEnabled && object_get($user, 'twoFactorAuthentication.enabled') && !$request->session()->has('_two_factor')) {
+                if ($mfaGloballyEnabled
+                    && object_get($user, 'mfa.enabled')
+                    && !$request->session()->has('_mfa')
+                ) {
                     $request->session()->put('url.intended', url()->current());
                     // Is the user registered? Attempt to authenticate them. Otherwise, register them:
-                    if (object_get($user, 'twoFactorAuthentication.id')) {
-                        return redirect()->to(route('laramie::duo-login'));
+                    if (object_get($user, 'mfa.registrationCompleted')) {
+                        return redirect()->to(route('laramie::mfa-login'));
                     } else {
-                        return redirect()->to(route('laramie::duo-register'));
+                        return redirect()->to(route('laramie::mfa-register'));
                     }
                 }
 
