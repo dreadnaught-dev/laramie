@@ -580,7 +580,7 @@ class AdminController extends Controller
             case 'password':
                 if ($request->get('_'.$fieldName)) {
                     // The 'keep' checkbox was checked
-                    return LaramieHelpers::getLaramiePasswordObjectFromPasswordText($request->get('_'.$fieldName));
+                    return (object) ['encryptedValue' => $request->get('_'.$fieldName)];
                 }
 
                 return LaramieHelpers::getLaramiePasswordObjectFromPasswordText($value);
