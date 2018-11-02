@@ -135,6 +135,17 @@ class ModelLoader
                     $model->alias = $fieldKeyToUseAsAlias ?: 'id';
                 }
 
+                $quickSearch = object_get($model, 'quickSearch', $model->alias);
+                $model->quickSearch = gettype($quickSearch) != 'array'
+                    ? [$quickSearch]
+                    : $quickSearch;
+
+                foreach ($model->quickSearch as $field) {
+                    if ($field != 'id' && !property_exists($fields, $field)) {
+                        throw new Exception(sprintf('Quick-search field "%s" does not exist on model "%s"', $field, $model->name));
+                    }
+                }
+
                 // Don't allow reference fields to be used as aliases -- we run into an issue
                 // with prefetching relationships and potentially going down a recursive rabbit hole
                 if (preg_match('/^reference/', object_get($fields, $model->alias.'.type'))) {

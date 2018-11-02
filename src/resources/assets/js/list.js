@@ -80,8 +80,14 @@ $(document).ready(function() {
 
   $(".js-delete").click(function() {
     if (confirm("Delete this item?")) {
-      $(this).closest("tr").remove();
-      $.post($(this).data("action"), { "_method": "DELETE" });
+      $row = $(this).closest("tr");
+      $.post($(this).data("action"), { "_method": "DELETE" }, function(data) {
+        if (data.success) {
+          $row.remove();
+        } else {
+          alert(data.message);
+        }
+      });
     }
   });
 

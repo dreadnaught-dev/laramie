@@ -8,6 +8,7 @@
         ],
         "properties": {
             "alias": { "type": "string" },
+            "quickSearch": { "type": ["string", "array"] },
             "mainTabLabel": { "type": "string" },
             "defaultSort": { "type": "string" },
             "defaultSortDirection": { "type": "string" },

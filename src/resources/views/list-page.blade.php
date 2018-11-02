@@ -3,6 +3,7 @@
 @php
     $activeSort = request()->get('sort', $model->defaultSort);
     $activeSortDirection = request()->get('sort-direction', $model->defaultSortDirection);
+    $quickSearch = request()->get('quick-search');
 
     $filterableFields = collect($model->fields)
         ->filter(function($e){
@@ -187,7 +188,7 @@
 
 @section('content')
     <div class="column is-10">
-        <div class="is-clearfix short-spacer">
+        <div class="is-clearfix">
             <div class="is-pulled-left">
                 <h1 class="title">{{ $model->namePlural }}
                     @if ($model->isEditable)
@@ -210,12 +211,21 @@
             <input type="hidden" id="is-filtering" class="post-only" value="1">
 
             <div class="is-clearfix short-spacer">
+                <div class="field has-addons" style="width: 25%; margin: .75rem 0">
+                    <div class="control is-expanded">
+                        <input class="input" type="text" name="quick-search" placeholder="Quick Search" title="Quickly search by {{ implode(', ', object_get($model, 'quickSearch')) }}" value="{{ $quickSearch }}">
+                    </div>
+                    <div class="control">
+                        <button type="submit" class="button is-text">Go</button>
+                    </div>
+                </div>
+
+                <div id="filter-holder"></div>
+
                 <em>Viewing {{ number_format($models->firstItem()) }} - {{ number_format($models->lastItem()) }} of {{ number_format($models->total()) }}</em> | <a href="javascript:void(0);" class="js-add-filter">Add a filter</a>
                 @if (count($filters) > 0)
                 | <a href="javascript:void(0);" class="js-toggle-save-report">Save filters to report</a>
                 @endif
-                <div id="filter-holder">
-                </div>
             </div>
 
             <div id="bulk-action-helper" class="notification is-warning" data-has-additional-pages="{{ $models->hasMorePages() ? '1' : '' }}">

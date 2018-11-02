@@ -11,6 +11,7 @@ use cogpowered\FineDiff\Granularity\Word;
 use cogpowered\FineDiff\Diff;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Events\PreEdit;
+use Laramie\Events\PreDelete;
 use Laramie\Events\BulkDuplicate;
 use Laramie\Events\BulkDelete;
 use Laramie\Events\BulkExport;
@@ -131,6 +132,7 @@ class AdminController extends Controller
         $filters = $this->getFilters($options);
 
         $options['filters'] = $filters;
+        $options['quick-search'] = $request->get('quick-search');
 
         $models = $this->dataService->findByType($model, $options);
 
@@ -242,7 +244,11 @@ class AdminController extends Controller
                 break;
             case 'export':
                 $options['sort'] = $origSort;
-                $listableFields = $this->getListableFields($model);
+                $listableFields = $this->getListableFields($model)
+                    ->filter(function($item) {
+                        // Don't include meta fields (versions, tags, comments) in export
+                        return object_get($item, 'isMetaField') !== true;
+                    });
                 $outputFile = storage_path(Uuid::uuid4()->toString().'.csv');
                 event(new BulkExport($model, $options, $listableFields, $outputFile));
 
@@ -343,7 +349,7 @@ class AdminController extends Controller
                     return response('OK')->cookie('default_'.$relatedModel, $id, (10 * 365 * 24 * 60));
                     break;
                 case 'delete':
-                    $this->dataService->deleteById($report->id, true);
+                    $this->dataService->deleteById('LaramieSavedReport', $report->id, true);
                     break;
                 break;
             }
@@ -374,7 +380,7 @@ class AdminController extends Controller
                 ->where(\DB::raw('data->>\'name\''), $reportName);
         }))
             ->each(function ($e) {
-                $this->dataService->deleteById($e->id, true);
+                $this->dataService->deleteById($modelKey, $e->id, true);
             });
 
         $filterString = collect($request->all())
@@ -714,10 +720,20 @@ class AdminController extends Controller
      */
     public function deleteItem($modelKey, $id, Request $request)
     {
-        $this->dataService->deleteById($id);
+        $error = null;
+
+        try {
+            $this->dataService->deleteById($modelKey, $id);
+        } catch (\Exception $e) {
+            $error = $e->getMessage();
+        }
 
         if ($request->ajax()) {
-            return response()->json(['success' => true]);
+            return response()->json(['success' => $error === null, 'message' => $error ?: 'ok']);
+        }
+
+        if ($error) {
+            return redirect()->back()->with(['alert' => (object) ['class' => 'is-danger', 'title' => 'Error', 'alert' => $error]]);
         }
 
         return redirect()->to(route('laramie::list', ['modelKey' => $modelKey]));

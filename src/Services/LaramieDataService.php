@@ -11,6 +11,8 @@ use Laramie\Lib\LaramieModel;
 use Laramie\Lib\ModelLoader;
 use Laramie\Events\PreSave;
 use Laramie\Events\PostSave;
+use Laramie\Events\PreDelete;
+use Laramie\Events\PostDelete;
 use Laramie\Events\PreList;
 use JsonSchema\Validator;
 
@@ -201,35 +203,10 @@ class LaramieDataService
 
         $filters = array_get($options, 'filters', []);
         foreach ($filters as $filter) {
-            $field = $filter->field;
-            $modelField = object_get($model->fields, $field);
+            $field = $this->getSearchSqlFromFieldName($model, $filter->field);
 
-            if ($field == '_tag') {
-                $field = '(select string_agg(ldm.data->>\'text\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
-            } elseif ($field == '_comment') {
-                $field = '(select string_agg(ldm.data->>\'markdown\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
-            } elseif ($modelField->type == 'aggregate') {
-                // Aggregate fields aren't eligible to take part in filters --
-                // if a fitler is needed on an aggreate, a computed field should
-                // be created to selecte the aggregate property that can then be
-                // listed/searched be searched.
-                continue;
-            } elseif ($modelField->type == 'computed') {
-                $field = $modelField->sql;
-            } elseif ($modelField->type == 'reference') {
-                $field = 'data->>\''.$field.'\'';
-                $relatedModel = $this->getModelByKey($modelField->relatedModel);
-                $relatedAlias = object_get($relatedModel->fields, $relatedModel->alias);
-                $tmp = $relatedAlias->type == 'computed' ? $relatedAlias->sql : sprintf('data->>\'%s\'', $relatedAlias->_fieldName);
-
-                if ($modelField->subtype == 'many') {
-                    // @optimize -- this subselect takes a long time for large tables. Change to something like `data->>'field' in (select id::text from laramie_data where type='$relatedType' and data->>'$field' ilike 'keywords%')
-                    $field = '(select string_agg('.$tmp.', \'|\') from laramie_data as n2 where n2.id::text in (select * from json_array_elements_text((laramie_data.data->>\''.$modelField->_fieldName.'\')::json)))';
-                } else {
-                    $field = '(select string_agg('.$tmp.', \'|\') from laramie_data as n2 where n2.id::text in (laramie_data.data->>\''.$modelField->_fieldName.'\'))';
-                }
-            } else {
-                $field = 'data->>\''.$field.'\'';
+            if (!$field) {
+                continue; // aggregate fields will return null and may not be searched against currently
             }
 
             $operation = $filter->operation;
@@ -274,7 +251,61 @@ class LaramieDataService
             }
         }
 
+        $quickSearch = array_get($options, 'quick-search');
+        $quickSearchFields = object_get($model, 'quickSearch');
+        if ($quickSearch && $quickSearchFields) {
+            $quickSearchFields = collect($quickSearchFields)
+                ->map(function($item) use ($model) { return $this->getSearchSqlFromFieldName($model, $item); })
+                ->filter();
+
+            $query->where(function($query) use($quickSearchFields, $quickSearch) {
+                foreach ($quickSearchFields as $field) {
+                    $query->orWhere(DB::raw($field), 'ilike', '%'.$quickSearch.'%');
+                }
+            });
+        }
+
         return $query;
+    }
+
+    private function getSearchSqlFromFieldName($model, $field)
+    {
+        // Specifically for quick search where no alias is provided on the model (or id is specified as a quick search field):
+        if (in_array($field, ['id'])) {
+            return $field.'::text';
+        }
+
+        $modelField = object_get($model->fields, $field);
+
+        if ($field == '_tag') {
+            $field = '(select string_agg(ldm.data->>\'text\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
+        } elseif ($field == '_comment') {
+            $field = '(select string_agg(ldm.data->>\'markdown\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
+        } elseif ($modelField->type == 'aggregate') {
+            // Aggregate fields aren't eligible to take part in filters --
+            // if a fitler is needed on an aggreate, a computed field should
+            // be created to selecte the aggregate property that can then be
+            // listed/searched be searched.
+            return null;
+        } elseif ($modelField->type == 'computed') {
+            $field = $modelField->sql;
+        } elseif ($modelField->type == 'reference') {
+            $field = 'data->>\''.$field.'\'';
+            $relatedModel = $this->getModelByKey($modelField->relatedModel);
+            $relatedAlias = object_get($relatedModel->fields, $relatedModel->alias);
+            $tmp = $relatedAlias->type == 'computed' ? $relatedAlias->sql : sprintf('data->>\'%s\'', $relatedAlias->_fieldName);
+
+            if ($modelField->subtype == 'many') {
+                // @optimize -- this subselect takes a long time for large tables. Change to something like `data->>'field' in (select id::text from laramie_data where type='$relatedType' and data->>'$field' ilike 'keywords%')
+                $field = '(select string_agg('.$tmp.', \'|\') from laramie_data as n2 where n2.id::text in (select * from json_array_elements_text((laramie_data.data->>\''.$modelField->_fieldName.'\')::json)))';
+            } else {
+                $field = '(select string_agg('.$tmp.', \'|\') from laramie_data as n2 where n2.id::text in (laramie_data.data->>\''.$modelField->_fieldName.'\'))';
+            }
+        } else {
+            $field = 'data->>\''.$field.'\'';
+        }
+
+        return $field;
     }
 
     public function getUserReportsForModel($model)
@@ -847,19 +878,35 @@ class LaramieDataService
     }
 
     // isFullDelete specifies whether or not to remove the item's history as well. If set to false, we'll create a snapshot of it in the archive table before deletion.
-    public function deleteById($id, $isFullDelete = false)
+    public function deleteById($model, $id, $isFullDelete = false)
     {
+        $model = $this->getModelByKey($model);
+        $item = $this->findByIdSuperficial($model, $id);
+
         if (Uuid::isValid($id)) {
-            if ($isFullDelete) {
-                DB::table('laramie_data_archive')
-                    ->where('laramie_data_id', $id)
+            \DB::beginTransaction();
+            try {
+                event(new PreDelete($model, $item, $this->getUser()));
+
+                if ($isFullDelete) {
+                    DB::table('laramie_data_archive')
+                        ->where('laramie_data_id', $id)
+                        ->delete();
+                } else {
+                    DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [Uuid::uuid1()->toString(), $id]);
+                }
+
+                DB::table('laramie_data')
+                    ->where('id', $id)
                     ->delete();
-            } else {
-                DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [Uuid::uuid1()->toString(), $id]);
+
+                event(new PostDelete($model, $item, $this->getUser()));
+
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
             }
-            DB::table('laramie_data')
-                ->where('id', $id)
-                ->delete();
         }
     }
 
