@@ -7,7 +7,9 @@
 
     $filterableFields = collect($model->fields)
         ->filter(function($e){
-            return $e->isListable && !object_get($e, 'isMetaField', false);
+            return $e->isListable
+                && !object_get($e, 'isMetaField', false)
+                && object_get($e, 'type') !== 'password';
         })
         ->sortBy('label')
         ->all();
@@ -221,7 +223,7 @@
             <div class="field is-grouped is-spaced">
                 @if ($quickSearch)
                     <p class="control">
-                        <button type="button" class="button is-white has-text-primary js-clear-search" title="Clear search">
+                        <button type="button" class="button is-white has-text-primary js-clear-search" title="Clear quick search">
                             <span class="icon"><i class="fas fa-broom"></i></span>
                         </button>
                     </p>

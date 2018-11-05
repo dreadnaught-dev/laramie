@@ -299,7 +299,7 @@ class ModelLoader
 
         $field->label = object_get($field, 'label', $fieldSingularName);
         $field->labelPlural = object_get($field, 'labelPlural', $fieldPluralName); // Used in relationships
-        $field->listByDefault = object_get($field, 'listByDefault', true);
+        $field->listByDefault = object_get($field, 'listByDefault', $field->type !== 'password');
 
         $weight = $fieldName == $modelAlias ? -1 : object_get($field, 'weight', 100);
         $field->weight = is_int($weight) ? $weight : 100; // Weight determines where the field is diplayed -- provides a default ordering to the sort page and the order on the edit page
@@ -387,6 +387,9 @@ class ModelLoader
                 break;
             case 'html':
                 $field->isListable = false; // html fields are not listable -- they're purely for presentation
+                break;
+            case 'password':
+                $field->isListable = object_get($field, 'isListable') === true; // password fields _can_ be listable, but will only show asterisks
                 break;
             case 'aggregate':
                 if (object_get($field, 'isListable') === true) {
