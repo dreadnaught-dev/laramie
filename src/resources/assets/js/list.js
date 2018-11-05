@@ -117,14 +117,25 @@ $(document).ready(function() {
     return false;
   });
 
-  $(".js-add-filter").click(addFilter);
+  $(".js-advanced-search").click(function(){
+    $('#filter-holder').toggle();
+    if ($('#filter-holder').is(':visible') && $('.filter-set').length == 0) {
+      addFilter();
+    }
+  });
 
-  $("#filter-holder").on("click.remove-filter", ".js-remove-filter", function() {
-    $(this).closest(".level").remove();
+  $("#filter-holder").on("click.add-filter", ".js-add-filter", addFilter);
+
+  $("#filters").on("click.remove-filter", ".js-remove-filter", function() {
+    $(this).closest(".filter-set").remove();
     $("#main-list-table").trigger("reflow");
 
+    if ($("#filters > .filter-set").length == 0) {
+      $('#filter-holder').hide();
+    }
+
     // refresh the list page if removing the last filter (if viewing a filtered page)
-    if (globals.filters.length > 0 && $("#filter-holder > .level").length == 0) {
+    if (globals.filters.length > 0 && $("#filters > .filter-set").length == 0) {
       $("#list-form").submit();
     }
   });
@@ -146,12 +157,12 @@ $(document).ready(function() {
     }
   });
 
-  $("#filter-holder").on("click.remove-filter", ".js-remove-filter", function() {
-    $(this).closest(".level").remove();
+  $("#filters").on("click.remove-filter", ".js-remove-filter", function() {
+    $(this).closest(".filter-set").remove();
     $("#main-list-table").trigger("reflow");
 
     // refresh the list page if removing the last filter (if viewing a filtered page)
-    if (globals.filters.length > 0 && $("#filter-holder > .level").length == 0) {
+    if (globals.filters.length > 0 && $("#filters > .filter-set").length == 0) {
       $("#list-form").submit();
     }
   });
@@ -178,7 +189,7 @@ function addFilter(data) {
   filterIndex += 1;
   var template = handlebarsTemplates["list-filter"];
   var $filterItem = $(template(data));
-  $("#filter-holder").append($filterItem);
+  $("#filters").append($filterItem);
   $("#main-list-table").trigger("reflow");
   return $filterItem;
 }
@@ -196,6 +207,10 @@ function loadHandlebarsTemplates(itemData) {
 }
 
 function loadFilters() {
+  if (globals.filters.length > 0) {
+    $("#filter-holder").show();
+  }
+
   for (var i = 0; i < globals.filters.length; i++) {
     var filter = globals.filters[i];
     var $filterItem = addFilter();

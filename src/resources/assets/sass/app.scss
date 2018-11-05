@@ -96,10 +96,6 @@ form {
     @extend .is-danger;
 }
 
-.field:not(:last-child) {
-    margin-bottom: 1.25rem;
-}
-
 .panel-block input[type="radio"] {
     margin-right: 0.75em;
 }
@@ -181,8 +177,12 @@ thead .fa-sort {
     color: lighten($grey-lighter, 5%);
 }
 
-.short-spacer:not(:last-child) {
-    padding-bottom: .5rem;
+.is-spaced:not(:last-child) {
+    margin-bottom: 1.25rem;
+}
+
+.is-spaced-sm:not(:last-child) {
+    margin-bottom: .5rem;
 }
 
 .has-margin-bottom:not(:last-child) {
@@ -190,10 +190,11 @@ thead .fa-sort {
 }
 
 #filter-holder {
-    .level {
+    display:none;
+    .filter-set {
         margin: .5rem 0;
-        .additional-actions { display: none; }
-        &:last-child .additional-actions {
+        .filter-button-holder { display: none; }
+        &:last-child .filter-button-holder {
             display: block;
         }
     }
