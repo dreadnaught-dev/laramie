@@ -16,6 +16,11 @@ $(document).ready(function() {
     $.event.trigger("modal-change");
   });
 
+  $(".js-clear-search").on("click", function() {
+    $('#quick-search').val('');
+    $(this).closest('form').submit();
+  });
+
   // We're posting this via the main list form as that's where all the
   // filters are -- and we need those filters for bulk actions as well.
   $("#save-report-form").submit(function() {

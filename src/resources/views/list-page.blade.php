@@ -221,7 +221,7 @@
             <div class="field is-grouped is-spaced">
                 @if ($quickSearch)
                     <p class="control">
-                        <button onclick="$('#quick-search').val('')" class="button is-white has-text-primary" title="Clear search">
+                        <button type="button" class="button is-white has-text-primary js-clear-search" title="Clear search">
                             <span class="icon"><i class="fas fa-broom"></i></span>
                         </button>
                     </p>
