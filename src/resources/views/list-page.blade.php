@@ -70,7 +70,7 @@
                 </div>
                 <div class="field is-narrow filter-button-holder">
                     <p class="control">
-                        <button class="button is-light">filter</button>
+                        <button class="button is-light">Go</button>
                     </p>
                 </div>
                 <div class="field is-narrow filter-button-holder">
