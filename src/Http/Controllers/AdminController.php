@@ -12,9 +12,8 @@ use cogpowered\FineDiff\Diff;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Events\PreEdit;
 use Laramie\Events\PreDelete;
-use Laramie\Events\BulkDuplicate;
-use Laramie\Events\BulkDelete;
-use Laramie\Events\BulkExport;
+use Laramie\Events\PreBulkAction;
+use Laramie\Events\PostBulkAction;
 use Laramie\Lib\LaramieModel;
 use Laramie\Services\LaramieDataService;
 
@@ -226,12 +225,6 @@ class AdminController extends Controller
     /**
      * Handle bulk actions -- these are triggered from the list page.
      *
-     * Bulk actions (for now) must be one of the following:
-     *
-     * - duplicate // clone items
-     * - delete    // delete items
-     * - export    // export items to a csv
-     *
      * Bulk actions trigger events (which must be synchronous) which in turn
      * actually field the logic of the bulk action.
      *
@@ -240,35 +233,42 @@ class AdminController extends Controller
     public function bulkActionHandler($modelKey, Request $request)
     {
         $model = $this->dataService->getModelByKey($modelKey);
-        $operation = $request->get('bulk-action-operation');
+        $nameOfBulkAction = $request->get('bulk-action-operation');
 
-        $options = $request->all();
-        $origSort = array_get($options, 'sort');
-        $filters = $this->getFilters($options);
-        $options['filters'] = $filters;
-        $options['sort'] = 'id';
+        $postData = $request->all();
+        $filters = $this->getFilters($postData);
+        $postData['filters'] = $filters;
+        $postData['sort'] = array_get($postData, 'sort', 'id');
 
-        switch ($operation) {
-            case 'duplicate':
-                event(new BulkDuplicate($model, $options));
-                break;
-            case 'delete':
-                event(new BulkDelete($model, $options));
-                break;
-            case 'export':
-                $options['sort'] = $origSort;
-                $listableFields = $this->getListableFields($model)
-                    ->filter(function($item) {
-                        // Don't include meta fields (versions, tags, comments) in export
-                        return object_get($item, 'isMetaField') !== true;
-                    });
-                $outputFile = storage_path(Uuid::uuid4()->toString().'.csv');
-                event(new BulkExport($model, $options, $listableFields, $outputFile));
+        $response = $this->redirectToFilteredListPage($modelKey, $request);
 
-                return response()->download($outputFile, sprintf('%s_%s.csv', snake_case($model->namePlural), date('Ymd')))->deleteFileAfterSend(true);
-        }
+        $user = $this->dataService->getUser();
+        $query = $this->dataService->getBulkActionQuery($modelKey, $postData);
 
-        return $this->redirectToFilteredListPage($modelKey, $request);
+        //dd($query->toSql());
+
+        event(new PreBulkAction($model, $nameOfBulkAction, $query, $postData, $user, $response));
+
+dd($response);
+
+        //event(new BulkAction($model, $nameOfBulkAction, $query, $user, $response));
+        //event(new PostBulkAction($model, $nameOfBulkAction, $query, $user, $response));
+
+        //switch ($operation) {
+            //case 'export':
+                //$options['sort'] = $origSort;
+                //$listableFields = $this->getListableFields($model)
+                    //->filter(function($item) {
+                        //// Don't include meta fields (versions, tags, comments) in export
+                        //return object_get($item, 'isMetaField') !== true;
+                    //});
+                //$outputFile = storage_path(Uuid::uuid4()->toString().'.csv');
+                //event(new BulkExport($model, $options, $listableFields, $outputFile));
+
+                //return response()->download($outputFile, sprintf('%s_%s.csv', snake_case($model->namePlural), date('Ymd')))->deleteFileAfterSend(true);
+        //}
+
+        return $response;
     }
 
     /**

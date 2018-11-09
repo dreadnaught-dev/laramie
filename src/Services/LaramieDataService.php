@@ -978,4 +978,29 @@ class LaramieDataService
 
         $this->deleteById($fileInfo->uploadKey);
     }
+
+    public function getBulkActionQuery($model, $postData)
+    {
+        $model = $this->getModelByKey($model);
+
+        return DB::table('laramie_data')
+            ->whereIn('id', function ($query) use ($model, $postData) {
+                $query->select(['id'])
+                    ->from('laramie_data')
+                    ->where('type', $model->_type);
+
+                $this->augmentListQuery($query, $model, $postData);
+
+                $isAllSelected = array_get($postData, 'bulk-action-all-selected') === '1';
+
+                if (!$isAllSelected) {
+                    $itemIds = collect(array_get($postData, 'bulk-action-ids', []))
+                        ->filter(function ($item) {
+                            return $item && Uuid::isValid($item);
+                        })
+                        ->all();
+                    $query->whereIn(DB::raw('id::text'), $itemIds);
+                }
+            });
+    }
 }

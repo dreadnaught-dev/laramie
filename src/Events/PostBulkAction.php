@@ -2,7 +2,7 @@
 
 namespace Laramie\Events;
 
-class PreBulkAction
+class PostBulkAction
 {
     public $model;
     public $action;

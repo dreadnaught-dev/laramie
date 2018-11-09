@@ -39,16 +39,8 @@ class LaramieListener
             'Laramie\Listeners\LaramieListener@postSave'
         );
         $events->listen(
-            'Laramie\Events\BulkDuplicate',
-            'Laramie\Listeners\LaramieListener@bulkDuplicate'
-        );
-        $events->listen(
-            'Laramie\Events\BulkDelete',
-            'Laramie\Listeners\LaramieListener@bulkDelete'
-        );
-        $events->listen(
-            'Laramie\Events\BulkExport',
-            'Laramie\Listeners\LaramieListener@bulkExport'
+            'Laramie\Events\PreBulkAction',
+            'Laramie\Listeners\LaramieListener@preBulkAction'
         );
     }
 
@@ -145,84 +137,66 @@ class LaramieListener
     /**
      * Clone items in bulk.
      *
-     * @param $event Laramie\Events\BulkDuplicate
+     * @param $event Laramie\Events\BulkAction
      */
-    public function bulkDuplicate($event)
+    public function bulkActionHandler($event)
     {
         $model = $event->model;
-        $options = $event->options;
-        $dataService = $this->getLaramieDataService();
-
-        $query = $this->getBulkActionBaseQuery($model->_type, $options);
-        $query->select([DB::raw('uuid_generate_v1()'), DB::raw('\''.$dataService->getUserUuid().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
-
-        DB::insert('insert into laramie_data (id, user_id, type, data, created_at, updated_at) '.$query->toSql(), $query->getBindings());
-    }
-
-    /**
-     * Delete items in bulk.
-     *
-     * @param $event Laramie\Events\BulkDelete
-     */
-    public function bulkDelete($event)
-    {
-        $model = $event->model;
+        $action = $event->action;
         $options = $event->options;
         $dataService = $this->getLaramieDataService();
 
         $query = $this->getBulkActionBaseQuery($model->_type, $options);
 
-        // First create a backup of the items in the archive table
-        $q1 = clone $query;
-        $q1->select([DB::raw('uuid_generate_v1()'), 'id', DB::raw('\''.$dataService->getUserUuid().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
-        DB::insert('insert into laramie_data_archive (id, laramie_data_id, user_id, type, data, created_at, updated_at)'.$q1->toSql(), $q1->getBindings());
+        switch ($action) {
+            case 'duplicate':
+                $query->select([DB::raw('uuid_generate_v1()'), DB::raw('\''.$dataService->getUserUuid().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
 
-        // Delete the items
-        $q2 = clone $query;
-        $q2->select(['id']);
-        DB::statement('delete from laramie_data where id in ('.$q2->toSql().')', $q2->getBindings());
-    }
+                DB::insert('insert into laramie_data (id, user_id, type, data, created_at, updated_at) '.$query->toSql(), $query->getBindings());
+                break;
+            case 'delete':
+                // First create a backup of the items in the archive table
+                $q1 = clone $query;
+                $q1->select([DB::raw('uuid_generate_v1()'), 'id', DB::raw('\''.$dataService->getUserUuid().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
+                DB::insert('insert into laramie_data_archive (id, laramie_data_id, user_id, type, data, created_at, updated_at)'.$q1->toSql(), $q1->getBindings());
 
-    /**
-     * Export items.
-     *
-     * @param $event Laramie\Events\BulkExport
-     */
-    public function bulkExport($event)
-    {
-        $model = $event->model;
-        $options = $event->options;
-        $listableFields = $event->listableFields;
-        $outputFile = $event->outputFile;
-        $dataService = $this->getLaramieDataService();
+                // Delete the items
+                $q2 = clone $query;
+                $q2->select(['id']);
+                DB::statement('delete from laramie_data where id in ('.$q2->toSql().')', $q2->getBindings());
+                break;
+            case 'export':
+                $listableFields = $event->listableFields;
+                $outputFile = $event->outputFile;
+                $isAllSelected = array_get($options, 'bulk-action-all-selected') === '1';
+                if ($isAllSelected) {
+                    $options['results-per-page'] = config('laramie.max_csv_records');
+                }
 
-        $isAllSelected = array_get($options, 'bulk-action-all-selected') === '1';
-        if ($isAllSelected) {
-            $options['results-per-page'] = config('laramie.max_csv_records');
+                $records = $dataService->findByType($model, $options);
+                $csvData = [];
+                $csvHeaders = [];
+                $csvFieldOrder = [];
+                foreach ($listableFields as $key => $field) {
+                    $csvHeaders[] = $field->label;
+                    $csvFieldOrder[$key] = $field;
+                }
+                $csvData[] = $csvHeaders;
+                if ($isAllSelected && $records->hasMorePages()) {
+                    $csvData[] = ['This report exceeds the maximum number of records to export ('.config('laramie.max_csv_records').'). Please filter or sort your data if other records are needed.'];
+                }
+                foreach ($records as $record) {
+                    $csvOutput = [];
+                    foreach ($csvFieldOrder as $key => $field) {
+                        $value = object_get($record, $key);
+                        $csvOutput[] = LaramieHelpers::formatListValue($field, $value, false);
+                    }
+                    $csvData[] = $csvOutput;
+                }
+                $writer = \League\Csv\Writer::createFromPath($outputFile, 'w+');
+                $writer->insertAll($csvData);
+                break;
         }
-
-        $records = $dataService->findByType($model, $options);
-        $csvData = [];
-        $csvHeaders = [];
-        $csvFieldOrder = [];
-        foreach ($listableFields as $key => $field) {
-            $csvHeaders[] = $field->label;
-            $csvFieldOrder[$key] = $field;
-        }
-        $csvData[] = $csvHeaders;
-        if ($isAllSelected && $records->hasMorePages()) {
-            $csvData[] = ['This report exceeds the maximum number of records to export ('.config('laramie.max_csv_records').'). Please filter or sort your data if other records are needed.'];
-        }
-        foreach ($records as $record) {
-            $csvOutput = [];
-            foreach ($csvFieldOrder as $key => $field) {
-                $value = object_get($record, $key);
-                $csvOutput[] = LaramieHelpers::formatListValue($field, $value, false);
-            }
-            $csvData[] = $csvOutput;
-        }
-        $writer = \League\Csv\Writer::createFromPath($outputFile, 'w+');
-        $writer->insertAll($csvData);
     }
 
     /**
@@ -378,33 +352,15 @@ class LaramieListener
         return app(LaramieDataService::class);
     }
 
-    /**
-     * Get the base query used by all bulk action events.
-     *
-     * @return Illuminate\Database\Query\Builder
-     */
-    private function getBulkActionBaseQuery($type, $options)
+    public function preBulkAction($event)
     {
-        $dataService = $this->getLaramieDataService();
+        $model = $event->model;
+        $nameOfBulkAction = $event->nameOfBulkAction;
+        $query = $event->query;
+        $postData = $event->postData;
+        $user = $event->user;
+        $response = $event->response;
 
-        $itemIds = collect(array_get($options, 'bulk-action-ids', []))
-            ->filter(function ($item) {
-                return $item && Uuid::isValid($item);
-            })
-            ->all();
-
-        $isAllSelected = array_get($options, 'bulk-action-all-selected') === '1';
-
-        return \DB::table('laramie_data')
-            ->whereIn('id', function ($query) use ($type, $options, $isAllSelected, $itemIds, $dataService) {
-                $query->select(['id'])
-                    ->from('laramie_data')
-                    ->where('type', $type);
-                $dataService->augmentListQuery($query, $dataService->getModelByKey($type), $options);
-
-                if (!$isAllSelected) {
-                    $query->whereIn(DB::raw('id::text'), $itemIds);
-                }
-            });
+        $event->response = response()->download(public_path('robots.txt'), sprintf('%s_%s.csv', snake_case($model->namePlural), date('Ymd')))->deleteFileAfterSend(false);
     }
 }
