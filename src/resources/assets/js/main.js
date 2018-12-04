@@ -19,7 +19,9 @@ $(document).ready(function() {
   $.ajaxSetup({ headers: { "X-CSRF-TOKEN": globals._token } });
 
   $(".modal-background").click(function() {
-    $(this).closest(".modal").removeClass("is-active");
+    $(this)
+      .closest(".modal")
+      .removeClass("is-active");
     $.event.trigger("modal-change");
   });
 
@@ -47,10 +49,12 @@ $(document).ready(function() {
     var metaId = $(this).data("id");
     if (confirm("Remove this " + type + "?")) {
       var $deleteLink = $(this);
-      var action = $(".meta-wrapper").data("loadMetaEndpoint").replace("_id_", "delete/" + metaId);
+      var action = $(".meta-wrapper")
+        .data("loadMetaEndpoint")
+        .replace("_id_", "delete/" + metaId);
       $.post(action, function(data) {
         $deleteLink.closest("article, .control").remove();
-        $.event.trigger("meta-change", { "id": itemId, "meta": data });
+        $.event.trigger("meta-change", { id: itemId, meta: data });
       });
     }
   });
@@ -59,12 +63,14 @@ $(document).ready(function() {
     var form = $(this);
     var type = $(this).data("type");
     var itemId = $(".meta-wrapper").data("itemId");
-    var action = $(".meta-wrapper").data("loadMetaEndpoint").replace("_id_", itemId + "/add-" + type);
+    var action = $(".meta-wrapper")
+      .data("loadMetaEndpoint")
+      .replace("_id_", itemId + "/add-" + type);
     $.post(action, { meta: $(".meta-" + type).val() }, function(data) {
       var template = handlebarsTemplates[type + "-list-template"];
       $("." + type + "s-wrapper").html(template(data));
       form.find("input, textarea").val("");
-      $.event.trigger("meta-change", { "id": itemId, "meta": data });
+      $.event.trigger("meta-change", { id: itemId, meta: data });
     });
   });
 });
@@ -74,7 +80,9 @@ function loadMeta(itemId, callback) {
   $(".tags-wrapper").html("Loading...");
   $(".comments-wrapper").html("Loading...");
   $(".meta-wrapper").data("itemId", itemId);
-  var action = $(".meta-wrapper").data("loadMetaEndpoint").replace("_id_", itemId);
+  var action = $(".meta-wrapper")
+    .data("loadMetaEndpoint")
+    .replace("_id_", itemId);
   $.getJSON(action, function(data) {
     var template = handlebarsTemplates["tag-list-template"];
     $(".tags-wrapper").html(template(data));

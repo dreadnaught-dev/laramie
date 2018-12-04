@@ -9,7 +9,7 @@ $(document).ready(function() {
     $("#page-settings").toggleClass("is-active");
     $.event.trigger("modal-change");
   });
-  dragula([ $("#selectable-fields")[0] ]);
+  dragula([$("#selectable-fields")[0]]);
 
   $(".js-toggle-save-report").on("click", function() {
     $("#save-report-modal").toggleClass("is-active");
@@ -17,14 +17,20 @@ $(document).ready(function() {
   });
 
   $(".js-clear-search").on("click", function() {
-    $('#quick-search').val('');
-    $(this).closest('form').submit();
+    $("#quick-search").val("");
+    $(this)
+      .closest("form")
+      .submit();
   });
 
   // We're posting this via the main list form as that's where all the
   // filters are -- and we need those filters for bulk actions as well.
   $("#save-report-form").submit(function() {
-    var reportName = ($(this).find("#modal-report-name").val() || "").trim();
+    var reportName = (
+      $(this)
+        .find("#modal-report-name")
+        .val() || ""
+    ).trim();
 
     if (!reportName) {
       alert("You must provide a report name.");
@@ -36,7 +42,13 @@ $(document).ready(function() {
     $listForm
       .attr("method", "post")
       .attr("action", $listForm.data("saveReportAction"))
-      .append($('<div style="display:none"></div>').append($(this).find(":input").clone()))
+      .append(
+        $('<div style="display:none"></div>').append(
+          $(this)
+            .find(":input")
+            .clone()
+        )
+      )
       .submit();
     return false;
   });
@@ -49,7 +61,13 @@ $(document).ready(function() {
     $listForm
       .attr("method", "post")
       .attr("action", $listForm.data("saveListPrefsAction"))
-      .append($('<div style="display:none"></div>').append($(this).find(":input").clone()))
+      .append(
+        $('<div style="display:none"></div>').append(
+          $(this)
+            .find(":input")
+            .clone()
+        )
+      )
       .submit();
     return false;
   });
@@ -63,14 +81,16 @@ $(document).ready(function() {
       $(".js-select-all").prop("checked", false);
     }
 
-    var isAllSelected = $('.js-select-all').is(':checked')
-      || $('.js-item-id').length == $('.js-item-id:checked').length;
+    var isAllSelected =
+      $(".js-select-all").is(":checked") || $(".js-item-id").length == $(".js-item-id:checked").length;
 
     if (isAllSelected && $("#bulk-action-helper").data("hasAdditionalPages") == "1") {
-      $(".js-select-all").prop('checked', true);
+      $(".js-select-all").prop("checked", true);
       $("#bulk-action-helper").show();
     } else {
-      $("#bulk-action-helper").hide().removeClass("all-selected");
+      $("#bulk-action-helper")
+        .hide()
+        .removeClass("all-selected");
       $("#bulk-action-all-selected").val("");
     }
     $("#main-list-table").trigger("reflow");
@@ -79,14 +99,16 @@ $(document).ready(function() {
 
   $("#list-form").submit(function() {
     if ($("#is-filtering").val() == "1") {
-      $(this).find(".post-only").remove();
+      $(this)
+        .find(".post-only")
+        .remove();
     }
   });
 
   $(".js-delete").click(function() {
     if (confirm("Delete this item?")) {
       $row = $(this).closest("tr");
-      $.post($(this).data("action"), { "_method": "DELETE" }, function(data) {
+      $.post($(this).data("action"), { _method: "DELETE" }, function(data) {
         if (data.success) {
           $row.remove();
         } else {
@@ -113,8 +135,13 @@ $(document).ready(function() {
         //<input type="hidden" id="bulk-action-all-selected" name="bulk-action-all-selected" value="">
         $("#is-filtering").val("");
         var $listForm = $("#list-form");
-        $listForm.attr("method", "post").attr("action", $listForm.data("bulkAction")).submit();
-        $(this).closest("form").submit();
+        $listForm
+          .attr("method", "post")
+          .attr("action", $listForm.data("bulkAction"))
+          .submit();
+        $(this)
+          .closest("form")
+          .submit();
       } else {
         $("#bulk-action-operation").val("");
       }
@@ -122,9 +149,9 @@ $(document).ready(function() {
     return false;
   });
 
-  $(".js-advanced-search").click(function(){
-    $('#filter-holder').toggle();
-    if ($('#filter-holder').is(':visible') && $('.filter-set').length == 0) {
+  $(".js-advanced-search").click(function() {
+    $("#filter-holder").toggle();
+    if ($("#filter-holder").is(":visible") && $(".filter-set").length == 0) {
       addFilter();
     }
   });
@@ -132,11 +159,13 @@ $(document).ready(function() {
   $("#filter-holder").on("click.add-filter", ".js-add-filter", addFilter);
 
   $("#filters").on("click.remove-filter", ".js-remove-filter", function() {
-    $(this).closest(".filter-set").remove();
+    $(this)
+      .closest(".filter-set")
+      .remove();
     $("#main-list-table").trigger("reflow");
 
     if ($("#filters > .filter-set").length == 0) {
-      $('#filter-holder').hide();
+      $("#filter-holder").hide();
     }
 
     // refresh the list page if removing the last filter (if viewing a filtered page)
@@ -156,14 +185,18 @@ $(document).ready(function() {
   $(".js-delete-report").click(function() {
     if (confirm("Delete this saved report?")) {
       $.post($(this).data("action"));
-      $(this).closest(".field").remove();
+      $(this)
+        .closest(".field")
+        .remove();
       $("#page-settings").removeClass("is-active");
       $.event.trigger("modal-change");
     }
   });
 
   $("#filters").on("click.remove-filter", ".js-remove-filter", function() {
-    $(this).closest(".filter-set").remove();
+    $(this)
+      .closest(".filter-set")
+      .remove();
     $("#main-list-table").trigger("reflow");
 
     // refresh the list page if removing the last filter (if viewing a filtered page)
@@ -178,7 +211,10 @@ $(document).ready(function() {
     if (!$("#meta-modal-wrapper").hasClass("is-active")) {
       return;
     }
-    var itemId = $(this).closest(".has-invisibles").find(".js-item-id:checkbox").val();
+    var itemId = $(this)
+      .closest(".has-invisibles")
+      .find(".js-item-id:checkbox")
+      .val();
     loadMeta(itemId);
   });
 

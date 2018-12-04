@@ -5,28 +5,27 @@ var timer;
 
 $(window).scroll(function() {
   clearTimeout(timer);
-  timer = setTimeout(
-    function() {
-      var top = $(window).scrollTop();
-      var saveBoxIsPinned = $(".save-box").hasClass("is-pinned");
-      if (top >= initSaveBoxOffset && !saveBoxIsPinned) {
-        $(".save-box").addClass("is-pinned");
-      } else if (top < initSaveBoxOffset && saveBoxIsPinned) {
-        $(".save-box").removeClass("is-pinned");
-      }
-    },
-    50,
-  ); // set slight delay to prevent debounce
+  timer = setTimeout(function() {
+    var top = $(window).scrollTop();
+    var saveBoxIsPinned = $(".save-box").hasClass("is-pinned");
+    if (top >= initSaveBoxOffset && !saveBoxIsPinned) {
+      $(".save-box").addClass("is-pinned");
+    } else if (top < initSaveBoxOffset && saveBoxIsPinned) {
+      $(".save-box").removeClass("is-pinned");
+    }
+  }, 50); // set slight delay to prevent debounce
 });
 
 $(document).ready(function() {
   loadHandlebarsTemplates();
 
-  $("#edit-form").find(".aggregate-holder").each(function() {
-    var $holder = $(this);
-    var itemData = objectGet(window, "globals.aggregates", {});
-    loadAggregateFields($holder, itemData);
-  });
+  $("#edit-form")
+    .find(".aggregate-holder")
+    .each(function() {
+      var $holder = $(this);
+      var itemData = objectGet(window, "globals.aggregates", {});
+      loadAggregateFields($holder, itemData);
+    });
 
   // Update wysiwyg editors (needed for those inside aggregates -- the linked
   // hidden field values are updated by `loadAggregateFields`, but the editor's
@@ -37,7 +36,9 @@ $(document).ready(function() {
 
   $("#edit-tabs a").on("click", function() {
     $("#edit-tabs li").removeClass("is-active");
-    $(this).closest("li").addClass("is-active");
+    $(this)
+      .closest("li")
+      .addClass("is-active");
 
     var selectedTab = $(this).data("tab");
     var hasTabSelected = selectedTab !== "_main";
@@ -82,49 +83,58 @@ $(document).ready(function() {
 
   // Get all reference fields and populate their selects:
   $("#edit-form").on("click.toggle-reference-search", ".js-toggle-reference-search", function() {
-    $searchWrapper = $(this).closest(".reference-wrapper").find(".reference-search");
+    $searchWrapper = $(this)
+      .closest(".reference-wrapper")
+      .find(".reference-search");
     $searchWrapper.toggle();
     if (!$searchWrapper.data("loaded")) {
       $searchWrapper.data("loaded", true);
       doSearch($searchWrapper);
 
       $searchWrapper.find(".keywords").keyup(
-        debounce(
-          function() {
-            $searchWrapper.find(".js-select-reference").addClass("is-loading");
-            doSearch($searchWrapper);
-          },
-          500,
-        ),
+        debounce(function() {
+          $searchWrapper.find(".js-select-reference").addClass("is-loading");
+          doSearch($searchWrapper);
+        }, 500)
       );
     }
   });
 
   // toggle tags / revisions viewing prefs
   $(".js-toggle-prefs").on("click", function() {
-    var $e = $(this).toggleClass("open").closest(".card").children(".card-content").toggleClass("is-hidden");
+    var $e = $(this)
+      .toggleClass("open")
+      .closest(".card")
+      .children(".card-content")
+      .toggleClass("is-hidden");
     var hideTags = $("#tags-card-content").hasClass("is-hidden") ? "1" : "0";
     var hideRevisions = $("#revisions-card-content").hasClass("is-hidden") ? "1" : "0";
     $.post(globals.adminUrl + "/ajax/edit-prefs", { hideTags: hideTags, hideRevisions: hideRevisions });
   });
 
   $("#edit-form").on("click.clear-reference-selection", ".js-clear-reference-select", function() {
-    $(this).closest(".reference-wrapper").find(":input:checked").prop("checked", false);
-    $(this).parent().find(".js-select-reference").trigger("click");
+    $(this)
+      .closest(".reference-wrapper")
+      .find(":input:checked")
+      .prop("checked", false);
+    $(this)
+      .parent()
+      .find(".js-select-reference")
+      .trigger("click");
   });
 
   $("#edit-form").on(
     "keyup.update-markdown",
     ".markdown",
-    debounce(
-      function() {
-        var $textarea = $(this);
-        $.post(globals.adminUrl + "/ajax/markdown", { markdown: $textarea.val() }, function(data) {
-          $textarea.closest(".columns").find(".markdown-html").html(data.html);
-        });
-      },
-      300,
-    ),
+    debounce(function() {
+      var $textarea = $(this);
+      $.post(globals.adminUrl + "/ajax/markdown", { markdown: $textarea.val() }, function(data) {
+        $textarea
+          .closest(".columns")
+          .find(".markdown-html")
+          .html(data.html);
+      });
+    }, 300)
   );
 
   $(".js-compare-revisions").on("click", function() {
@@ -151,8 +161,8 @@ $(document).ready(function() {
     var minutes = String(d.getMinutes()).padStart(2, "0");
     var seconds = "00";
 
-    var date = [ year, month, day ].join("-");
-    var time = [ hours, minutes, seconds ].join(":");
+    var date = [year, month, day].join("-");
+    var time = [hours, minutes, seconds].join(":");
 
     $field = $(this).closest(".field");
     $field.find('[name$="-date"]').val(date);
@@ -207,23 +217,33 @@ $(document).ready(function() {
     var $searchWrapper = $referenceWrapper.find(".reference-search");
     var selectedItems = $searchWrapper.find(":input:checked").toArray();
     var $refIds = $referenceWrapper.find("input.reference-ids").val(
-      selectedItems.map(function(e) {
-        return $(e).val();
-      }).join("|"),
+      selectedItems
+        .map(function(e) {
+          return $(e).val();
+        })
+        .join("|")
     );
     if (isFileSelect) {
       $refIds.prop("checked", true);
     }
     var selectionInfoContent = "Nothing selected";
     if (selectedItems.length > 0) {
-      selectionInfoContent = selectedItems.map(function(e) {
-        return '<em><a href="' + $referenceWrapper.find(".selection-info").data("baseUrl").replace(/new$/, $(e).val()) +
-          '"' +
-          (isFileSelect ? ' onclick="dynamicFileHref(this)"' : "") +
-          ' target="_blank">' +
-          $(e).data("label") +
-          "</a></em>";
-      }).join(", ");
+      selectionInfoContent = selectedItems
+        .map(function(e) {
+          return (
+            '<em><a href="' +
+            $referenceWrapper
+              .find(".selection-info")
+              .data("baseUrl")
+              .replace(/new$/, $(e).val()) +
+            '"' +
+            (isFileSelect ? ' onclick="dynamicFileHref(this)"' : "") +
+            ' target="_blank">' +
+            $(e).data("label") +
+            "</a></em>"
+          );
+        })
+        .join(", ");
     }
     $referenceWrapper
       .toggleClass("has-file", selectedItems.length > 0)
@@ -236,7 +256,9 @@ $(document).ready(function() {
   });
 
   $(".js-dismissable").click(function() {
-    $(this).closest(".dismissable-wrapper").hide();
+    $(this)
+      .closest(".dismissable-wrapper")
+      .hide();
   });
 
   $(".js-save").click(function() {
@@ -267,15 +289,22 @@ $(document).ready(function() {
   $(".js-restore-revision").click(function() {
     // Are you sure you want to restore to this revision? The revision from December 28 at 3:07 PM will become your current revision.
     if (confirm("Restore this revision? Any unsaved changes will be lost.")) {
-      $(this).closest(".revision-item").find(".restore-revision-form").submit();
+      $(this)
+        .closest(".revision-item")
+        .find(".restore-revision-form")
+        .submit();
     }
   });
 
   $("a.show-more-link").click(function() {
-    $(this).closest(".revision-history").toggleClass("show-more", true);
+    $(this)
+      .closest(".revision-history")
+      .toggleClass("show-more", true);
   });
   $("a.show-less-link").click(function() {
-    $(this).closest(".revision-history").toggleClass("show-more", false);
+    $(this)
+      .closest(".revision-history")
+      .toggleClass("show-more", false);
   });
 
   loadMeta(globals.metaId, function() {
@@ -306,9 +335,14 @@ function getQS(querystring) {
 }
 
 function dynamicFileHref(e) {
-  var tmp = $(e).text().trim();
+  var tmp = $(e)
+    .text()
+    .trim();
   var isImage = /\.(gif|jpg|jpeg|png)$/i.test(tmp);
-  var assetKey = $(e).closest("label").find("input:checkbox").val();
+  var assetKey = $(e)
+    .closest("label")
+    .find("input:checkbox")
+    .val();
 
   if (assetKey) {
     $(e).attr("href", (isImage ? globals.cropperBase : globals.fileDownloadBase) + assetKey);
@@ -331,7 +365,12 @@ function randString(length) {
 }
 
 function doSearch($searchWrapper) {
-  var selectedItems = ($searchWrapper.closest(".reference-wrapper").find(".reference-ids").val() || "").split(/[|,]/g);
+  var selectedItems = (
+    $searchWrapper
+      .closest(".reference-wrapper")
+      .find(".reference-ids")
+      .val() || ""
+  ).split(/[|,]/g);
   var tmp = $searchWrapper.find(":input:checked").each(function() {
     selectedItems.push($(this).val());
   });
@@ -351,7 +390,7 @@ function doSearch($searchWrapper) {
       $searchWrapper.find(".panel-block.option").remove();
       var template = handlebarsTemplates["reference-" + (isSingleReference ? "single" : "many") + "-option"];
       $searchWrapper.find(".panel-block.search").after(template(data));
-    },
+    }
   );
 }
 
@@ -409,7 +448,7 @@ function loadAggregateFields($holder, itemData, keys, isAddNew) {
 
     if (!isAddNew) {
       // Make repeated items draggable
-      var drake = dragula([ $holder[0] ], {
+      var drake = dragula([$holder[0]], {
         moves: function(el, container, handle) {
           return handle.classList.contains("drag-" + type);
         },
@@ -455,8 +494,12 @@ function loadAggregateFieldsHelper(data, $newItem) {
         .parent()
         .find(".js-file-name")
         .html(
-          '<img class="filetype-icon" src="' + globals.adminUrl + "/assets/icon/" + inputValue.uploadKey + '_50">' +
-            inputValue.name,
+          '<img class="filetype-icon" src="' +
+            globals.adminUrl +
+            "/assets/icon/" +
+            inputValue.uploadKey +
+            '_50">' +
+            inputValue.name
         );
     } else if (hasProperty(inputValue, "encryptedValue")) {
       $newItem
@@ -484,34 +527,47 @@ function loadAggregateFieldsHelper(data, $newItem) {
       }
     } else if (
       hasProperty(inputValue, "id") ||
-        Array.isArray(inputValue) && inputValue.length > 0 && hasProperty(inputValue[0], "id")
+      (Array.isArray(inputValue) && inputValue.length > 0 && hasProperty(inputValue[0], "id"))
     ) {
-      var tmp = (Array.isArray(inputValue) ? inputValue : [ inputValue ]).filter(function(e) {
+      var tmp = (Array.isArray(inputValue) ? inputValue : [inputValue]).filter(function(e) {
         return !!e && e.id !== null;
       });
       $newItem.find("[name$=" + inputKey + "]").val(
-        tmp.map(function(e) {
-          return e.id;
-        }).join("|"),
+        tmp
+          .map(function(e) {
+            return e.id;
+          })
+          .join("|")
       );
       if (tmp.length > 0) {
         $newItem.find(".selection-info").html(
-          tmp.map(function(e) {
-            return '<em><a href="' + $newItem.find(".selection-info").data("baseUrl").replace(/new$/, e.id) +
-              '" target="_blank">' +
-              e._alias +
-              "</a></em>";
-            //return '<em>'+ e._alias +'</em>';
-          }).join(", "),
+          tmp
+            .map(function(e) {
+              return (
+                '<em><a href="' +
+                $newItem
+                  .find(".selection-info")
+                  .data("baseUrl")
+                  .replace(/new$/, e.id) +
+                '" target="_blank">' +
+                e._alias +
+                "</a></em>"
+              );
+              //return '<em>'+ e._alias +'</em>';
+            })
+            .join(", ")
         );
       }
     } else if (Array.isArray(inputValue) && inputValue.length > 0) {
-      for (var i = 0; i < inputValue.length; i ++) {
-        $newItem.find("[name$=" + inputKey + "\\[\\]] option[value=\""+inputValue[i]+"\"]").prop('selected', true);
+      for (var i = 0; i < inputValue.length; i++) {
+        $newItem.find("[name$=" + inputKey + '\\[\\]] option[value="' + inputValue[i] + '"]').prop("selected", true);
       }
       $newItem.find("[name$=" + inputKey + "\\[\\]]").trigger("change");
     } else {
-      $newItem.find("[name$=" + inputKey + "]").val(inputValue).trigger("change");
+      $newItem
+        .find("[name$=" + inputKey + "]")
+        .val(inputValue)
+        .trigger("change");
     }
   }
 }
@@ -528,7 +584,7 @@ function defaultEmptyTimezonesToBrowserValue() {
 
 // Transform multiple selects (or selects with class `select2`) into select2 elements:
 function transformSelectsToSelect2() {
-  $('select[multiple]:not(.select2-hidden-accessible), select.select2:not(.select2-hidden-accessible)').select2();
+  $("select[multiple]:not(.select2-hidden-accessible), select.select2:not(.select2-hidden-accessible)").select2();
 }
 
 function getKey() {
@@ -556,16 +612,15 @@ function hasProperty(obj, key) {
 function debounce(func, wait, immediate) {
   var timeout;
   return function() {
-    var context = this, args = arguments;
+    var context = this;
+    var args = arguments;
     var later = function() {
       timeout = null;
-      if (!immediate)
-        func.apply(context, args);
+      if (!immediate) func.apply(context, args);
     };
     var callNow = immediate && !timeout;
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
-    if (callNow)
-      func.apply(context, args);
+    if (callNow) func.apply(context, args);
   };
 }
