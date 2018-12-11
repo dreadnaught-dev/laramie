@@ -266,9 +266,7 @@ $(document).ready(function() {
   });
 
   $(".js-cancel-edit").click(function() {
-    if (confirm("Cancel edit? Any unsaved changes will be lost.")) {
-      history.back();
-    }
+    return confirm("Cancel edit? Any unsaved changes will be lost.");
   });
 
   $(".js-delete").click(function() {

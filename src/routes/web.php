@@ -36,7 +36,7 @@ Route::group(
         'as' => 'laramie::',
     ],
     function () {
-        Route::get('/', 'AdminController@getDashboard')->name('dashboard')->middleware(LaramieAuthorize::class);
+        Route::get('/', 'AdminController@getDashboard')->name('dashboard')->middleware([LaramieAuthorize::class, ShareAlertFromSession::class]);
         Route::post('/save-report/{modelKey}', 'AdminController@saveReport')->name('save-report')->middleware(LaramieAuthorize::class);
         Route::post('/bulk-actions/{modelKey}', 'AdminController@bulkActionHandler')->name('bulk-action-handler')->middleware(LaramieAuthorize::class);
 
@@ -63,15 +63,17 @@ Route::group(
         Route::post('/ajax/meta/{modelKey}/{id}/add-comment', 'AjaxController@addComment')->name('add-comment')->middleware(LaramieAuthorize::class);
         Route::post('/ajax/dismiss-alert/{id}', 'AjaxController@dismissAlert');
 
-        Route::get('/revisions/compare/{modelKey}/{revisionId}', 'AdminController@compareRevisions')->name('compare-revisions')->middleware(LaramieAuthorize::class);
+        Route::get('/revisions/compare/{modelKey}/{revisionId}', 'AdminController@compareRevisions')->name('compare-revisions')->middleware([LaramieAuthorize::class, ShareAlertFromSession::class]);
         Route::post('/revisions/restore/{modelKey}/{revisionId}', 'AdminController@restoreRevision')->name('restore-revision')->middleware(LaramieAuthorize::class);
         Route::post('/revisions/trash/{modelKey}/{revisionId}', 'AdminController@deleteRevision')->name('trash-revision')->middleware(LaramieAuthorize::class);
 
         Route::get('/alert/{id}', 'AdminController@alertRedirect')->name('alert-redirector');
 
+        Route::get('/go-back/{modelKey}', 'AdminController@goBack')->name('go-back')->middleware(LaramieAuthorize::class);
+
         Route::get('/{modelKey}/{id}', 'AdminController@getEdit')->name('edit')->middleware([LaramieAuthorize::class, ShareAlertFromSession::class]);
         Route::post('/{modelKey}/{id}', 'AdminController@postEdit')->name('post-edit')->middleware(LaramieAuthorize::class);
         Route::delete('/{modelKey}/{id}', 'AdminController@deleteItem')->name('delete-item')->middleware(LaramieAuthorize::class);
-        Route::get('/{modelKey}', 'AdminController@getList')->name('list')->middleware(LaramieAuthorize::class);
+        Route::get('/{modelKey}', 'AdminController@getList')->name('list')->middleware([LaramieAuthorize::class, ShareAlertFromSession::class]);
     }
 );

@@ -193,6 +193,9 @@
 
 @section('content')
     <div class="column is-12-touch is-10-desktop">
+
+        @include('laramie::partials.alert')
+
         <div class="level is-mobile is-spaced">
             <div class="level-left">
                 <div class="level-item">

@@ -100,6 +100,8 @@ class AdminController extends Controller
             })
             ->all();
 
+        session()->put('_laramie_last_list_url', $request->fullUrl());
+
         // If there aren't any qs params, check to see if the referrer is
         // either this or its edit page. If not, check to see if there's a default
         // report to load. If so, load it.
@@ -168,6 +170,17 @@ class AdminController extends Controller
             ->with('filters', $filters)
             ->with('reports', $reports)
             ->with('viewHelper', $viewHelper);
+    }
+
+    public function goBack($modelKey) {
+        $redirectUrl = session()->get('_laramie_last_list_url', route('laramie::dashboard'));
+
+        // If one jumped to another edit page from a relationship field or something, don't redirect back to a potentially different model's list page:
+        if (strpos($redirectUrl, $modelKey) === false) {
+            $redirectUrl = route('laramie::list', ['modelKey' => $modelKey]);
+        }
+
+        return redirect()->to($redirectUrl);
     }
 
     private function setMeta($type, &$models, $ids)
@@ -431,6 +444,8 @@ class AdminController extends Controller
         // Ensure that the user can't create a new 'singular' item
         if ($item->_isNew && object_get($model, 'isSingular')) {
             return $this->redirectToSingularEdit($model);
+        } else if (object_get($model, 'isSingular')) {
+            session()->put('_laramie_last_list_url', route('laramie::dashboard'));
         }
 
         $lastUserToUpdate = null;
@@ -515,6 +530,12 @@ class AdminController extends Controller
             }
         }
 
+        $redirectRouteParams = ['modelKey' => $modelKey, 'id' => $id];
+
+        if ($request->get('is-child')) {
+            $redirectRouteParams['is-child'] = 1;
+        }
+
         if (!$success) {
             $alert = (object) ['class' => 'is-danger', 'title' => 'Awww snap! That didn\'t work', 'alert' => sprintf('There was an error saving the %s. Please review the form, address all errors, and try again.', $model->name)];
             if (is_array($errors) && array_key_exists('schemaError', $errors)) {
@@ -522,7 +543,7 @@ class AdminController extends Controller
             }
 
             return redirect()
-                ->route('laramie::edit', ['modelKey' => $modelKey, $id => $id])
+                ->route('laramie::edit', $redirectRouteParams)
                 ->with('item', $item)
                 ->with('alert', $alert)
                 ->with('metaId', $metaId)
@@ -537,9 +558,16 @@ class AdminController extends Controller
         }
 
         return redirect()
-            ->route('laramie::edit', ['modelKey' => $modelKey, $id => $item->id])
+            ->route('laramie::edit', $redirectRouteParams)
             ->with('selectedTab', $selectedTab)
-            ->with('alert', (object) ['title' => 'Success!', 'alert' => sprintf('The %s was successfully %s.', $model->name, $id == 'new' ? 'created' : 'updated')])
+            ->with('alert', (object) [
+                'title' => 'Success!',
+                'alert' => sprintf('The %s was successfully %s. Continue editing or <a href="%s">go back to the %s</a>.',
+                    $model->name,
+                    $id == 'new' ? 'created' : 'updated',
+                    object_get($model, 'isSingular') ? route('laramie::dashboard') : route('laramie::go-back', ['modelKey' => $modelKey]),
+                    object_get($model, 'isSingular') ? 'dashboard' : 'list page')
+                ])
             ->with('status', 'saved');
     }
 

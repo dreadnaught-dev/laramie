@@ -59,7 +59,7 @@
                     $tabbedAggregates = collect(object_get($model, 'fields', []))->filter(function($item){ return $item->isEditable && $item->type == 'aggregate' && object_get($item, 'asTab', false); });
                     $hasTabs = count($tabbedAggregates) > 0;
                 @endphp
-                <form id="edit-form" class="{{ $selectedTab !== '_main' ? 'has-tab-selected' : '' }}" action="{{ url()->current() }}" method="post" enctype="multipart/form-data">
+                <form id="edit-form" class="{{ $selectedTab !== '_main' ? 'has-tab-selected' : '' }}" action="{{ url()->full() }}" method="post" enctype="multipart/form-data">
                     {{ csrf_field() }}
                     <input type="hidden" name="_metaId" value="{{ $metaId }}">
                     <input type="hidden" name="_selectedTab" value="{{ $selectedTab }}">
@@ -131,7 +131,7 @@
                                     <a href="javascript:void(0);" class="button is-primary js-save is-fullwidth">Save{{ $item->_isUpdate ? ' changes' : ''}}</a>
                                 </p>
                                 <p class="control {{ $item->_isNew ? 'is-expanded' : '' }}">
-                                    <a href="javascript:void(0);" class="button is-light js-cancel-edit">Cancel</a>
+                                    <a href="{{ route('laramie::go-back', ['modelKey' => $model->_type]) }}" class="button is-light js-cancel-edit">Cancel</a>
                                 </p>
                                 @if ($item->_isUpdate)
                                     <p class="control">
@@ -183,7 +183,7 @@
                         <div class="revision-item">
                             <span title="by: {{ object_get($lastEditor, 'user', '--') }}">Current <em><small>({{ \Carbon\Carbon::parse($item->updated_at)->toDayDateTimeString() }})</small></em></span>
                             <div>
-                                <a href="{{ route('laramie::compare-revisions', ['modelKey' => $model->_type, 'revisionId' => $item->id]) }}" target="_blank" class="js-compare-revisions">View changes</a>
+                                <a href="{{ route('laramie::compare-revisions', ['modelKey' => $model->_type, 'revisionId' => $item->id, 'is-child' => 1]) }}" target="_blank" class="js-compare-revisions">View changes</a>
                             </div>
                         </div>
                         @foreach ($revisions as $revision)
@@ -191,7 +191,7 @@
                                 <hr style="margin: .5rem 0;">
                                 <i class="fas fa-book" style="line-height: inherit; font-size: inherit"></i>&nbsp;<span title="by: {{ $revision->user }}">{{ \Carbon\Carbon::parse($revision->updated_at)->toDayDateTimeString() }}</span>
                                 <div>
-                                    <a href="{{ route('laramie::compare-revisions', ['modelKey' => $model->_type, 'revisionId' => $revision->id]) }}" target="_blank" class="js-compare-revisions">View changes</a> |
+                                    <a href="{{ route('laramie::compare-revisions', ['modelKey' => $model->_type, 'revisionId' => $revision->id, 'is-child' => 1]) }}" target="_blank" class="js-compare-revisions">View changes</a> |
                                     <a href="javascript:void(0);" class="js-restore-revision">Restore</a> |
                                     <a href="{{ route('laramie::trash-revision', ['modelKey' => $model->_type, 'revisionId' => $revision->id]) }}" class="js-delete-revision" onclick="return false;">Trash</a>
                                 </div>

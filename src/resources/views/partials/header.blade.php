@@ -25,14 +25,6 @@
         <a class="navbar-item" href="{{ route('laramie::dashboard') }}">
             <span class="title is-2">{{ config('laramie.site_name') }}</span>
         </a>
-        <?php /*
-        <a class="navbar-item is-hidden-desktop" href="https://github.com/laramie-cms/laramie" target="_blank">
-            <span class="icon" style="color: #333;"><i class="fab fa-github"></i></span>
-        </a>
-        <a class="navbar-item is-hidden-desktop" href="https://twitter.com/presclark" target="_blank">
-            <span class="icon" style="color: #55acee;"><i class="fab fa-twitter"></i></span>
-        </a>
-        */ ?>
         <div class="nav-toggle navbar-burger burger" data-target="navMenuExample" id="nav-toggle">
             <span></span>
             <span></span>

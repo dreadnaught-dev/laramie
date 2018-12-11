@@ -22,7 +22,7 @@
             <blockquote>
                 <div class="selection-info is-pulled-left" data-base-url="{{ route('laramie::edit', ['modelKey' => $referencedModelKey, 'id' => 'new'])  }}">
                     @forelse ($references as $reference)
-                        <em><a href="{{ route('laramie::edit', ['modelKey' => $referencedModelKey, 'id' => $reference->id]) }}" target="_blank">{{ object_get($reference, '_alias') }}</a></em>{{ $loop->last ? '' : ', ' }}
+                        <em><a href="{{ route('laramie::edit', ['modelKey' => $referencedModelKey, 'id' => $reference->id, 'is-child' => 1]) }}" target="_blank">{{ object_get($reference, '_alias') }}</a></em>{{ $loop->last ? '' : ', ' }}
                     @empty
                         Nothing selected
                     @endforelse
