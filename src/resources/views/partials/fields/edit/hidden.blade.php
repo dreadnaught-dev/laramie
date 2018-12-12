@@ -1,4 +1,4 @@
-<div class="field">
+<div class="field" data-field-key="{{ $fieldKey }}" data-field-type="{{ $field->type }}">
     <label class="label" for="{{ $fieldKey }}">{{ $field->label }}</label>
     <p class="control">
          <span class="hidden-value">{{ object_get($item, $field->id, '--') }}</span>

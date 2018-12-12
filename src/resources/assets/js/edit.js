@@ -478,94 +478,126 @@ function loadAggregateFields($holder, itemData, keys, isAddNew) {
 function loadAggregateFieldsHelper(data, $newItem) {
   for (var inputKey in data) {
     var inputValue = data[inputKey];
-    // All file fields will have an extension (true? what about files without?):
-    // @todo -- instead of relying on the format of the data, we should attach some context of input type to the html via data attributes
-    if (hasProperty(inputValue, "extension")) {
-      window.tmp = $newItem;
-      $newItem
-        .find("[name$=" + inputKey + "]:checkbox")
-        .closest(".file-wrapper")
-        .addClass("has-file")
-        .find("[name$=" + inputKey + "]:checkbox")
-        .prop("checked", true)
-        .val(inputValue.uploadKey)
-        .parent()
-        .find(".js-file-name")
-        .html(
-          '<img class="filetype-icon" src="' +
-            globals.adminUrl +
-            "/assets/icon/" +
-            inputValue.uploadKey +
-            '_50">' +
-            inputValue.name
-        );
-    } else if (hasProperty(inputValue, "encryptedValue")) {
-      $newItem
-        .find(".password-wrapper")
-        .addClass("has-password")
-        .find("[name$=" + inputKey + "]:checkbox")
-        .prop("checked", true)
-        .val(inputValue.password);
-    } else if (hasProperty(inputValue, "timestamp")) {
-      $newItem.find("[name$=" + inputKey + "-date]").val(inputValue.date);
-      $newItem.find("[name$=" + inputKey + "-time]").val(inputValue.time);
-      $newItem.find("[name$=" + inputKey + "-timezone]").val(inputValue.timezone);
-    } else if (hasProperty(inputValue, "markdown")) {
-      $newItem
-        .find("[name$=" + inputKey + "]")
-        .val(inputValue.markdown)
-        .closest(".columns")
-        .find(".markdown-html")
-        .html(inputValue.html);
-    } else if (typeof inputValue == "boolean") {
-      if ($newItem.find("[name$=" + inputKey + "]:checkbox").length > 0) {
-        $newItem.find("[name$=" + inputKey + "]:checkbox").prop("checked", inputValue);
-      } else {
-        $newItem.find("[id$=" + inputKey + "-" + (inputValue ? "yes" : "no") + "]").prop("checked", true);
-      }
-    } else if (
-      hasProperty(inputValue, "id") ||
-      (Array.isArray(inputValue) && inputValue.length > 0 && hasProperty(inputValue[0], "id"))
-    ) {
-      var tmp = (Array.isArray(inputValue) ? inputValue : [inputValue]).filter(function(e) {
-        return !!e && e.id !== null;
-      });
-      $newItem.find("[name$=" + inputKey + "]").val(
-        tmp
-          .map(function(e) {
-            return e.id;
-          })
-          .join("|")
-      );
-      if (tmp.length > 0) {
-        $newItem.find(".selection-info").html(
+
+    var $wrapper = $newItem.find('[data-field-key="'+inputKey+'"]');
+
+    switch ($wrapper.data('fieldType')) {
+      case 'file':
+        $wrapper
+          .find("[name$=" + inputKey + "]:checkbox")
+          .closest(".file-wrapper")
+          .addClass("has-file")
+          .find("[name$=" + inputKey + "]:checkbox")
+          .prop("checked", true)
+          .val(inputValue.uploadKey)
+          .parent()
+          .find(".js-file-name")
+          .html(
+            '<img class="filetype-icon" src="' +
+              globals.adminUrl +
+              "/assets/icon/" +
+              inputValue.uploadKey +
+              '_50">' +
+              inputValue.name
+          );
+        break;
+
+      case 'password':
+        $wrapper
+          .find(".password-wrapper")
+          .addClass("has-password")
+          .find("[name$=" + inputKey + "]:checkbox")
+          .prop("checked", true)
+          .val(inputValue.encryptedValue);
+          break;
+
+      case 'timestamp':
+        $wrapper.find("[name$=" + inputKey + "-date]").val(inputValue.date);
+        $wrapper.find("[name$=" + inputKey + "-time]").val(inputValue.time);
+        $wrapper.find("[name$=" + inputKey + "-timezone]").val(inputValue.timezone);
+        break;
+
+      case 'markdown':
+        $wrapper
+          .find("[name$=" + inputKey + "]")
+          .val(inputValue.markdown)
+          .closest(".columns")
+          .find(".markdown-html")
+          .html(inputValue.html);
+        break;
+
+      case 'checkbox':
+          $wrapper.find("[name$=" + inputKey + "]:checkbox").prop("checked", inputValue);
+          break;
+
+      case 'boolean':
+        $wrapper.find("[id$=" + inputKey + "-" + (inputValue ? "yes" : "no") + "]").prop("checked", true);
+        break;
+
+      case 'radio':
+        var radios = $wrapper.find(":radio").toArray();
+        for (var i = 0, found = false; i < radios.length && !found; i ++) {
+          var $r = $(radios[i]);
+          if ($r.val() == inputValue) {
+            found = true;
+            $r.prop("checked", true);
+          }
+        }
+        break;
+
+      case 'reference':
+        var tmp = (Array.isArray(inputValue) ? inputValue : [inputValue]).filter(function(e) {
+          return !!e && e.id !== null;
+        });
+        $wrapper.find("[name$=" + inputKey + "]").val(
           tmp
             .map(function(e) {
-              return (
-                '<em><a href="' +
-                $newItem
-                  .find(".selection-info")
-                  .data("baseUrl")
-                  .replace(/new$/, e.id) +
-                '" target="_blank">' +
-                e._alias +
-                "</a></em>"
-              );
-              //return '<em>'+ e._alias +'</em>';
+              return e.id;
             })
-            .join(", ")
+            .join("|")
         );
-      }
-    } else if (Array.isArray(inputValue) && inputValue.length > 0) {
-      for (var i = 0; i < inputValue.length; i++) {
-        $newItem.find("[name$=" + inputKey + '\\[\\]] option[value="' + inputValue[i] + '"]').prop("selected", true);
-      }
-      $newItem.find("[name$=" + inputKey + "\\[\\]]").trigger("change");
-    } else {
-      $newItem
-        .find("[name$=" + inputKey + "]")
-        .val(inputValue)
-        .trigger("change");
+        if (tmp.length > 0) {
+          $wrapper.find(".selection-info").html(
+            tmp
+              .map(function(e) {
+                return (
+                  '<em><a href="' +
+                  $wrapper
+                    .find(".selection-info")
+                    .data("baseUrl")
+                    .replace(/new$/, e.id) +
+                  '?is-child=1" target="_blank">' +
+                  e._alias +
+                  "</a></em>"
+                );
+              })
+              .join(", ")
+          );
+        }
+        break;
+
+      case 'select':
+        if (Array.isArray(inputValue)) {
+          for (var i = 0; i < inputValue.length; i++) {
+            $wrapper
+              .find("[name$=" + inputKey + '\\[\\]] option[value="' + inputValue[i] + '"]')
+              .prop("selected", true);
+          }
+        }
+        else {
+          $wrapper
+            .find("[name$=" + inputKey + "]")
+            .val(inputValue)
+        }
+        $wrapper.find("[name$=" + inputKey + "\\[\\]]").trigger("change");
+        break;
+
+      default:
+        $wrapper
+          .find("[name$=" + inputKey + "]")
+          .val(inputValue)
+          .trigger("change");
+        break;
     }
   }
 }

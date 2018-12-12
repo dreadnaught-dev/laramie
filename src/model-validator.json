@@ -104,7 +104,6 @@
                 "subtype": { "enum": [ "file", "image" ] }
             }
         },
-        "hidden": {},
         "html": {
             "properties": {
                 "html": { "type": "string" }
@@ -130,7 +129,11 @@
             }
         },
         "password": {},
-        "radio": {},
+        "radio": {
+            "properties": {
+                "options": { "type": "array" }
+            }
+        },
         "range": {
             "properties": {
                 "min": { "type": "number" },
@@ -151,7 +154,6 @@
             }
         },
         "textarea": {},
-        "range": {},
         "timestamp": {},
         "wysiwyg": {},
         "aggregate": {

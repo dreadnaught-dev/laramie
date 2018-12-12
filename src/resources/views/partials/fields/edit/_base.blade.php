@@ -3,7 +3,7 @@
     $isFullwidthSelect = object_get($field, 'isMultiple', false) === true;
 @endphp
 
-<div class="field {{ $hasError ? 'is-danger' : '' }}">
+<div class="field {{ $hasError ? 'is-danger' : '' }}" data-field-key="{{ $fieldKey }}" data-field-type="{{ $field->type }}">
     <label class="label" for="{{ $fieldKey }}">{!! $field->label !!}</label>
     <div class="control {{ $hasError ? 'has-icon has-icon-right' : '' }} {{ $isFullwidthSelect ? 'is-expanded' : '' }}">
         @yield('input')
