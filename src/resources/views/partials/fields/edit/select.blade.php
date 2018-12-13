@@ -13,7 +13,7 @@
                 <option value="">Select {{ strtolower($field->label) }}...</option>
             @endif
             @foreach (object_get($field, 'options') as $option)
-                <option value="{{ $option }}" {!! in_array($option, $selectedValues) ? 'selected="selected"' : '' !!}>{{ $option }}</option>
+                <option value="{{ object_get($option, 'value') }}" {!! in_array(object_get($option, 'value'), $selectedValues) ? 'selected="selected"' : '' !!}>{{ object_get($option, 'text') }}</option>
             @endforeach
         </select>
     </div>
