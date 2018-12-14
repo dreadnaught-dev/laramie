@@ -39,8 +39,8 @@ class LaramieListener
             'Laramie\Listeners\LaramieListener@postSave'
         );
         $events->listen(
-            'Laramie\Events\PreBulkAction',
-            'Laramie\Listeners\LaramieListener@preBulkAction'
+            'Laramie\Events\BulkAction',
+            'Laramie\Listeners\LaramieListener@bulkAction'
         );
     }
 
@@ -135,25 +135,30 @@ class LaramieListener
     }
 
     /**
-     * Clone items in bulk.
+     * Handle bulk actions
      *
      * @param $event Laramie\Events\BulkAction
      */
-    public function bulkActionHandler($event)
+    public function bulkAction($event)
     {
         $model = $event->model;
-        $action = $event->action;
-        $options = $event->options;
+        $nameOfBulkAction = $event->nameOfBulkAction;
+        $query = $event->query;
+        $postData = $event->postData;
+        $user = $event->user;
+        $extra = $event->extra;
+
         $dataService = $this->getLaramieDataService();
 
-        $query = $this->getBulkActionBaseQuery($model->_type, $options);
+        $extra->response = response()->download(public_path('robots.txt'), sprintf('%s_%s.csv', snake_case($model->namePlural), date('Ymd')))->deleteFileAfterSend(false);
 
-        switch ($action) {
+        switch (strtolower($nameOfBulkAction)) {
             case 'duplicate':
                 $query->select([DB::raw('uuid_generate_v1()'), DB::raw('\''.$dataService->getUserUuid().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
 
                 DB::insert('insert into laramie_data (id, user_id, type, data, created_at, updated_at) '.$query->toSql(), $query->getBindings());
                 break;
+
             case 'delete':
                 // First create a backup of the items in the archive table
                 $q1 = clone $query;
@@ -165,15 +170,20 @@ class LaramieListener
                 $q2->select(['id']);
                 DB::statement('delete from laramie_data where id in ('.$q2->toSql().')', $q2->getBindings());
                 break;
+
             case 'export':
-                $listableFields = $event->listableFields;
-                $outputFile = $event->outputFile;
-                $isAllSelected = array_get($options, 'bulk-action-all-selected') === '1';
+                $listableFields = object_get($extra, 'listableFields', collect(['id'])) // should always be defined, but default to `id` just in case
+                    ->filter(function($item) { // Don't include meta fields in export (versions, tags, comments).
+                        return object_get($item, 'isMetaField') !== true;
+                    });
+
+                // Have "all" matching records been selected? Great. But limit to `max_csv_records` just in case there are too many records
+                $isAllSelected = array_get($postData, 'bulk-action-all-selected') === '1';
                 if ($isAllSelected) {
-                    $options['results-per-page'] = config('laramie.max_csv_records');
+                    $postData['results-per-page'] = config('laramie.max_csv_records');
                 }
 
-                $records = $dataService->findByType($model, $options);
+                $records = $dataService->findByType($model, $postData);
                 $csvData = [];
                 $csvHeaders = [];
                 $csvFieldOrder = [];
@@ -193,8 +203,10 @@ class LaramieListener
                     }
                     $csvData[] = $csvOutput;
                 }
+                $outputFile = storage_path(Uuid::uuid4()->toString().'.csv');
                 $writer = \League\Csv\Writer::createFromPath($outputFile, 'w+');
                 $writer->insertAll($csvData);
+                $extra->response = response()->download($outputFile, sprintf('%s_%s.csv', snake_case($model->namePlural), date('Ymd')))->deleteFileAfterSend(true);
                 break;
         }
     }
@@ -352,15 +364,4 @@ class LaramieListener
         return app(LaramieDataService::class);
     }
 
-    public function preBulkAction($event)
-    {
-        $model = $event->model;
-        $nameOfBulkAction = $event->nameOfBulkAction;
-        $query = $event->query;
-        $postData = $event->postData;
-        $user = $event->user;
-        $response = $event->response;
-
-        $event->response = response()->download(public_path('robots.txt'), sprintf('%s_%s.csv', snake_case($model->namePlural), date('Ymd')))->deleteFileAfterSend(false);
-    }
 }

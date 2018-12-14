@@ -13,7 +13,7 @@ use Laramie\Lib\LaramieHelpers;
 use Laramie\Events\PreEdit;
 use Laramie\Events\PreDelete;
 use Laramie\Events\PreBulkAction;
-use Laramie\Events\PostBulkAction;
+use Laramie\Events\BulkAction;
 use Laramie\Lib\LaramieModel;
 use Laramie\Services\LaramieDataService;
 
@@ -225,8 +225,8 @@ class AdminController extends Controller
     /**
      * Handle bulk actions -- these are triggered from the list page.
      *
-     * Bulk actions trigger events (which must be synchronous) which in turn
-     * actually field the logic of the bulk action.
+     * Bulk actions trigger events (which must be synchronous) which field the
+     * logic of the bulk action.
      *
      * @return \Illuminate\Http\Response
      */
@@ -240,19 +240,22 @@ class AdminController extends Controller
         $postData['filters'] = $filters;
         $postData['sort'] = array_get($postData, 'sort', 'id');
 
-        $response = $this->redirectToFilteredListPage($modelKey, $request);
 
         $user = $this->dataService->getUser();
         $query = $this->dataService->getBulkActionQuery($modelKey, $postData);
 
-        //dd($query->toSql());
+        $extra = (object) [
+            'response' => $this->redirectToFilteredListPage($modelKey, $request),
+            'listableFields' => $this->getListableFields($model), // inject context of what fields the list page is showing
+        ];
 
-        event(new PreBulkAction($model, $nameOfBulkAction, $query, $postData, $user, $response));
+        // Give applications the ability to shape the query before execution
+        event(new PreBulkAction($model, $nameOfBulkAction, $query, $postData, $user, $extra));
 
-dd($response);
+        // Execute the bulk action
+        event(new BulkAction($model, $nameOfBulkAction, $query, $postData, $user, $extra));
 
-        //event(new BulkAction($model, $nameOfBulkAction, $query, $user, $response));
-        //event(new PostBulkAction($model, $nameOfBulkAction, $query, $user, $response));
+        return object_get($extra, 'response');
 
         //switch ($operation) {
             //case 'export':
