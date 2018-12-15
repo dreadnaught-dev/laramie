@@ -5,6 +5,10 @@ $(document).ready(function() {
   loadHandlebarsTemplates();
   loadFilters();
 
+  window.onblur = function() {
+    $("#bulk-action-operation").val("");
+  };
+
   $(".js-toggle-page-settings").on("click", function() {
     $("#page-settings").toggleClass("is-active");
     $.event.trigger("modal-change");
@@ -129,7 +133,7 @@ $(document).ready(function() {
   });
 
   $("#bulk-action-operation").change(function() {
-    var operation = $(this).val();
+    var operation = $(this).val().toLowerCase().replace(/\([^\)]+\)/, "").trim();
     if (operation) {
       if (confirm("Are you sure you want to " + operation + " these items?")) {
         //<input type="hidden" id="bulk-action-all-selected" name="bulk-action-all-selected" value="">

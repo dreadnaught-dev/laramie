@@ -135,6 +135,12 @@ class ModelLoader
                     $model->alias = $fieldKeyToUseAsAlias ?: 'id';
                 }
 
+                $defaultBulkActions = config('laramie.default_bulk_actions');
+                $modelBulkActions = array_merge(object_get($model, 'bulkActions', $defaultBulkActions), object_get($model, 'additionalBulkActions', []));
+                if ($modelBulkActions != $defaultBulkActions) {
+                    $model->bulkActions = $modelBulkActions;
+                }
+
                 $quickSearch = object_get($model, 'quickSearch', $model->alias);
                 $model->quickSearch = gettype($quickSearch) != 'array'
                     ? [$quickSearch]

@@ -3,6 +3,7 @@
 namespace Laramie\Listeners;
 
 use DB;
+use Exception;
 use Illuminate\Http\File;
 use Intervention\Image\ImageManager;
 use Ramsey\Uuid\Uuid;
@@ -41,6 +42,10 @@ class LaramieListener
         $events->listen(
             'Laramie\Events\BulkAction',
             'Laramie\Listeners\LaramieListener@bulkAction'
+        );
+        $events->listen(
+            'Laramie\Events\PreDelete',
+            'Laramie\Listeners\LaramieListener@preDelete'
         );
     }
 
@@ -98,7 +103,7 @@ class LaramieListener
         switch ($type) {
             case 'LaramieRole':
                 if (in_array($item->id, [Globals::SuperAdminRoleId, Globals::AdminRoleId])) {
-                    throw new \Exception('Sorry, you may not edit default system roles (Super admin and User management.');
+                    throw new Exception('Sorry, you may not edit default system roles (Super admin and User management.');
                 } else {
                     // Not a system role, dynamically add fields to the model for each model type.
                     $dataService = $this->getLaramieDataService();
@@ -147,31 +152,37 @@ class LaramieListener
         $postData = $event->postData;
         $user = $event->user;
         $extra = $event->extra;
+        $type = $model->_type;
 
         $dataService = $this->getLaramieDataService();
 
-        $extra->response = response()->download(public_path('robots.txt'), sprintf('%s_%s.csv', snake_case($model->namePlural), date('Ymd')))->deleteFileAfterSend(false);
-
-        switch (strtolower($nameOfBulkAction)) {
-            case 'duplicate':
-                $query->select([DB::raw('uuid_generate_v1()'), DB::raw('\''.$dataService->getUserUuid().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
-
-                DB::insert('insert into laramie_data (id, user_id, type, data, created_at, updated_at) '.$query->toSql(), $query->getBindings());
-                break;
-
+        // @note -- switching on the slugified version of the bulk action
+        switch (str_slug($nameOfBulkAction)) {
             case 'delete':
                 // First create a backup of the items in the archive table
                 $q1 = clone $query;
                 $q1->select([DB::raw('uuid_generate_v1()'), 'id', DB::raw('\''.$dataService->getUserUuid().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
                 DB::insert('insert into laramie_data_archive (id, laramie_data_id, user_id, type, data, created_at, updated_at)'.$q1->toSql(), $q1->getBindings());
 
-                // Delete the items
                 $q2 = clone $query;
                 $q2->select(['id']);
+
+                if ($type == 'LaramieRole') {
+                    $q2->whereNotIn('id', [Globals::SuperAdminRoleId, Globals::AdminRoleId]); // don't allow deletion of core Laramie roles.
+                }
+
+                // Delete the items
                 DB::statement('delete from laramie_data where id in ('.$q2->toSql().')', $q2->getBindings());
                 break;
 
-            case 'export':
+            case 'duplicate':
+                $query->select([DB::raw('uuid_generate_v1()'), DB::raw('\''.$dataService->getUserUuid().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
+
+                DB::insert('insert into laramie_data (id, user_id, type, data, created_at, updated_at) '.$query->toSql(), $query->getBindings());
+                break;
+
+            case 'export-to-csv':
+                $itemIds = [];
                 $listableFields = object_get($extra, 'listableFields', collect(['id'])) // should always be defined, but default to `id` just in case
                     ->filter(function($item) { // Don't include meta fields in export (versions, tags, comments).
                         return object_get($item, 'isMetaField') !== true;
@@ -181,9 +192,18 @@ class LaramieListener
                 $isAllSelected = array_get($postData, 'bulk-action-all-selected') === '1';
                 if ($isAllSelected) {
                     $postData['results-per-page'] = config('laramie.max_csv_records');
+                } else {
+                    $itemIds = collect(array_get($postData, 'bulk-action-ids', []))
+                        ->filter(function ($item) {
+                            return $item && Uuid::isValid($item);
+                        });
                 }
 
-                $records = $dataService->findByType($model, $postData);
+                $records = $dataService->findByType($model, $postData, function($query) use($itemIds) {
+                    if ($itemIds) {
+                        $query->whereIn(DB::raw('id::text'), $itemIds);
+                    }
+                });
                 $csvData = [];
                 $csvHeaders = [];
                 $csvFieldOrder = [];
@@ -293,10 +313,10 @@ class LaramieListener
                     } else { // delete file if switched from public to private
                         try {
                             Storage::disk('public')->delete($item->path);
-                        } catch (\Exception $e) { /* don't error if the public version of the file can't be deleted -- may have been manually deleted */
+                        } catch (Exception $e) { /* don't error if the public version of the file can't be deleted -- may have been manually deleted */
                         }
                     }
-                } catch (\Exception $e) { /* there was some issue with creating thumbs... don't bork too hard, though */
+                } catch (Exception $e) { /* there was some issue with creating thumbs... don't bork too hard, though */
                 }
                 break;
             case 'LaramieAlert':
@@ -315,8 +335,7 @@ class LaramieListener
     }
 
     /**
-     * Handle post-save event -- MAY be asynchronous -- enables ability to
-     * deliver email or implement a custom workflow for a model.
+     * Handle post-save event
      *
      * @param $event Laramie\Events\PostSave
      */
@@ -351,6 +370,20 @@ class LaramieListener
                         $dataService->save('LaramieAlert', $alert);
                     }
                 }
+        }
+    }
+
+    /**
+     * Handle pre-delete
+     *
+     * @param $event Laramie\Events\PostSave
+     */
+    public function preDelete($event)
+    {
+        $item = $event->item;
+
+        if (in_array(object_get($item, 'id'), [Globals::SuperAdminRoleId, Globals::AdminRoleId])) {
+            throw new Exception('You may not delete one of the core roles.');
         }
     }
 

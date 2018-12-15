@@ -8,6 +8,14 @@
         ],
         "properties": {
             "alias": { "type": "string" },
+            "bulkActions": {
+                "type": "array",
+                "items": { "type": "string" }
+            },
+            "additionalBulkActions": {
+                "type": "array",
+                "items": { "type": "string" }
+            },
             "quickSearch": { "type": ["string", "array"] },
             "mainTabLabel": { "type": "string" },
             "defaultSort": { "type": "string" },

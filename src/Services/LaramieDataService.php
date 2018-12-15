@@ -983,6 +983,10 @@ class LaramieDataService
     {
         $model = $this->getModelByKey($model);
 
+        // $postData is not passed by reference, so making changes here won't affect its value in the caller
+        $postData['sort'] = null;
+        $postData['sort-direction'] = null;
+
         return DB::table('laramie_data')
             ->whereIn('id', function ($query) use ($model, $postData) {
                 $query->select(['id'])
@@ -997,8 +1001,7 @@ class LaramieDataService
                     $itemIds = collect(array_get($postData, 'bulk-action-ids', []))
                         ->filter(function ($item) {
                             return $item && Uuid::isValid($item);
-                        })
-                        ->all();
+                        });
                     $query->whereIn(DB::raw('id::text'), $itemIds);
                 }
             });

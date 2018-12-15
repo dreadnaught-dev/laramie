@@ -325,6 +325,7 @@
                 </table>
             </div>
 
+            @if ($bulkActions = object_get($model, 'bulkActions', config('laramie.default_bulk_actions')))
             <div class="level">
                 <div class="level-left">
                     <div class="field">
@@ -332,15 +333,16 @@
                             <span class="select">
                                 <select id="bulk-action-operation" name="bulk-action-operation" disabled>
                                     <option value="" id="null-bulk-action">With selected...</option>
-                                    <option value="delete">Delete</option>
-                                    <option value="duplicate">Duplicate</option>
-                                    <option value="export">Export to CSV</option>
+                                    @foreach ($bulkActions as $bulkAction)
+                                    <option value="{{ $bulkAction }}">{{ $bulkAction }}</option>
+                                    @endforeach
                                 </select>
                             </span>
                         </p>
                     </div>
                 </div>
             </div>
+            @endif
 
             {{ $models->links('laramie::partials.pagination.bulma-paginator') }}
         </form>

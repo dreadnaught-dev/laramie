@@ -25,7 +25,7 @@ class LaramieHelpers
             $qs[$key] = $value;
         }
         $qs = collect($qs)
-            ->filter()
+            ->filter(function($item){ return $item && gettype($item) != 'array'; }) // exclude `bulk-action-ids`
             ->map(function ($value, $key) use ($curSort, $curSortDirection) {
                 $kvp = "$key=$value";
                 if ($key == 'sort') {

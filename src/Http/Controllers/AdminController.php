@@ -11,7 +11,6 @@ use cogpowered\FineDiff\Granularity\Word;
 use cogpowered\FineDiff\Diff;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Events\PreEdit;
-use Laramie\Events\PreDelete;
 use Laramie\Events\PreBulkAction;
 use Laramie\Events\BulkAction;
 use Laramie\Lib\LaramieModel;
@@ -240,7 +239,6 @@ class AdminController extends Controller
         $postData['filters'] = $filters;
         $postData['sort'] = array_get($postData, 'sort', 'id');
 
-
         $user = $this->dataService->getUser();
         $query = $this->dataService->getBulkActionQuery($modelKey, $postData);
 
@@ -249,29 +247,28 @@ class AdminController extends Controller
             'listableFields' => $this->getListableFields($model), // inject context of what fields the list page is showing
         ];
 
-        // Give applications the ability to shape the query before execution
-        event(new PreBulkAction($model, $nameOfBulkAction, $query, $postData, $user, $extra));
+        $alert = null;
 
-        // Execute the bulk action
-        event(new BulkAction($model, $nameOfBulkAction, $query, $postData, $user, $extra));
+        DB::beginTransaction();
+        try {
+            // Give applications the ability to shape the query before execution
+            event(new PreBulkAction($model, $nameOfBulkAction, $query, $postData, $user, $extra));
 
-        return object_get($extra, 'response');
+            // Execute the bulk action
+            event(new BulkAction($model, $nameOfBulkAction, $query, $postData, $user, $extra));
 
-        //switch ($operation) {
-            //case 'export':
-                //$options['sort'] = $origSort;
-                //$listableFields = $this->getListableFields($model)
-                    //->filter(function($item) {
-                        //// Don't include meta fields (versions, tags, comments) in export
-                        //return object_get($item, 'isMetaField') !== true;
-                    //});
-                //$outputFile = storage_path(Uuid::uuid4()->toString().'.csv');
-                //event(new BulkExport($model, $options, $listableFields, $outputFile));
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+            $extra->response = $this->redirectToFilteredListPage($modelKey, $request);
+            $alert = (object) ['class' => 'is-danger', 'title' => 'Awww snap! That didn\'t work', 'alert' => $e->getMessage()];
+        };
 
-                //return response()->download($outputFile, sprintf('%s_%s.csv', snake_case($model->namePlural), date('Ymd')))->deleteFileAfterSend(true);
-        //}
+        $response = object_get($extra, 'response');
 
-        return $response;
+        return $alert
+            ?  $response->with('alert', $alert)
+            : $response;
     }
 
     /**
@@ -310,7 +307,7 @@ class AdminController extends Controller
     {
         $filterString = collect($request->all())
             ->filter(function ($value, $key) {
-                return preg_match('/^(filter|sort)/', $key);
+                return preg_match('/^(filter|sort|quick)/', $key);
             })
             ->map(function ($e, $key) {
                 return sprintf('%s=%s', rawurlencode($key), rawurlencode($e));
@@ -391,9 +388,9 @@ class AdminController extends Controller
 
         // Delete reports with the same name by the same user for the same model
         $tmp = collect($this->dataService->findByType($reportModel, ['results-per-page' => 0], function ($query) use ($model, $reportName, $userUuid) {
-            $query->where(\DB::raw('data->>\'user\''), $userUuid)
-                ->where(\DB::raw('data->>\'relatedModel\''), $model->_type)
-                ->where(\DB::raw('data->>\'name\''), $reportName);
+            $query->where(DB::raw('data->>\'user\''), $userUuid)
+                ->where(DB::raw('data->>\'relatedModel\''), $model->_type)
+                ->where(DB::raw('data->>\'name\''), $reportName);
         }))
             ->each(function ($e) {
                 $this->dataService->deleteById($modelKey, $e->id, true);
@@ -522,12 +519,12 @@ class AdminController extends Controller
         // within the save method there is an additional stage of validation that
         // utilizes the model's json schema.
         if ($success) {
-            \DB::beginTransaction();
+            DB::beginTransaction();
             try {
                 $item = $this->dataService->save($model, $item);
-                \DB::commit();
+                DB::commit();
             } catch (\Exception $e) {
-                \DB::rollBack();
+                DB::rollBack();
                 $success = false;
                 $errors = ['schemaError' => true, 'message' => $e->getMessage()];
             }
