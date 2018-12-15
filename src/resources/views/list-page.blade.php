@@ -252,7 +252,7 @@
             </div>
 
             <div class="is-spaced-sm">
-            <em>Viewing {{ number_format($models->firstItem()) }} - {{ number_format($models->lastItem()) }} of {{ number_format($models->total()) }}</em>
+            <em>Viewing <span id="viewing-start">{{ number_format($models->firstItem()) }}</span> - <span id="viewing-end">{{ number_format($models->lastItem()) }}</span> of <span id="viewing-total">{{ number_format($models->total()) }}</span></em>
             </div>
 
             <div id="bulk-action-helper" class="is-spaced-sm notification is-warning" data-has-additional-pages="{{ $models->hasMorePages() ? '1' : '' }}">

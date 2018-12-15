@@ -115,6 +115,9 @@ $(document).ready(function() {
       $.post($(this).data("action"), { _method: "DELETE" }, function(data) {
         if (data.success) {
           $row.remove();
+          ['viewing-end', 'viewing-total'].forEach(function(item){
+            $('#' + item).text((Number($('#' + item).text()) || 1) - 1);
+          });
         } else {
           alert(data.message);
         }
