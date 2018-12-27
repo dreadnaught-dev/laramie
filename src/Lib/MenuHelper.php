@@ -14,7 +14,6 @@ class MenuHelper
         $this->user = $user;
         $this->currentRoute = $currentRoute;
         $this->setVisibility($this->menu);
-        //dd($this->menu);
     }
 
     private function setVisibility($node)

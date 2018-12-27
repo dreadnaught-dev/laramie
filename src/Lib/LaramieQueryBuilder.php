@@ -31,7 +31,6 @@ class LaramieQueryBuilder
         $this->dataService = app(LaramieDataService::class);
         $this->qb = DB::table('__dummy');
         $this->queryCallback = function ($query) {
-            //dd($this->qb);
             $query->mergeWheres($this->qb->wheres, $this->qb->getBindings());
 
             foreach (($this->qb->orders ?: []) as $order) {

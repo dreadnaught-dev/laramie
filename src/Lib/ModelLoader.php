@@ -439,7 +439,6 @@ class ModelLoader
                 });
                 $field->options = $mappedOptions->toArray();
 
-                //dd($mappedOptions->toArray());
                 break;
         }
 
