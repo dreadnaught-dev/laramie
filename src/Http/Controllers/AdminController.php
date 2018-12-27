@@ -170,7 +170,8 @@ class AdminController extends Controller
             ->with('viewHelper', $viewHelper);
     }
 
-    public function goBack($modelKey) {
+    public function goBack($modelKey)
+    {
         $redirectUrl = session()->get('_laramie_last_list_url', route('laramie::dashboard'));
 
         // If one jumped to another edit page from a relationship field or something, don't redirect back to a potentially different model's list page:
@@ -262,12 +263,12 @@ class AdminController extends Controller
             DB::rollBack();
             $extra->response = $this->redirectToFilteredListPage($modelKey, $request);
             $alert = (object) ['class' => 'is-danger', 'title' => 'Awww snap! That didn\'t work', 'alert' => $e->getMessage()];
-        };
+        }
 
         $response = object_get($extra, 'response');
 
         return $alert
-            ?  $response->with('alert', $alert)
+            ? $response->with('alert', $alert)
             : $response;
     }
 
@@ -444,7 +445,7 @@ class AdminController extends Controller
         // Ensure that the user can't create a new 'singular' item
         if ($item->_isNew && object_get($model, 'isSingular')) {
             return $this->redirectToSingularEdit($model);
-        } else if (object_get($model, 'isSingular')) {
+        } elseif (object_get($model, 'isSingular')) {
             session()->put('_laramie_last_list_url', route('laramie::dashboard'));
         }
 
@@ -566,7 +567,7 @@ class AdminController extends Controller
                     $model->name,
                     $id == 'new' ? 'created' : 'updated',
                     object_get($model, 'isSingular') ? route('laramie::dashboard') : route('laramie::go-back', ['modelKey' => $modelKey]),
-                    object_get($model, 'isSingular') ? 'dashboard' : 'list page')
+                    object_get($model, 'isSingular') ? 'dashboard' : 'list page'),
                 ])
             ->with('status', 'saved');
     }
@@ -789,7 +790,6 @@ class AdminController extends Controller
         $item = $this->dataService->restoreRevision($revisionId);
         $model = $this->dataService->getModelByKey($item->type);
         $alert = (object) ['class' => 'is-warning', 'title' => 'Revision loaded', 'alert' => sprintf('The revision from %s has been loaded successfully.', \Carbon\Carbon::parse($item->updated_at)->toDayDateTimeString())];
-
 
         return redirect()->route('laramie::edit', ['modelKey' => $model->_type, 'id' => $item->laramie_data_id])
             ->with('alert', $alert);

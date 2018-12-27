@@ -8,7 +8,6 @@ use Laramie\Globals;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
 use Laramie\Services\LaramieDataService;
-
 use PragmaRX\Google2FA\Google2FA;
 
 class AuthorizeLaramieUser extends Command

@@ -4,7 +4,6 @@ namespace Laramie\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
-
 use Laramie\Http\Middleware\RequestLogger;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Services\LaramieDataService;

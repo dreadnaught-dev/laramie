@@ -140,7 +140,7 @@ class LaramieListener
     }
 
     /**
-     * Handle bulk actions
+     * Handle bulk actions.
      *
      * @param $event Laramie\Events\BulkAction
      */
@@ -184,7 +184,7 @@ class LaramieListener
             case 'export-to-csv':
                 $itemIds = [];
                 $listableFields = object_get($extra, 'listableFields', collect(['id'])) // should always be defined, but default to `id` just in case
-                    ->filter(function($item) { // Don't include meta fields in export (versions, tags, comments).
+                    ->filter(function ($item) { // Don't include meta fields in export (versions, tags, comments).
                         return object_get($item, 'isMetaField') !== true;
                     });
 
@@ -199,7 +199,7 @@ class LaramieListener
                         });
                 }
 
-                $records = $dataService->findByType($model, $postData, function($query) use($itemIds) {
+                $records = $dataService->findByType($model, $postData, function ($query) use ($itemIds) {
                     if ($itemIds) {
                         $query->whereIn(DB::raw('id::text'), $itemIds);
                     }
@@ -335,7 +335,7 @@ class LaramieListener
     }
 
     /**
-     * Handle post-save event
+     * Handle post-save event.
      *
      * @param $event Laramie\Events\PostSave
      */
@@ -374,7 +374,7 @@ class LaramieListener
     }
 
     /**
-     * Handle pre-delete
+     * Handle pre-delete.
      *
      * @param $event Laramie\Events\PostSave
      */
@@ -396,5 +396,4 @@ class LaramieListener
     {
         return app(LaramieDataService::class);
     }
-
 }

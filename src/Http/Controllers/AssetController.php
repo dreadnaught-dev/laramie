@@ -42,9 +42,10 @@ class AssetController extends Controller
     public function showCropper(Request $request, $imageKey)
     {
         $item = $this->dataService->findById('LaramieUpload', $imageKey);
+
         return view('laramie::cropper', [
             'item' => $item,
-            'imageKey' => $imageKey
+            'imageKey' => $imageKey,
         ]);
     }
 

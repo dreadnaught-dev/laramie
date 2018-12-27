@@ -83,7 +83,9 @@ class LaramieDataService
 
     public function findTypeByTag($model, $tag)
     {
-        return $this->findByType($model, ['results-per-page' => 0]);
+        return $this->findByType($model, ['results-per-page' => 0], function ($query) use ($tag) {
+            $query->whereRaw(DB::raw('(select 1 from laramie_data_meta ldm where ldm.laramie_data_id = laramie_data.id and ldm.type ilike ? and data->>\'text\' ilike ? limit 1) = 1'), ['tag', $tag]);
+        });
     }
 
     // NOTE: For now, we're only diving into aggregate relationships for single
@@ -255,10 +257,10 @@ class LaramieDataService
         $quickSearchFields = object_get($model, 'quickSearch');
         if ($quickSearch && $quickSearchFields) {
             $quickSearchFields = collect($quickSearchFields)
-                ->map(function($item) use ($model) { return $this->getSearchSqlFromFieldName($model, $item); })
+                ->map(function ($item) use ($model) { return $this->getSearchSqlFromFieldName($model, $item); })
                 ->filter();
 
-            $query->where(function($query) use($quickSearchFields, $quickSearch) {
+            $query->where(function ($query) use ($quickSearchFields, $quickSearch) {
                 foreach ($quickSearchFields as $field) {
                     $query->orWhere(DB::raw($field), 'ilike', '%'.$quickSearch.'%');
                 }
@@ -268,8 +270,10 @@ class LaramieDataService
         return $query;
     }
 
-    private function getSearchSqlFromFieldName($model, $field)
+    public function getSearchSqlFromFieldName($model, $field)
     {
+        $model = $this->getModelByKey($model);
+
         // Specifically for quick search where no alias is provided on the model (or id is specified as a quick search field):
         if (in_array($field, ['id'])) {
             return $field.'::text';
@@ -595,7 +599,8 @@ class LaramieDataService
 
         try {
             $this->spiderAggregatesHelper($aggregateFields, $item);
-        } catch (Exception $e) { /* Might have gotten here because the schema of the model changed between edits. */ }
+        } catch (Exception $e) { /* Might have gotten here because the schema of the model changed between edits. */
+        }
     }
 
     private function spiderAggregatesHelper($aggregateFields, $item)
@@ -611,11 +616,11 @@ class LaramieDataService
                 foreach ($aggregateReferenceFields as $aggregateReferenceFieldKey => $aggregateReferenceField) {
                     if (is_array($aggregateData)) {
                         // If `$aggregateData` is an array, we're processing a repeatable aggregate. @optimize -- should we refactor all aggregates to be essentially repeatable? Simpler handling, conversion of one type to the other...
-                        for ($i = 0; $i < count($aggregateData); ++$i ) {
+                        for ($i = 0; $i < count($aggregateData); ++$i) {
                             $aggregateReferenceFieldData = object_get($aggregateData[$i], $aggregateReferenceFieldKey);
                             if (is_array($aggregateReferenceFieldData)) {
                                 // If `$aggregateReferenceFieldData` is an array, we're processing a `reference-many` field
-                                for ($j = 0; $j < count($aggregateReferenceFieldData); ++$j ) {
+                                for ($j = 0; $j < count($aggregateReferenceFieldData); ++$j) {
                                     $aggregateReferenceFieldData[$j] = $this->findById($this->getModelByKey($aggregateReferenceField->relatedModel), $aggregateReferenceFieldData[$j]);
                                 }
                             } else {
@@ -628,7 +633,7 @@ class LaramieDataService
                         $aggregateReferenceFieldData = object_get($aggregateData, $aggregateReferenceFieldKey);
                         if (is_array($aggregateReferenceFieldData)) {
                             // If `$aggregateReferenceFieldData` is an array, we're processing a `reference-many` field
-                            for ($i = 0; $i < count($aggregateReferenceFieldData); ++$i ) {
+                            for ($i = 0; $i < count($aggregateReferenceFieldData); ++$i) {
                                 $aggregateReferenceFieldData[$i] = $this->findById($this->getModelByKey($aggregateReferenceField->relatedModel), $aggregateReferenceFieldData[$i]);
                             }
                         } else {
@@ -725,8 +730,10 @@ class LaramieDataService
         }
     }
 
-    private function getBaseQuery($model)
+    public function getBaseQuery($model)
     {
+        $model = $this->getModelByKey($model);
+
         // Create the base query
         $query = DB::table('laramie_data')
             ->where('type', $model->_type)
@@ -763,7 +770,7 @@ class LaramieDataService
             } elseif ($field->type == 'aggregate') {
                 $aggregateData = object_get($data, $key, null);
                 if (is_array($aggregateData)) {
-                    for ($i = 0; $i < count($aggregateData); ++$i ) {
+                    for ($i = 0; $i < count($aggregateData); ++$i) {
                         $aggregateData[$i] = $this->flattenRelationships($field, $aggregateData[$i]);
                     }
                 } else {
@@ -877,8 +884,8 @@ class LaramieDataService
         return $item;
     }
 
-    // isFullDelete specifies whether or not to remove the item's history as well. If set to false, we'll create a snapshot of it in the archive table before deletion.
-    public function deleteById($model, $id, $isFullDelete = false)
+    // `$isDeleteHistory` specifies whether or not to remove the item's history as well. If set to false, we'll create a snapshot of it in the archive table before deletion.
+    public function deleteById($model, $id, $isDeleteHistory = false)
     {
         $model = $this->getModelByKey($model);
         $item = $this->findByIdSuperficial($model, $id);
@@ -888,7 +895,7 @@ class LaramieDataService
             try {
                 event(new PreDelete($model, $item, $this->getUser()));
 
-                if ($isFullDelete) {
+                if ($isDeleteHistory) {
                     DB::table('laramie_data_archive')
                         ->where('laramie_data_id', $id)
                         ->delete();
@@ -910,7 +917,6 @@ class LaramieDataService
         }
     }
 
-    // isFullDelete specifies whether or not to remove the item's history as well. If set to false, we'll create a snapshot of it in the archive table before deletion.
     public function cloneById($id)
     {
         DB::statement('insert into laramie_data (id, user_id, type, data, created_at, updated_at) select ?, ?, type, data, now(), now() from laramie_data where id = ?', [Uuid::uuid1()->toString(), $this->getUser()->id, $id]);

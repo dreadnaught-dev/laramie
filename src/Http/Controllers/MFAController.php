@@ -3,10 +3,8 @@
 namespace Laramie\Http\Controllers;
 
 use DB;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use PragmaRX\Google2FA\Google2FA;
-
 use Laramie\Services\LaramieDataService;
 
 /**
@@ -42,6 +40,7 @@ class MFAController extends Controller
 
         if ($isValid) {
             $request->session()->put('_mfa', 'allow');
+
             return redirect()->intended(route('laramie::dashboard'));
         }
 
@@ -73,6 +72,7 @@ class MFAController extends Controller
             $user->mfa->registrationCompleted = true;
             $this->dataService->save('LaramieUser', $user);
             $request->session()->put('_mfa', 'allow');
+
             return redirect()->intended(route('laramie::dashboard'));
         }
 
@@ -95,5 +95,4 @@ class MFAController extends Controller
 
         return $this->dataService->findById('LaramieUser', $userRecord->id);
     }
-
 }

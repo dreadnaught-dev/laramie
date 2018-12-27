@@ -418,19 +418,20 @@ class ModelLoader
                 // Allow for several options arrays, but transform them to consistent interface (i.e., [{'text' => 'displayed option text', 'value' => 'saved to db'}]).
                 $options = collect(object_get($field, 'options', []));
                 // Determine transform needed based on first option:
-                $mappedOptions = $options->map(function($item) {
+                $mappedOptions = $options->map(function ($item) {
                     $type = gettype($item);
                     if ($type == 'string' || is_numeric($item)) {
                         return (object) ['text' => $item, 'value' => $item];
-                    } else if ($type == 'object' || ($type == 'array' && static::isAssoc($item))) {
+                    } elseif ($type == 'object' || ($type == 'array' && static::isAssoc($item))) {
                         $tmp = (object) $item;
                         $text = object_get($tmp, 'text', object_get($tmp, 'key'));
                         $value = object_get($tmp, 'value') ?: $text;
                         if (!$text || !$value) {
                             throw new Exception('Select / radio `options` must be a valid array.');
                         }
+
                         return (object) ['text' => $text, 'value' => $value];
-                    } else if ($type == 'array') {
+                    } elseif ($type == 'array') {
                         return (object) ['text' => array_first($item), 'value' => array_last($item)];
                     } else {
                         throw new Exception('Select / radio `options` must be a valid array.');
@@ -701,7 +702,7 @@ class ModelLoader
 
     /**
      * Take an array and return whether or not it's associative
-     * (from https://stackoverflow.com/a/173479)
+     * (from https://stackoverflow.com/a/173479).
      *
      * @param array $arr
      *
@@ -715,5 +716,4 @@ class ModelLoader
 
         return array_keys($arr) !== range(0, count($arr) - 1);
     }
-
 }

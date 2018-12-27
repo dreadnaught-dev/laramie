@@ -64,7 +64,7 @@ class MenuHelper
                 $this->printMenu($value);
                 echo '</ul></li>';
             } else {
-                $isActive = false;// $currentRoute->hasParameter('modelKey') && $currentRoute->parameter('modelKey') == $modelKeyOrChild;
+                $isActive = false; // $currentRoute->hasParameter('modelKey') && $currentRoute->parameter('modelKey') == $modelKeyOrChild;
                 echo '<li><a class="'.($isActive ? 'is-active' : '').'" href="'.route('laramie::list', ['modelKey' => object_get($value, 'modelName')]).'">'.$key.'</a></li>';
             }
         }

@@ -10,6 +10,16 @@ use Ramsey\Uuid\Uuid;
 /**
  * LaramieModel makes JSON data stored in dbo.laramie_data accessible (and has
  * helpers for converting it back to JSON).
+ *
+ * In some ways LaramieModels look kind of like Eloquent ones. They are not.
+ * LaramieModels are **not** also query builders (as Eloquent models are).
+ * Similarities are merely syntactic sugar to smooth the cognitive burden of
+ * working with Laramie-backed data. It is a crude pastiche of eloquence, if you
+ * will... That said, extending this class for your custom ones may be useful (or
+ * feel free to use LaramieDataService directly if you'd rather).
+ *
+ * Note that the admin is never going to use your extended model when editing.
+ * The admin will always use the standard LaramieModel.
  */
 class LaramieModel
 {
@@ -22,7 +32,10 @@ class LaramieModel
     public $_isNew = true;
     public $_isUpdate = false;
 
-    public static $tableColumns = ['id' => 1, 'user_id' => 1, 'type' => 1, 'data' => 1, 'created_at' => 1, 'updated_at' => 1];
+    protected static $dataService = null;
+
+    protected $protectedFields = ['id' => 1, 'user_id' => 1, 'type' => 1, 'data' => 1, 'created_at' => 1, 'updated_at' => 1];
+    protected $jsonClass = null;
 
     /**
      * Load data and return a view-model mapped version of `data`.
@@ -87,6 +100,22 @@ class LaramieModel
     }
 
     /**
+     * Factory: return instance of extended LaramieModel class, populated with
+     * attributes from `$data`.
+     *
+     * @param \stdClass $data
+     *
+     * @return static
+     */
+    public static function rehydrate(LaramieModel $data)
+    {
+        $tmp = new static();
+        $tmp->fill($data);
+
+        return $tmp;
+    }
+
+    /**
      * Hydrate `$data` into a LaramieModel -- take json data and hoist its
      * values up to the level of `$this`.
      *
@@ -103,11 +132,10 @@ class LaramieModel
         $this->_origId = $this->id;
         $this->_isNew = $this->id == null || !Uuid::isValid($this->id);
         $this->_isUpdate = !$this->_isNew;
+        $this->_origData = $this->data;
 
         $origData = $this->data;
         unset($this->data);
-
-        $protectedFields = $this->getProtectedFieldHash();
 
         $tmp = json_decode($origData);
 
@@ -115,7 +143,7 @@ class LaramieModel
             foreach ($tmp as $key => $value) {
                 $this->{$key} = $value;
                 // Don't overwrite protected fields with values from JSON data.
-                if (array_key_exists($key, $protectedFields)) {
+                if (array_key_exists($key, $this->protectedFields)) {
                     continue;
                 }
             }
@@ -127,28 +155,6 @@ class LaramieModel
     }
 
     /**
-     * Set and return a map of fields that should _not_ be converted to json
-     * (id, created_at, updated_at, etc).
-     *
-     * @return mixed[] $protectedFields
-     */
-    private function getProtectedFieldHash()
-    {
-        return self::$tableColumns;
-    }
-
-    /**
-     * Set and return a map of fields that should _not_ be converted to json
-     * (id, created_at, updated_at, etc).
-     *
-     * @return mixed[] $protectedFields
-     */
-    public static function addTableColumn($columnName)
-    {
-        self::$tableColumns[] = $columnName;
-    }
-
-    /**
      * Convert data stored in this object into a json encoded string (with the
      * exception of certain other table-level data).
      *
@@ -157,11 +163,10 @@ class LaramieModel
     public function toArray()
     {
         $properties = get_object_vars($this);
-        $protectedFields = $this->getProtectedFieldHash();
         $modelData = [];
         $jsonData = [];
         foreach ($properties as $key => $value) {
-            if (array_key_exists($key, $protectedFields)) {
+            if (array_key_exists($key, $this->protectedFields)) {
                 $modelData[$key] = $value;
             } elseif (strpos($key, '_') === 0) {
                 // Skip fields that start with an underscore
@@ -174,5 +179,258 @@ class LaramieModel
         $modelData['data'] = json_encode((object) $jsonData);
 
         return $modelData;
+    }
+
+    final protected static function getLaramieQueryBuilder($functionToInvoke, $arguments = [])
+    {
+        $builder = new LaramieQueryBuilder(new static());
+
+        return call_user_func_array([$builder, $functionToInvoke], $arguments);
+    }
+
+    /**
+     * Apply an Eloquent-ish veneer to interacting with the data service. The
+     * following methods are NOT eloquent, merely helpful.
+     */
+    final public static function where($column, string $operator = null, $value = null, string $boolean = 'and')
+    {
+        return self::getLaramieQueryBuilder('where', func_get_args());
+    }
+
+    final public static function whereRaw(string $sql, $bindings = [], string $boolean = 'and')
+    {
+        return self::getLaramieQueryBuilder('whereRaw', func_get_args());
+    }
+
+    final public static function whereIn(string $column, $values, string $boolean = 'and', bool $not = false)
+    {
+        return self::getLaramieQueryBuilder('whereIn', func_get_args());
+    }
+
+    final public static function whereNotIn(string $column, $values, string $boolean = 'and')
+    {
+        return self::getLaramieQueryBuilder('whereNotIn', func_get_args());
+    }
+
+    final public static function whereNull(string $column, string $boolean = 'and', bool $not = false)
+    {
+        return self::getLaramieQueryBuilder('whereNull', func_get_args());
+    }
+
+    final public static function whereNotNull(string $column, string $boolean = 'and')
+    {
+        return self::getLaramieQueryBuilder('whereNotNull', func_get_args());
+    }
+
+    final public static function whereTag($tag)
+    {
+        return self::getLaramieQueryBuilder('whereTag', [$tag]);
+    }
+
+    final public static function whereNotTag($tag)
+    {
+        return self::getLaramieQueryBuilder('whereNotTag', [$tag]);
+    }
+
+    final public static function orderBy(string $field, string $direction = 'asc')
+    {
+        return self::getLaramieQueryBuilder('orderBy', func_get_args());
+    }
+
+    final public static function orderByDesc(string $field)
+    {
+        return self::getLaramieQueryBuilder('orderByDesc', func_get_args());
+    }
+
+    final public static function orderByRaw(string $sql, array $bindings = [])
+    {
+        return self::getLaramieQueryBuilder('orderByRaw', func_get_args());
+    }
+
+    final public static function latest(string $column = 'created_at')
+    {
+        return self::getLaramieQueryBuilder('latest', func_get_args());
+    }
+
+    final public static function oldest(string $column = 'created_at')
+    {
+        return self::getLaramieQueryBuilder('oldest', func_get_args());
+    }
+
+    final public static function inRandomOrder(string $seed = '')
+    {
+        return self::getLaramieQueryBuilder('orderBy', func_get_args());
+    }
+
+    final public static function skip(int $val)
+    {
+        return self::getLaramieQueryBuilder('skip', func_get_args());
+    }
+
+    final public static function offset(int $val)
+    {
+        return self::getLaramieQueryBuilder('offset', func_get_args());
+    }
+
+    final public static function take(int $val)
+    {
+        return self::getLaramieQueryBuilder('take', func_get_args());
+    }
+
+    final public static function limit(int $val)
+    {
+        return self::getLaramieQueryBuilder('limit', func_get_args());
+    }
+
+    final public static function all()
+    {
+        return self::getLaramieQueryBuilder('get');
+    }
+
+    final public static function get()
+    {
+        return self::getLaramieQueryBuilder('get');
+    }
+
+    final public static function paginate(int $resultsPerPage = 15)
+    {
+        return self::getLaramieQueryBuilder('paginate', func_get_args());
+    }
+
+    final public static function first()
+    {
+        return self::getLaramieQueryBuilder('first');
+    }
+
+    final public static function firstOrFail()
+    {
+        return self::getLaramieQueryBuilder('firstOrFail');
+    }
+
+    final public static function find($id, $maxPrefetchDepth = 5)
+    {
+        return self::getLaramieQueryBuilder('find', func_get_args());
+    }
+
+    final public static function findSuperficial($id)
+    {
+        return self::getLaramieQueryBuilder('findSuperficial', func_get_args());
+    }
+
+    final public static function findOrFail($id, $maxPrefetchDepth = 5)
+    {
+        return self::getLaramieQueryBuilder('findOrFail', func_get_args());
+    }
+
+    final public static function count(string $columns = '*')
+    {
+        return self::getLaramieQueryBuilder('count', func_get_args());
+    }
+
+    final public static function min(string $column)
+    {
+        return self::getLaramieQueryBuilder('min', func_get_args());
+    }
+
+    final public static function max(string $column)
+    {
+        return self::getLaramieQueryBuilder('max', func_get_args());
+    }
+
+    final public static function sum(string $column)
+    {
+        return self::getLaramieQueryBuilder('sum', func_get_args());
+    }
+
+    final public static function avg(string $column)
+    {
+        return self::getLaramieQueryBuilder('avg', func_get_args());
+    }
+
+    final public static function average(string $column)
+    {
+        return self::avg();
+    }
+
+    // Save new item and return instance
+    final public static function create(array $attributes, $validate = true)
+    {
+        $item = self::load($attributes);
+
+        return self::getLaramieQueryBuilder('save', [$item, $validate]);
+    }
+
+    public function save($validate = true)
+    {
+        return self::getLaramieQueryBuilder('save', [$this, $validate]);
+    }
+
+    public function update(array $attributes = [], $validate = true)
+    {
+        foreach ($attributes as $key => $value) {
+            data_set($this, $key, $value);
+        }
+
+        return $this->save($validate);
+    }
+
+    public function delete($isDeleteHistory = false)
+    {
+        return self::getLaramieQueryBuilder('deleteById', [$this->id, $isDeleteHistory]);
+    }
+
+    final public static function newModelInstance(array $attributes = [])
+    {
+        return new static();
+    }
+
+    final public static function destroy($ids, $isDeleteHistory)
+    {
+        $ids = is_array($ids) ? $ids : [$ids];
+
+        foreach ($ids as $id) {
+            return self::getLaramieQueryBuilder('deleteById', [$this->id, $isDeleteHistory]);
+        }
+    }
+
+    public function getComments()
+    {
+        return self::getLaramieQueryBuilder('getComments', [$this->id]);
+    }
+
+    public function getTags()
+    {
+        return self::getLaramieQueryBuilder('getTags', [$this->id]);
+    }
+
+    public function addTag($tag)
+    {
+        // @todo -- case where id is null (or item is new)
+        return self::getLaramieQueryBuilder('addTag', [$this->id, $tag]);
+    }
+
+
+    public function addComment($comment)
+    {
+        // @todo -- case where id is null (or item is new)
+        return self::getLaramieQueryBuilder('addComment', [$this->id, $comment]);
+    }
+
+    /**
+     * Get the name of the model's json counterpart. Naming convention is
+     * assumed camelCase in JSON. Can be explicitly defined by providing
+     * `$jsonClass` override.
+     *
+     * @return string $jsonClass name
+     */
+    final public static function getJsonClass()
+    {
+        $tmp = new static();
+
+        if ($tmp->jsonClass) {
+            return $tmp->jsonClass;
+        }
+
+        return lcfirst(class_basename(get_called_class())); // `class_basename` is a Laravel Helper
     }
 }

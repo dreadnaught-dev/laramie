@@ -25,7 +25,7 @@ class LaramieHelpers
             $qs[$key] = $value;
         }
         $qs = collect($qs)
-            ->filter(function($item){ return $item && gettype($item) != 'array'; }) // exclude `bulk-action-ids`
+            ->filter(function ($item) { return $item && gettype($item) != 'array'; }) // exclude `bulk-action-ids`
             ->map(function ($value, $key) use ($curSort, $curSortDirection) {
                 $kvp = "$key=$value";
                 if ($key == 'sort') {
@@ -77,6 +77,7 @@ class LaramieHelpers
                 if (is_array($value)) {
                     return implode(', ', $value);
                 }
+
                 return $value;
             case 'color':
                 return sprintf('<span style="color:%s">%s</span>', $value, $value);
