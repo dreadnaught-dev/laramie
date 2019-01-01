@@ -890,31 +890,36 @@ class LaramieDataService
         $model = $this->getModelByKey($model);
         $item = $this->findByIdSuperficial($model, $id);
 
-        if (Uuid::isValid($id)) {
-            \DB::beginTransaction();
-            try {
-                event(new PreDelete($model, $item, $this->getUser()));
-
-                if ($isDeleteHistory) {
-                    DB::table('laramie_data_archive')
-                        ->where('laramie_data_id', $id)
-                        ->delete();
-                } else {
-                    DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [Uuid::uuid1()->toString(), $id]);
-                }
-
-                DB::table('laramie_data')
-                    ->where('id', $id)
-                    ->delete();
-
-                event(new PostDelete($model, $item, $this->getUser()));
-
-                DB::commit();
-            } catch (\Exception $e) {
-                DB::rollBack();
-                throw $e;
-            }
+        if (!Uuid::isValid($id)) {
+            return false;
         }
+
+        \DB::beginTransaction();
+
+        try {
+            event(new PreDelete($model, $item, $this->getUser()));
+
+            if ($isDeleteHistory) {
+                DB::table('laramie_data_archive')
+                    ->where('laramie_data_id', $id)
+                    ->delete();
+            } else {
+                DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [Uuid::uuid1()->toString(), $id]);
+            }
+
+            DB::table('laramie_data')
+                ->where('id', $id)
+                ->delete();
+
+            event(new PostDelete($model, $item, $this->getUser()));
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
+        return true;
     }
 
     public function cloneById($id)

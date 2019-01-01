@@ -246,8 +246,8 @@ class LaramieQueryBuilder
 
     public function find($id, $maxPrefetchDepth = 5)
     {
-        return $this->dataService
-            ->findById($this->callingClass::getJsonClass(), $id, $maxPrefetchDepth);
+        return $this->callingClass::rehydrate($this->dataService
+            ->findById($this->callingClass::getJsonClass(), $id, $maxPrefetchDepth));
     }
 
     public function findOrFail($id, $maxPrefetchDepth = 5)
@@ -262,8 +262,8 @@ class LaramieQueryBuilder
 
     public function findSuperficial($id)
     {
-        return $this->dataService
-            ->findByIdSuperficial($this->callingClass::getJsonClass(), $id);
+        return $this->callingClass::rehydrate($this->dataService
+            ->findByIdSuperficial($this->callingClass::getJsonClass(), $id));
     }
 
     public function deleteById($id, $isDeleteHistory = false)
@@ -274,8 +274,8 @@ class LaramieQueryBuilder
 
     public function save(LaramieModel $item, $validate = true)
     {
-        return $this->dataService
-            ->save($this->callingClass::getJsonClass(), $item, $validate);
+        return $this->callingClass::rehydrate($this->dataService
+            ->save($this->callingClass::getJsonClass(), $item, $validate));
     }
 
     // Allow updating of json data via query (may touch deeply-nested data as long as it's not computed, a reference field, or a repeatable aggregate (jsonb_set doesn't have decent facility for mass updating array data)
