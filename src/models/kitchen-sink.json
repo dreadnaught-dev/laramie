@@ -99,7 +99,7 @@
                             "type": "text"
                         }
                     },
-                    "isRepeatable": "true",
+                    "isRepeatable": true,
                     "type": "aggregate"
                 },
                 "title": {
