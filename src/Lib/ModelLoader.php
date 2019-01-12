@@ -3,6 +3,7 @@
 namespace Laramie\Lib;
 
 use Laramie\Events\LoadModel;
+use Laramie\Events\AugmentModelValidator;
 use JsonSchema\Validator;
 use Exception;
 
@@ -203,6 +204,9 @@ class ModelLoader
 
             $validator = new Validator();
             $modelValidator = json_decode(file_get_contents(__DIR__.'/../model-validator.json'));
+
+            event(new AugmentModelValidator($modelValidator));
+
             $baseFieldValidator = object_get($modelValidator, 'fields._base');
 
             $errors = [];
