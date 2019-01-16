@@ -28,6 +28,10 @@ class LaramieListener
             'Laramie\Listeners\LaramieListener@preList'
         );
         $events->listen(
+            'Laramie\Events\PostList',
+            'Laramie\Listeners\LaramieListener@postList'
+        );
+        $events->listen(
             'Laramie\Events\PreEdit',
             'Laramie\Listeners\LaramieListener@preEdit'
         );
@@ -83,6 +87,51 @@ class LaramieListener
                     throw new Exception('You do not have access.');
                 }
                 break;
+        }
+    }
+
+    /**
+     * Handle post-list event.
+     *
+     * @param $event Laramie\Events\PostList
+     */
+    public function postList($event)
+    {
+        $model = $event->model;
+        $items = $event->items;
+        $user = $event->user;
+        $options = $event->options;
+
+        $listFields = array_get($options, 'listFields');
+
+        // At the moment $items is expected to be a lengthAwarePaginator, but it could be plain collection as well -- @todo adjust the code that modifies the results
+        $ids = collect($items->items())
+            ->map(function ($item) {
+                return $item->id;
+            })
+            ->all();
+
+        $dataService = $this->getLaramieDataService();
+
+        $systemMetaFields = [
+            '_versions' => function() use($dataService, $ids) { return $dataService->getNumVersions($ids); },
+            '_comments' => function() use($dataService, $ids) { return $dataService->getNumComments($ids); },
+            '_tags' => function() use($dataService, $ids) { return $dataService->getNumTags($ids); },
+        ];
+
+        foreach ($systemMetaFields as $metaField => $countGeneratorCallback) {
+            $counts = null;
+            $map = [];
+            if (array_get($listFields, $metaField)) {
+                $counts = $countGeneratorCallback();
+                foreach ($counts as $count) {
+                    $map[$count->laramie_data_id] = $count;
+                }
+                foreach ($items as $item) {
+                    $count = array_get($map, $item->id, null);
+                    $item->{$metaField} = str_replace('{*count*}', object_get($count, 'count', 0), $item->{$metaField});
+                }
+            }
         }
     }
 
@@ -191,7 +240,7 @@ class LaramieListener
                 // Have "all" matching records been selected? Great. But limit to `max_csv_records` just in case there are too many records
                 $isAllSelected = array_get($postData, 'bulk-action-all-selected') === '1';
                 if ($isAllSelected) {
-                    $postData['results-per-page'] = config('laramie.max_csv_records');
+                    $postData['resultsPerPage'] = config('laramie.max_csv_records');
                 } else {
                     $itemIds = collect(array_get($postData, 'bulk-action-ids', []))
                         ->filter(function ($item) {
@@ -396,4 +445,5 @@ class LaramieListener
     {
         return app(LaramieDataService::class);
     }
+
 }

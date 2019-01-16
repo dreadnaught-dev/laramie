@@ -124,41 +124,25 @@ class AdminController extends Controller
             return $this->redirectToSingularEdit($model);
         }
 
-        // A user may have saved preferences for hiding / showing fields. Load those and ensure that if they exist they're a subset of the fields on the model.
-        // The user's model prefs may include things like which columns to show, etc
-        $userPrefs = $this->dataService->getUserPrefs();
-        $userUuid = $this->dataService->getUserUuid();
-
         $filters = $this->getFilters($options);
 
         $options['filters'] = $filters;
-        $options['quick-search'] = $request->get('quick-search');
+        $options['quickSearch'] = $request->get('quick-search');
+        $options['sortDirection'] = $request->get('sort-direction');
 
-        $models = $this->dataService->findByType($model, $options);
-
-        $listableFields = $this->getListableFields($model, (object) object_get($userPrefs, $modelKey.'.listFields', []));
+        // A user may have saved preferences for hiding / showing fields. Load those and ensure that if they exist they're a subset of the fields on the model.
+        // The user's model prefs may include things like which columns to show, etc
+        $userPrefs = $this->dataService->getUserPrefs();
 
         $reports = $this->dataService->getUserReportsForModel($model);
 
+        $listableFields = $this->getListableFields($model, (object) object_get($userPrefs, $modelKey.'.listFields', []));
+
         $listFields = $this->getListedFields($listableFields);
 
-        $ids = collect($models->items())
-            ->map(function ($item) {
-                return $item->id;
-            })
-            ->all();
+        $options['listFields'] = $listFields; // passing this so we have context in the post list event
 
-        if (array_get($listFields, '_versions')) {
-            $this->setMeta('_versions', $models, $ids);
-        }
-
-        if (array_get($listFields, '_comments')) {
-            $this->setMeta('_comments', $models, $ids);
-        }
-
-        if (array_get($listFields, '_tags')) {
-            $this->setMeta('_tags', $models, $ids);
-        }
+        $models = $this->dataService->findByType($model, $options);
 
         return view('laramie::list-page')
             ->with('model', $model)
@@ -180,33 +164,6 @@ class AdminController extends Controller
         }
 
         return redirect()->to($redirectUrl);
-    }
-
-    private function setMeta($type, &$models, $ids)
-    {
-        $tmp = null;
-        $map = [];
-
-        switch ($type) {
-            case '_versions':
-                $tmp = $this->dataService->getNumVersions($ids);
-                break;
-            case '_tags':
-                $tmp = $this->dataService->getNumTags($ids);
-                break;
-            case '_comments':
-                $tmp = $this->dataService->getNumComments($ids);
-                break;
-        }
-
-        foreach ($tmp as $item) {
-            $map[$item->laramie_data_id] = $item;
-        }
-
-        foreach ($models as $model) {
-            $item = array_get($map, $model->id, null);
-            $model->{$type} = str_replace('{*count*}', object_get($item, 'count', 0), $model->{$type});
-        }
     }
 
     /**
@@ -388,14 +345,15 @@ class AdminController extends Controller
         $reportModel = $this->dataService->getModelByKey('LaramieSavedReport');
 
         // Delete reports with the same name by the same user for the same model
-        $tmp = collect($this->dataService->findByType($reportModel, ['results-per-page' => 0], function ($query) use ($model, $reportName, $userUuid) {
+        // @TODO -- move this out of the controller
+        $tmp = collect($this->dataService->findByType($reportModel, ['resultsPerPage' => 0], function ($query) use ($model, $reportName, $userUuid) {
             $query->where(DB::raw('data->>\'user\''), $userUuid)
                 ->where(DB::raw('data->>\'relatedModel\''), $model->_type)
                 ->where(DB::raw('data->>\'name\''), $reportName);
         }))
-            ->each(function ($e) {
-                $this->dataService->deleteById($modelKey, $e->id, true);
-            });
+        ->each(function ($e) {
+            $this->dataService->deleteById($modelKey, $e->id, true);
+        });
 
         $filterString = collect($request->all())
             ->except(['page', 'report-name', '_token'])

@@ -14,6 +14,7 @@ use Laramie\Events\PostSave;
 use Laramie\Events\PreDelete;
 use Laramie\Events\PostDelete;
 use Laramie\Events\PreList;
+use Laramie\Events\PostList;
 use JsonSchema\Validator;
 
 class LaramieDataService
@@ -83,7 +84,7 @@ class LaramieDataService
 
     public function findTypeByTag($model, $tag)
     {
-        return $this->findByType($model, ['results-per-page' => 0], function ($query) use ($tag) {
+        return $this->findByType($model, ['resultsPerPage' => 0], function ($query) use ($tag) {
             $query->whereRaw(DB::raw('(select 1 from laramie_data_meta ldm where ldm.laramie_data_id = laramie_data.id and ldm.type ilike ? and data->>\'text\' ilike ? limit 1) = 1'), ['tag', $tag]);
         });
     }
@@ -96,7 +97,7 @@ class LaramieDataService
 
         $query = $this->getBaseQuery($model);
         $query = $this->augmentListQuery($query, $model, $options, $queryCallback);
-        $resultsPerPage = array_get($options, 'results-per-page', 15);
+        $resultsPerPage = array_get($options, 'resultsPerPage', 15);
         $laramieModels = LaramieModel::load($resultsPerPage === 0 ? $query->get() : $query->paginate($resultsPerPage));
 
         // If we're not running in the console, whitelist qs params we need to be appended to pagination links
@@ -110,6 +111,12 @@ class LaramieDataService
         }
 
         $this->prefetchRelationships($model, $laramieModels, $maxPrefetchDepth, $curDepth);
+
+        if ($curDepth == 0
+            && array_get($options, 'postList', true) !== false)
+        {
+            event(new PostList($model, $laramieModels, $this->getUser(), $options));
+        }
 
         return $laramieModels;
     }
@@ -184,7 +191,7 @@ class LaramieDataService
             ->all();
 
         $sort = array_get($options, 'sort', $model->defaultSort);
-        $sortDirection = array_get($options, 'sort-direction', $model->defaultSortDirection);
+        $sortDirection = array_get($options, 'sortDirection', $model->defaultSortDirection);
         if ($sort) {
             if (in_array($sort, array_keys($computedFields))
                 || in_array($sort, ['id', 'created_at', 'updated_at'])
@@ -196,10 +203,10 @@ class LaramieDataService
                 $query->orderByRaw(DB::raw('(data #>> \'{'.$sort.',timestamp}\')::integer '.$timestampSort));
             } elseif (in_array($sort, array_keys($markdownFields))) {
                 // Sort markdown fields by inner markdown
-                $query->orderBy(DB::raw('(data #>> \'{"'.$sort.'","markdown"}\')'), array_get($options, 'sort-direction', 'asc'));
+                $query->orderBy(DB::raw('(data #>> \'{"'.$sort.'","markdown"}\')'), array_get($options, 'sortDirection', 'asc'));
             } elseif (object_get($model->fields, $sort)) {
                 // Otherwise, check to see if the sort is part one of the model's dynamic fields:
-                $query->orderBy(DB::raw('data #>> \'{"'.$sort.'"}\''), array_get($options, 'sort-direction', 'asc'));
+                $query->orderBy(DB::raw('data #>> \'{"'.$sort.'"}\''), array_get($options, 'sortDirection', 'asc'));
             }
         }
 
@@ -253,7 +260,7 @@ class LaramieDataService
             }
         }
 
-        $quickSearch = array_get($options, 'quick-search');
+        $quickSearch = array_get($options, 'quickSearch');
         $quickSearchFields = object_get($model, 'quickSearch');
         if ($quickSearch && $quickSearchFields) {
             $quickSearchFields = collect($quickSearchFields)
@@ -319,7 +326,7 @@ class LaramieDataService
         $modelKey = $model->_type;
         $userUuid = $this->getUserUuid();
 
-        return $this->findByType($this->getModelByKey('LaramieSavedReport'), ['results-per-page' => 0], function ($query) use ($modelKey, $userUuid) {
+        return $this->findByType($this->getModelByKey('LaramieSavedReport'), ['resultsPerPage' => 0, 'postList' => false], function ($query) use ($modelKey, $userUuid) {
             $query->where(DB::raw('data->>\'relatedModel\''), $modelKey)
                 ->where(function ($query) use ($userUuid) {
                     $query->where(DB::raw('data->>\'user\''), $userUuid)
@@ -365,7 +372,7 @@ class LaramieDataService
                 $relatedModels = $this->findByType(
                     $this->getModelByKey($modelKey),
                     [
-                        'results-per-page' => 0,
+                        'resultsPerPage' => 0,
                         'preList' => false,
                     ],
                     function ($query) use ($uuidList) {

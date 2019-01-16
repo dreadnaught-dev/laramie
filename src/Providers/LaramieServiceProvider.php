@@ -59,7 +59,7 @@ class LaramieServiceProvider extends ServiceProvider
             $view->with('systemUsers',
                 collect(app(LaramieDataService::class)->findByType(
                     'LaramieUser',
-                    ['results-per-page' => 0],
+                    ['resultsPerPage' => 0, 'postList' => false],
                     function ($query) {
                         $query->where(\DB::raw('data->>\'status\''), '=', 'Active');
                     },
@@ -74,7 +74,7 @@ class LaramieServiceProvider extends ServiceProvider
             $service = app(LaramieDataService::class);
             $alerts = $service->findByType(
                     'LaramieAlert',
-                    ['results-per-page' => 0],
+                    ['resultsPerPage' => 0, 'postList' => false],
                     function ($query) use ($service) {
                         $query->where(\DB::raw('data->>\'recipient\''), '=', $service->getUserUuid())
                             ->where(\DB::raw('data->>\'status\''), '=', 'Unread');

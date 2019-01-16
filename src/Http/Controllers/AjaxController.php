@@ -55,7 +55,7 @@ class AjaxController extends Controller
 
         $paginator = $this->dataService->findByType(
             $model,
-            ['results-per-page' => 10],
+            ['resultsPerPage' => 10],
             function ($query) use ($uuidCollection, $keywords, $model, $lookupSubtype, $itemId) {
                 // Never show the item being edited. Is there ever a need for an item to be its own parent? None that I
                 // can think of

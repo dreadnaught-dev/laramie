@@ -22,7 +22,7 @@ class LaramieQueryBuilder
 
     private $searchOptions = [
         'preList' => false,
-        'results-per-page' => 0,
+        'resultsPerPage' => 0,
     ];
 
     public function __construct($callingClass)
@@ -224,7 +224,7 @@ class LaramieQueryBuilder
 
     public function paginate(int $resultsPerPage = 15)
     {
-        $this->searchOptions['results-per-page'] = max(0, $resultsPerPage);
+        $this->searchOptions['resultsPerPage'] = max(0, $resultsPerPage);
 
         return $this->get();
     }
