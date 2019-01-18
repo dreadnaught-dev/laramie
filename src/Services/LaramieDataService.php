@@ -294,7 +294,7 @@ class LaramieDataService
             $field = '(select string_agg(ldm.data->>\'markdown\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
         } elseif ($modelField->type == 'aggregate') {
             // Aggregate fields aren't eligible to take part in filters --
-            // if a fitler is needed on an aggreate, a computed field should
+            // if a fitler is needed on an aggregate, a computed field should
             // be created to selecte the aggregate property that can then be
             // listed/searched be searched.
             return null;
@@ -595,7 +595,7 @@ class LaramieDataService
         // Recursively dive into aggregate fields defined on the model (e.g.,
         // aggregate1 -> aggregate2 -> aggregate3 -> ...) `spiderAggregatesHelper`
         // is slightly different. It finds reference fields within aggregates and
-        // hydrantes them (which in turn is a recursive process).
+        // hydrates them (which in turn is a recursive process).
         foreach ($aggregateFields as $aggregateKey => $aggregateField) {
             $tmpData = object_get($item, $aggregateKey);
             $tmpData = ($tmpData && is_array($tmpData)) ? $tmpData : [$tmpData];
@@ -931,7 +931,10 @@ class LaramieDataService
 
     public function cloneById($id)
     {
-        DB::statement('insert into laramie_data (id, user_id, type, data, created_at, updated_at) select ?, ?, type, data, now(), now() from laramie_data where id = ?', [Uuid::uuid1()->toString(), $this->getUser()->id, $id]);
+        $newId = Uuid::uuid1()->toString();
+        DB::statement('insert into laramie_data (id, user_id, type, data, created_at, updated_at) select ?, ?, type, data, now(), now() from laramie_data where id = ?', [$newId, $this->getUser()->id, $id]);
+
+        return $newId;
     }
 
     public function saveFile($file, $isPublic)

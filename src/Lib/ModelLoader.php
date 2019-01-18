@@ -527,7 +527,9 @@ class ModelLoader
 
         $fieldCollection
             ->filter(function ($e, $k) {
-                if (in_array($e->type, ['computed'])) {
+                // Don't try to validate computed fields
+                // Don't try to validate hidden fields -- they can be any type (including objects, etc (useful for allowing modules to create dynamic fields as necessary)).
+                if (in_array($e->type, ['computed', 'hidden'])) {
                     return false;
                 }
 
@@ -572,9 +574,6 @@ class ModelLoader
                 if (is_numeric(object_get($field, 'max'))) {
                     $validationType->maximum = object_get($field, 'max');
                 }
-                break;
-            case 'hidden': // hidden fields can be any type: string, int, null, etc
-                $validationType = (object) ['type' => ['string', 'boolean', 'number', 'integer', 'null']];
                 break;
             case 'integer':
                 $validationType = (object) ['type' => 'integer'];

@@ -173,10 +173,7 @@ class AjaxController extends Controller
     public function addComment($modelKey, $id, Request $request)
     {
         // After saving, return a list of comments to repopulate comments holder.
-        $this->dataService->createComment($id, (object) [
-            'html' => LaramieHelpers::markdownToHtml($request->get('meta')),
-            'markdown' => $request->get('meta'),
-        ]);
+        $this->dataService->createComment($id, LaramieHelpers::getLaramieMarkdownObjectFromRawText($request->get('meta')));
 
         return $this->getMeta($modelKey, $id);
     }

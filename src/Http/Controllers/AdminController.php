@@ -568,7 +568,7 @@ class AdminController extends Controller
                 return null;
 
             case 'markdown':
-                return (object) ['markdown' => $value, 'html' => LaramieHelpers::markdownToHtml($value)];
+                return LaramieHelpers::getLaramieMarkdownObjectFromRawText($value);
 
             case 'password':
                 if ($request->get('_'.$fieldName)) {

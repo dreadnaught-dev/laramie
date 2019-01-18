@@ -261,4 +261,9 @@ class LaramieHelpers
     {
         return (object) ['encryptedValue' => $plaintextPassword ? \Hash::make($plaintextPassword) : null];
     }
+
+    public static function getLaramieMarkdownObjectFromRawText($rawText)
+    {
+        return (object) ['markdown' => $rawText, 'html' => self::markdownToHtml($rawText)];
+    }
 }
