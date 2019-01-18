@@ -380,7 +380,7 @@ class AdminController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getEdit($modelKey, $id, Request $request)
+    public function getEdit(Request $request, $modelKey, $id)
     {
         $model = $this->dataService->getModelByKey($modelKey);
 
@@ -417,19 +417,33 @@ class AdminController extends Controller
          * the ability to dynamically alter the model that will be edited based on
          * the injected arguments.
          */
-        event(new PreEdit($model, $item, $this->dataService->getUser()));
+        $user = $this->dataService->getUser();
 
-        return view('laramie::edit-page')
+        $sidebars = [
+            'laramie::partials.edit.save-box' => ['item' => $item, 'user' => $user, 'lastUserToUpdate' => $lastUserToUpdate],
+            'laramie::partials.edit.meta-box' => ['user' => $user],
+        ];
+
+        if (count($revisions) > 0) {
+            $sidebars['laramie::partials.edit.revisions-box'] = ['item' => $item, 'revisions' => $revisions, 'model' => $model, 'user' => $user, 'lastEditor' => $lastEditor];
+        }
+
+        event(new PreEdit($model, $item, $user));
+
+        return view($this->getEditView())
             ->with('model', $model)
             ->with('modelKey', $modelKey)
             ->with('item', $item)
             ->with('metaId', $metaId)
             ->with('selectedTab', $selectedTab)
             ->with('errorMessages', $errorMessages)
-            ->with('lastUserToUpdate', $lastUserToUpdate)
-            ->with('user', $this->dataService->getUser())
-            ->with('lastEditor', $lastEditor)
-            ->with('revisions', $revisions);
+            ->with('user', $user)
+            ->with('sidebars', $sidebars);
+    }
+
+    protected function getEditView()
+    {
+        return 'laramie::edit-page';
     }
 
     /**
@@ -790,8 +804,8 @@ class AdminController extends Controller
                 case 'computed':
                 case 'password':
                     break;
-                case 'aggregate':
-                    // Aggregates pose a bit of a challenge -- we could recurse into them... but doing a diff on their json encoded data is easier. I'm fine with that for now.
+                case 'aggregate': // Aggregates pose a bit of a challenge -- we could recurse into them... but doing a diff on their json encoded data is easier. I'm fine with that for now.
+                case 'hidden': // Hidden fields can literally be anything (including objects, etc), so we're going to handle the same way we handle aggregates for now.
                     $diff = $differ->render(json_encode(object_get($previousItem, $key, '{}'), JSON_PRETTY_PRINT), json_encode(object_get($item, $key, '{}'), JSON_PRETTY_PRINT));
                     break;
                 case 'file':
