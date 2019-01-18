@@ -1,4 +1,4 @@
-<aside class="menu">
+<aside class="menu" style="width: 200px;">
     <p class="menu-label">Content Types</p>
     <ul class="menu-list">
         @php

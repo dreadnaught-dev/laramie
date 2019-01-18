@@ -26,7 +26,7 @@
     <section class="content-wrapper section">
         <div class="container is-fluid">
             <div class="columns">
-                <div class="column is-2 is-hidden-touch">
+                <div class="column is-narrow is-hidden-touch">
                     @include('laramie::partials.left-nav')
                 </div>
                 @yield('content')

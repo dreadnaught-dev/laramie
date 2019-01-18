@@ -20,17 +20,13 @@
         @endif
 
         @if ($aggregateDepth == 1)
-            @push('scripts')
-                <script>
-                    window.globals.aggregates = window.globals.aggregates || {};
-                    window.globals.aggregates['{{ $aggregateField->_fieldName }}'] = {!! json_encode(object_get($item, $fieldKey, $isRepeatable ? [] : (object) [])) !!};
-                </script>
-            @endpush
+            <script>
+                window.globals.aggregates = window.globals.aggregates || {};
+                window.globals.aggregates['{{ $aggregateField->_fieldName }}'] = {!! json_encode(object_get($item, $fieldKey, $isRepeatable ? [] : (object) [])) !!};
+            </script>
         @endif
 
-        @push('scripts')
         <script id="{{ $field->_template }}" type="text/x-handlebars-template">
-
             <div class="media field">
                 @if ($isRepeatable)
                     <figure class="media-left">
@@ -52,9 +48,7 @@
                     </figure>
                 @endif
             </div>
-
         </script>
-        @endpush
     </div>
 </div>
 
