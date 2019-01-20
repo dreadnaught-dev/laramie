@@ -19,12 +19,14 @@ $(window).scroll(function() {
 $(document).ready(function() {
   loadHandlebarsTemplates();
 
-  $("#edit-form")
+  $(".edit-container")
     .find(".aggregate-holder")
     .each(function() {
+      var itemId = $(this).closest('.edit-container').data('itemId');
       var $holder = $(this);
-      var itemData = objectGet(window, "globals.aggregates", {});
+      var itemData = objectGet(window, "globals.aggregates." + itemId, {});
       loadAggregateFields($holder, itemData);
+      $.event.trigger("aggregates-loaded");
     });
 
   // Update wysiwyg editors (needed for those inside aggregates -- the linked

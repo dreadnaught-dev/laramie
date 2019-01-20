@@ -1,4 +1,4 @@
-<form id="edit-form" class="{{ $selectedTab !== '_main' ? 'has-tab-selected' : '' }}" action="{{ url()->full() }}" method="post" enctype="multipart/form-data">
+<form id="edit-form" class="edit-container {{ $selectedTab !== '_main' ? 'has-tab-selected' : '' }}" action="{{ url()->full() }}" method="post" enctype="multipart/form-data" data-item-id="{{ $item->id ?: 'new' }}">
     {{ csrf_field() }}
     <input type="hidden" name="_metaId" value="{{ $metaId }}">
     <input type="hidden" name="_selectedTab" value="{{ $selectedTab }}">

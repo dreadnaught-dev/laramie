@@ -22,7 +22,8 @@
         @if ($aggregateDepth == 1)
             <script>
                 window.globals.aggregates = window.globals.aggregates || {};
-                window.globals.aggregates['{{ $aggregateField->_fieldName }}'] = {!! json_encode(object_get($item, $fieldKey, $isRepeatable ? [] : (object) [])) !!};
+                window.globals.aggregates['{{ $item->id ?: 'new' }}'] = window.globals.aggregates['{{ $item->id ?: 'new' }}'] || {};
+                window.globals.aggregates['{{ $item->id ?: 'new' }}']['{{ $aggregateField->_fieldName }}'] = {!! json_encode(object_get($item, $fieldKey, $isRepeatable ? [] : (object) [])) !!};
             </script>
         @endif
 
