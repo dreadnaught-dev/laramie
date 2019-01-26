@@ -4,8 +4,6 @@
     <input type="hidden" name="_selectedTab" value="{{ $selectedTab }}">
     <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;" tabindex="-1" />
 
-    @include('laramie::partials.alert')
-
     @php
         $tabbedAggregates = collect(object_get($model, 'fields', []))->filter(function($item){ return $item->isEditable && $item->type == 'aggregate' && object_get($item, 'asTab', false); });
         $hasTabs = count($tabbedAggregates) > 0;

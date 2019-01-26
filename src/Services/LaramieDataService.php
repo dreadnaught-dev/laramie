@@ -562,7 +562,7 @@ class LaramieDataService
         }
 
         if (!Uuid::isValid($id)) {
-            throw new Exception('Id must be a valid UUID');
+            throw new Exception('Id must be a valid UUID ' . $id);
         }
 
         $query = $this->getBaseQuery($model)

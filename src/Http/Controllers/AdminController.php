@@ -380,7 +380,7 @@ class AdminController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getEdit(Request $request, $modelKey, $id)
+    public function getEdit(Request $request, $modelKey, $id, array $extraInfoToPassToEvents = [])
     {
         $model = $this->dataService->getModelByKey($modelKey);
 
@@ -428,7 +428,11 @@ class AdminController extends Controller
             $sidebars['laramie::partials.edit.revisions-box'] = ['item' => $item, 'revisions' => $revisions, 'model' => $model, 'user' => $user, 'lastEditor' => $lastEditor];
         }
 
-        event(new PreEdit($model, $item, $user));
+        $extraInfoToPassToEvents = (object) $extraInfoToPassToEvents;
+
+        $extraInfoToPassToEvents->sidebars = $sidebars;
+
+        event(new PreEdit($model, $item, $user, $extraInfoToPassToEvents));
 
         return view($this->getEditView())
             ->with('model', $model)
@@ -438,7 +442,7 @@ class AdminController extends Controller
             ->with('selectedTab', $selectedTab)
             ->with('errorMessages', $errorMessages)
             ->with('user', $user)
-            ->with('sidebars', $sidebars);
+            ->with('sidebars', data_get($extraInfoToPassToEvents, 'sidebars', []));
     }
 
     protected function getEditView()
@@ -452,7 +456,7 @@ class AdminController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function postEdit($modelKey, $id, Request $request)
+    public function postEdit(Request $request, $modelKey, $id)
     {
         $model = $this->dataService->getModelByKey($modelKey);
         $item = $this->dataService->findById($model, $id);
@@ -509,6 +513,8 @@ class AdminController extends Controller
             $redirectRouteParams['is-child'] = 1;
         }
 
+        $previousUrl = url()->previous();
+
         if (!$success) {
             $alert = (object) ['class' => 'is-danger', 'title' => 'Awww snap! That didn\'t work', 'alert' => sprintf('There was an error saving the %s. Please review the form, address all errors, and try again.', $model->name)];
             if (is_array($errors) && array_key_exists('schemaError', $errors)) {
@@ -516,7 +522,7 @@ class AdminController extends Controller
             }
 
             return redirect()
-                ->route('laramie::edit', $redirectRouteParams)
+                ->to($previousUrl)
                 ->with('item', $item)
                 ->with('alert', $alert)
                 ->with('metaId', $metaId)
@@ -528,10 +534,12 @@ class AdminController extends Controller
         if ($isNew) {
             // Update meta that may have been created to point to this new item:
             $this->dataService->updateMetaIds($metaId, $item->id);
+            $redirectRouteParams['id'] = $item->id;
+            $previousUrl = preg_replace('/\/new\b/', '/'.$item->id, $previousUrl);
         }
 
         return redirect()
-            ->route('laramie::edit', $redirectRouteParams)
+            ->to($previousUrl)
             ->with('selectedTab', $selectedTab)
             ->with('alert', (object) [
                 'title' => 'Success!',
@@ -682,7 +690,6 @@ class AdminController extends Controller
                 // Recursively dive back in.
                 foreach ($itemPrefixes as $prefix) {
                     $tmp = preg_replace('/[_]+$/', '', $prefix);
-                    //var_dump(substr($tmp, strrpos(preg_replace('/[_]+$/', '', $prefix), '_'); die();
                     $oldKey = substr($tmp, strrpos($tmp, '_') + 1);
                     $item = (object) ['_key' => $oldKey];
                     foreach ($field->fields as $subfieldName => $subfield) {

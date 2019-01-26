@@ -16,7 +16,7 @@
 
     @include('laramie::handlebars.reference-options')
 
-    <div class="modal">
+    <div id="revisions-modal" class="modal">
         <div class="modal-background"></div>
         <div class="modal-card">
             <header class="modal-card-head">
@@ -25,6 +25,22 @@
             </header>
             <div id="revision-diff" class="modal-card-body">
                 <p>Loading...</p>
+            </div>
+            <footer class="modal-card-foot">
+                <a class="button js-hide-modal">Close</a>
+            </footer>
+        </div>
+    </div>
+
+    <div id="markdown-preview-modal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title">Markdown Preview</p>
+                <button class="delete js-hide-modal" onclick="return false;"></button>
+            </header>
+            <div class="modal-card-body">
+                <div class="content">Loading...</div>
             </div>
             <footer class="modal-card-foot">
                 <a class="button js-hide-modal">Close</a>

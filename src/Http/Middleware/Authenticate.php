@@ -81,18 +81,6 @@ class Authenticate
                     }
                 }
 
-                // Collect all non-system models (non-core models, like LaramieUser, etc). We'll be checking the user's
-                // access to each.
-                $nonSystemModels = collect($laramieDataService->getAllModels())
-                    ->filter(function ($e) {
-                        return !object_get($e, 'isSystemModel');
-                    })
-                    ->sortBy(function ($e) {
-                        return $e->namePlural;
-                    })
-                    ->keys()
-                    ->all();
-
                 $userRoles = object_get($user, 'role', []);
                 $abilities = [];
                 $isSuperAdmin = false;
@@ -105,17 +93,15 @@ class Authenticate
                         // Don't dive deeper if the user is an admin or super admin -- both have access to all non system models (see [Authorize.md](Authorize.md).
                         continue;
                     }
-                    foreach ($nonSystemModels as $modelType) {
-                        if (object_get($role, $modelType, false) === true) {
-                            // Add the model as an "ability" if the user has access
-                            $abilities[] = $modelType;
-                        }
-                    }
+                    // The `data` attribute contains the abilities the particular role has been granted
+                    collect(json_decode(data_get($role->toArray(), 'data')))
+                        ->filter(function($item) { return $item === true; })
+                        ->each(function($item, $key) use(&$abilities) { $abilities[$key] = true; });
                 }
 
                 $user->isSuperAdmin = $isSuperAdmin;
                 $user->isAdmin = $isAdmin;
-                $user->abilities = $abilities;
+                $user->abilities = array_keys($abilities);
 
                 // Save all the above processing to the user's session so we don't have to do it on every request
                 $request->session()->put('_laramie', $user);

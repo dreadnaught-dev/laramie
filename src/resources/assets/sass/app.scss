@@ -236,6 +236,13 @@ thead .fa-sort {
 #edit-form.has-tab-selected > .aggregate-outer-wrapper:not(.is-active) {
     display:none;
 }
+.edit-sidebar .card {
+    @media screen and (min-width: $tablet), print {
+        max-width: 350px;
+    }
+}
+
+
 .tabs.is-toggle li a.is-danger {
     color: $white;
     background-color: lighten($danger, 10%);
@@ -329,4 +336,11 @@ thead .fa-sort {
     }
 }
 
-trix-toolbar .icon { display:block; }
+trix-toolbar {
+    .icon {
+        display:block;
+    }
+    .trix-button-row {
+        flex-wrap: wrap !important;
+    }
+}

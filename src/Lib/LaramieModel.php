@@ -34,7 +34,8 @@ class LaramieModel
 
     protected static $dataService = null;
 
-    protected $protectedFields = ['id' => 1, 'user_id' => 1, 'type' => 1, 'data' => 1, 'created_at' => 1, 'updated_at' => 1];
+    protected $tableFields = ['id' => 1, 'user_id' => 1, 'type' => 1, 'data' => 1, 'created_at' => 1, 'updated_at' => 1];
+    protected $excludeAttributesOnSave = ['jsonClass' => 1, 'tableFields' => 1, 'excludeAttributesOnSave' => 1];
     protected $jsonClass = null;
 
     /**
@@ -143,7 +144,7 @@ class LaramieModel
             foreach ($tmp as $key => $value) {
                 $this->{$key} = $value;
                 // Don't overwrite protected fields with values from JSON data.
-                if (array_key_exists($key, $this->protectedFields)) {
+                if (array_key_exists($key, $this->tableFields)) {
                     continue;
                 }
             }
@@ -166,9 +167,9 @@ class LaramieModel
         $modelData = [];
         $jsonData = [];
         foreach ($properties as $key => $value) {
-            if (array_key_exists($key, $this->protectedFields)) {
+            if (array_key_exists($key, $this->tableFields)) {
                 $modelData[$key] = $value;
-            } elseif (strpos($key, '_') === 0) {
+            } elseif (strpos($key, '_') === 0 || array_key_exists($key, $this->excludeAttributesOnSave)) {
                 // Skip fields that start with an underscore
                 continue;
             } else {

@@ -130,6 +130,10 @@ $(document).ready(function() {
     ".markdown",
     debounce(function() {
       var $textarea = $(this);
+      // determine if the markdown preview is visible; if not, don't do anything
+      if (!$textarea.closest('.columns').find('.markdown-html').is(':visible')) {
+        return;
+      }
       $.post(globals.adminUrl + "/ajax/markdown", { markdown: $textarea.val() }, function(data) {
         $textarea
           .closest(".columns")
@@ -139,16 +143,37 @@ $(document).ready(function() {
     }, 300)
   );
 
+  $(document).on(
+    "click.preview-markdown",
+    ".js-preview-markdown",
+    function(e) {
+      var $modal = $("#markdown-preview-modal")
+        .find('.content')
+          .html('Loading...')
+          .end()
+        .toggleClass("is-active");
+
+      var $textarea = $(e.target)
+        .closest('.columns')
+        .find('textarea');
+
+      $.post(globals.adminUrl + "/ajax/markdown", { markdown: $textarea.val() }, function(data) {
+          $modal
+            .find('.content')
+            .html(data.html);
+      });
+  });
+
   $(".js-compare-revisions").on("click", function() {
     $("#revision-diff").html("Loading...");
-    $(".modal").toggleClass("is-active");
+    $("#revisions-modal").toggleClass("is-active");
     $.event.trigger("modal-change");
     $("#revision-diff").load($(this).attr("href"));
     return false;
   });
 
   $(".js-hide-modal").on("click", function() {
-    $(".modal").toggleClass("is-active", false);
+    $(".modal.is-active").toggleClass("is-active", false);
     $.event.trigger("modal-change");
   });
 
