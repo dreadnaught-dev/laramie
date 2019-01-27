@@ -9,13 +9,6 @@
                 @include('laramie::partials.alert')
 
                 @include('laramie::partials.edit.edit-form')
-
-                @if ($item->_isUpdate)
-                    <form id="delete-form" action="{{ route('laramie::delete-item', ['modelKey' => $model->_type, 'id' => $item->id]) }}" method="POST" style="display: none;">
-                        <input type="hidden" name="_method" value="DELETE">
-                        {{ csrf_field() }}
-                    </form>
-                @endif
             </div>
             <div class="column is-narrow edit-sidebar">
                 @foreach ($sidebars as $sidebar => $data)

@@ -51,6 +51,13 @@
     @include('laramie::handlebars.meta-tags-comments')
 
     {!! object_get($model, 'editJs', '') !!}
+
+    @if ($item->_isUpdate)
+        <form id="delete-form" action="{{ route('laramie::delete-item', ['modelKey' => $model->_type, 'id' => $item->id]) }}" method="POST" style="display: none;">
+            <input type="hidden" name="_method" value="DELETE">
+            {{ csrf_field() }}
+        </form>
+    @endif
 @endpush
 
 @section('content')
