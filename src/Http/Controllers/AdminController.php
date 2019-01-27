@@ -465,8 +465,6 @@ class AdminController extends Controller
 
         $isNew = $item->_isNew;
 
-        event(new PreEdit($model, $item, $this->dataService->getUser()));
-
         // Load item with new values _before_ validation. If there are errors, flash updated item and redirect.
         foreach ($model->fields as $fieldName => $field) {
             $item->{$fieldName} = $this->updateField($field);

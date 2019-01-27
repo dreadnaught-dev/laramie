@@ -2,7 +2,7 @@
 
 namespace Laramie\Lib;
 
-use Laramie\Events\LoadModel;
+use Laramie\Events\ConfigLoaded;
 use Laramie\Events\AugmentModelValidator;
 use JsonSchema\Validator;
 use Exception;
@@ -104,8 +104,6 @@ class ModelLoader
                         $fields->{$tmpKey} = json_decode(file_get_contents($fieldPath));
                     }
                 }
-
-                event(new LoadModel($model));
 
                 // Set some required name attributes (although they're not necessarily required by the JSON schema)
                 list($singularName, $pluralName) = static::getPrettyNamesFromKey($key);
@@ -232,6 +230,8 @@ class ModelLoader
                 \Log::error(implode("\n", $errors));
                 throw new Exception($errorString);
             }
+
+            event(new ConfigLoaded($config));
 
             // Save the processed config to storage so we don't have to that processing on every request.
             file_put_contents($cachedConfigPath, json_encode($config, JSON_PRETTY_PRINT));

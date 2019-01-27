@@ -24,6 +24,10 @@ class LaramieListener
     public function subscribe($events)
     {
         $events->listen(
+            'Laramie\Events\ConfigLoaded',
+            'Laramie\Listeners\LaramieListener@configLoaded'
+        );
+        $events->listen(
             'Laramie\Events\PreList',
             'Laramie\Listeners\LaramieListener@preList'
         );
@@ -51,6 +55,31 @@ class LaramieListener
             'Laramie\Events\PreDelete',
             'Laramie\Listeners\LaramieListener@preDelete'
         );
+    }
+
+    /**
+     * Handle config-loaded event
+     *
+     * @param $event Laramie\Events\ConfigLoaded
+     */
+    public function configLoaded($event)
+    {
+        $config = $event->config;
+
+        $laramieRoleModel = object_get($config, 'models.LaramieRole');
+
+        $nonSystemModels = collect($config->models)
+            ->filter(function ($e) {
+                return !object_get($e, 'isSystemModel');
+            })
+            ->sortBy(function ($e) {
+                return $e->namePlural;
+            });
+
+        foreach ($nonSystemModels as $nonSystemModel) {
+            $showName = object_get($nonSystemModel, 'isSingular', false) ? $nonSystemModel->name : $nonSystemModel->namePlural;
+            $laramieRoleModel->fields->{$nonSystemModel->_type} = ModelLoader::processField($nonSystemModel->_type, (object) ['type' => 'boolean', 'label' => 'Can manage '.$showName]);
+        }
     }
 
     /**
@@ -151,22 +180,9 @@ class LaramieListener
 
         switch ($type) {
             case 'LaramieRole':
+                // Don't allow main system rles to be edited
                 if (in_array($item->id, [Globals::SuperAdminRoleId, Globals::AdminRoleId])) {
                     throw new Exception('Sorry, you may not edit default system roles (Super admin and User management.');
-                } else {
-                    // Not a system role, dynamically add fields to the model for each model type.
-                    $dataService = $this->getLaramieDataService();
-                    $nonSystemModels = collect($dataService->getAllModels())
-                        ->filter(function ($e) {
-                            return !object_get($e, 'isSystemModel');
-                        })
-                        ->sortBy(function ($e) {
-                            return $e->namePlural;
-                        })
-                        ->each(function ($e) use ($model, $dataService) {
-                            $showName = object_get($e, 'isSingular', false) ? $e->name : $e->namePlural;
-                            $model->fields->{$e->_type} = ModelLoader::processField($e->_type, (object) ['type' => 'boolean', 'label' => 'Can manage '.$showName]);
-                        });
                 }
                 break;
             case 'LaramieUser':

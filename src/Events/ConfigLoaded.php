@@ -2,12 +2,12 @@
 
 namespace Laramie\Events;
 
-class LoadModel
+class ConfigLoaded
 {
-    public $model;
+    public $config;
 
     /**
-     * Create a new LoadModel event instance. Listeners **must** be synchronous.
+     * Create a new ConfigLoaded event instance. Listeners **must** be synchronous.
      *
      * This event is fired from `Laramie\Lib\ModelLoader` for each model
      * while building the cached model json. It can be used to dynamically
@@ -15,8 +15,8 @@ class LoadModel
      *
      * @param stdClass $model JSON-decoded model definition (from laramie-models.json, etc).
      */
-    public function __construct($model)
+    public function __construct($config)
     {
-        $this->model = $model;
+        $this->config = $config;
     }
 }
