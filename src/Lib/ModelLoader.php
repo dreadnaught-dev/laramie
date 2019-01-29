@@ -171,7 +171,7 @@ class ModelLoader
                 if (config('laramie.disable_meta') !== true && object_get($model, 'disableMeta', false) !== true) {
                     //$fields->_version = (object) ['type' => 'computed', 'label' => 'Version', 'sql' => '(select (count(*) + 1) from laramie_data_archive as lda where lda.laramie_data_id = laramie_data.id)', 'listByDefault' => false, 'weight' => 920];
                     // @optimize -- can we dynamically add a sort-by that hooks into the query to allow sorting? Maybe at list-level.
-                    $fields->_versions = (object) ['type' => 'computed', 'isMetaField' => true, 'label' => 'Versions', 'sql' => '(select \'{*count*}\')', 'listByDefault' => false, 'sortBy' => null, 'weight' => 920];
+                    $fields->_versions = (object) ['type' => 'computed', 'isMetaField' => true, 'label' => 'Versions', 'sql' => '(select \'{*count*}\')', 'listByDefault' => false, 'isSearchable' => false, 'sortBy' => null, 'weight' => 920];
                     $fields->_tags = (object) ['type' => 'computed', 'isMetaField' => true, 'label' => 'Tags', 'sql' => '(select \'<span class="js-meta" data-meta-type="tags"><i class="fas fa-tags has-text-grey"></i>&nbsp;<span class="tag-count">{*count*}</span></span>\')', 'listByDefault' => false, 'sortBy' => null, 'weight' => 930];
                     $fields->_comments = (object) ['type' => 'computed', 'isMetaField' => true, 'label' => 'Comments', 'sql' => '(select \'<span class="js-meta" data-meta-type="comments"><i class="far fa-comments has-text-grey"></i>&nbsp;<span class="comment-count">{*count*}</span></span>\')', 'listByDefault' => false, 'sortBy' => null, 'weight' => 940];
                 }
@@ -400,6 +400,7 @@ class ModelLoader
                 break;
             case 'password':
                 $field->isListable = object_get($field, 'isListable') === true; // password fields _can_ be listable, but will only show asterisks
+                $field->isSearchable = false;
                 break;
             case 'aggregate':
                 if (object_get($field, 'isListable') === true) {

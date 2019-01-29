@@ -20,10 +20,11 @@ class PreList
      * @param Illuminate\Database\Query\Builder $query the query that will be used to fetch db instances of the `$model`
      * @param Laramie\Lib\LaramieModel          $user  laramie's version of the logged in user
      */
-    public function __construct($model, $query, $user)
+    public function __construct($model, $query, $user, &$options)
     {
         $this->model = $model;
         $this->query = $query;
         $this->user = $user;
+        $this->options = $options;
     }
 }

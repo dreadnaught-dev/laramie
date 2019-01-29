@@ -14,7 +14,7 @@
         @endif
     </label>
 
-    <div class="aggregate-holder padded content" data-type="{{ $field->_fieldName }}" data-template="{{ $field->_template }}" data-is-repeatable="{{ $field->isRepeatable ? '1' : '0' }}" data-min-items="{{ object_get($field, 'minItems') }}" data-max-items="{{ object_get($field, 'maxItems') }}" data-empty-message="No {{ $aggregateField->labelPlural }} added yet">
+    <div class="aggregate-holder padded content" data-type="{{ $field->_fieldName }}" data-template="{{ $metaId . $field->_template }}" data-is-repeatable="{{ $field->isRepeatable ? '1' : '0' }}" data-min-items="{{ object_get($field, 'minItems') }}" data-max-items="{{ object_get($field, 'maxItems') }}" data-empty-message="No {{ $aggregateField->labelPlural }} added yet">
         @if ($isRepeatable)
             <?php /*<p>No {{ $aggregateField->labelPlural }} added yet</p>*/ ?>
         @endif
@@ -27,7 +27,7 @@
             </script>
         @endif
 
-        <script id="{{ $field->_template }}" type="text/x-handlebars-template">
+        <script id="{{ $metaId . $field->_template }}" type="text/x-handlebars-template">
             <div class="media field">
                 @if ($isRepeatable)
                     <figure class="media-left">

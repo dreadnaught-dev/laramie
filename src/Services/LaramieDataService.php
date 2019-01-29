@@ -161,14 +161,18 @@ class LaramieDataService
             $queryCallback($query);
         }
 
+        $options = (object) $options;
+
         /*
          * Fire pre-list event: listeners MUST be synchronous. This event enables
          * the ability to dynamically change the query that retrieves items based
          * on the injected arguments.
          */
         if (array_get($options, 'preList', true) !== false) {
-            event(new PreList($model, $query, $this->getUser()));
+            event(new PreList($model, $query, $this->getUser(), $options));
         }
+
+        $options = (array) $options;
 
         $fieldCollection = collect($model->fields);
 
@@ -212,7 +216,10 @@ class LaramieDataService
 
         $filters = array_get($options, 'filters', []);
         foreach ($filters as $filter) {
-            $field = $this->getSearchSqlFromFieldName($model, $filter->field);
+            // @TODO -- document that one can specify custom sql to search a field by via adding a `sql` attribute to the filter in `PreList`
+            $field = object_get($filter, 'sql')
+                ? $filter->sql
+                : $this->getSearchSqlFromFieldName($model, $filter->field);
 
             if (!$field) {
                 continue; // aggregate fields will return null and may not be searched against currently
@@ -288,9 +295,9 @@ class LaramieDataService
 
         $modelField = object_get($model->fields, $field);
 
-        if ($field == '_tag') {
+        if ($field == '_tags') {
             $field = '(select string_agg(ldm.data->>\'text\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
-        } elseif ($field == '_comment') {
+        } elseif ($field == '_comments') {
             $field = '(select string_agg(ldm.data->>\'markdown\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
         } elseif ($modelField->type == 'aggregate') {
             // Aggregate fields aren't eligible to take part in filters --

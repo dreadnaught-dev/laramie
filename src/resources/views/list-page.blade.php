@@ -9,10 +9,16 @@
         ->filter(function($e){
             return $e->isListable
                 && !object_get($e, 'isMetaField', false)
-                && object_get($e, 'type') !== 'password';
+                && object_get($e, 'isSearchable') !== false;
         })
-        ->sortBy('label')
-        ->all();
+        ->sortBy('label');
+
+    $metaFields = collect($model->fields)
+        ->filter(function($e){
+            return object_get($e, 'isMetaField')
+                && object_get($e, 'isSearchable') !== false;
+        })
+        ->sortBy('label');
 @endphp
 
 
@@ -37,10 +43,13 @@
                                         <option value="{{ $key }}" {{ object_get($model, 'alias') == $key ? 'selected' : '' }}>{{ $field->label }}</option>
                                     @endforeach
                                 </optgroup>
-                                <optgroup label="Meta">
-                                    <option value="_comment">Comments</option>
-                                    <option value="_tag">Tags</option>
-                                </optgroup>
+                                @if ($metaFields->count() > 0)
+                                    <optgroup label="Meta">
+                                        @foreach ($metaFields as $key => $field)
+                                            <option value="{{ $key }}" {{ object_get($model, 'alias') == $key ? 'selected' : '' }}>{{ $field->label }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endif
                             </select>
                         </div>
                     </div>

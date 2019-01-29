@@ -434,6 +434,10 @@ class AdminController extends Controller
 
         event(new PreEdit($model, $item, $user, $extraInfoToPassToEvents));
 
+        if (object_get($extraInfoToPassToEvents, 'response')) {
+            return $extraInfoToPassToEvents->response;
+        }
+
         return view($this->getEditView())
             ->with('model', $model)
             ->with('modelKey', $modelKey)

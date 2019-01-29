@@ -68,6 +68,7 @@
                 "validation": { "type": "string" },
                 "isEditable": { "type": "boolean" },
                 "isListable": { "type": "boolean" },
+                "isSearchable": { "type": "boolean" },
                 "sortBy": { "type": "string" },
                 "sortBy": {
                     "oneOf": [

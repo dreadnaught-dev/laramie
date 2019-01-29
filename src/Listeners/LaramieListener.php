@@ -133,12 +133,11 @@ class LaramieListener
 
         $listFields = array_get($options, 'listFields');
 
-        // At the moment $items is expected to be a lengthAwarePaginator, but it could be plain collection as well -- @todo adjust the code that modifies the results
-        $ids = collect($items->items())
-            ->map(function ($item) {
-                return $item->id;
-            })
-            ->all();
+        $ids = [];
+
+        foreach ($items as $item) {
+            $ids[] = $item->id;
+        }
 
         $dataService = $this->getLaramieDataService();
 
