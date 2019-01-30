@@ -416,17 +416,27 @@ class LaramieDataService
 
     public function getMetaInformation($modelName)
     {
-        $meta = (object) [];
-        $meta->count = DB::table('laramie_data')
-            ->where('type', $modelName)
-            ->count();
+        $model = $this->getModelByKey($modelName);
 
-        $lastRecord = DB::table('laramie_data as ld')
-            ->leftJoin('laramie_data as ld2', 'ld.user_id', '=', 'ld2.id')
-            ->where('ld.type', $modelName)
-            ->orderBy('ld.updated_at', 'desc')
-            ->select(['ld.updated_at', DB::raw('ld2.data->>\'user\' as user')])
+        // Create the base query
+        $query = DB::table('laramie_data')
+            ->where('type', $model->_type);
+
+        $this->augmentListQuery($query, $model, ['isMetaRequest' => true, 'sort' => null]);
+
+        $meta = (object) [];
+        $meta->count = $query->count();
+
+        $lastRecord = $query->orderBy('updated_at', 'desc')
+            ->select(['updated_at', 'user_id'])
             ->first();
+
+        if ($lastRecord) {
+            $lastRecord->user = object_get(DB::table('laramie_data')
+                ->where('id', $lastRecord->user_id)
+                ->select([DB::raw('data->>\'user\' as user')])
+                ->first(), 'user');
+        }
 
         $meta->user = object_get($lastRecord, 'user');
         $meta->updatedAt = object_get($lastRecord, 'updated_at');
