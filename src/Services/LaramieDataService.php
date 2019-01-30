@@ -168,7 +168,7 @@ class LaramieDataService
          * the ability to dynamically change the query that retrieves items based
          * on the injected arguments.
          */
-        if (array_get($options, 'preList', true) !== false) {
+        if (object_get($options, 'preList', true) !== false) {
             event(new PreList($model, $query, $this->getUser(), $options));
         }
 

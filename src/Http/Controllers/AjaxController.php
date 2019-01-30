@@ -44,8 +44,8 @@ class AjaxController extends Controller
                 return $item && Uuid::isValid($item);
             });
 
-        // `$itemId` refers to the id of the item being edited (may be null).
-        $itemId = $request->get('itemId');
+        // `$outerItemId` refers to the id of the item being edited (may be null).
+        $outerItemId = $request->get('itemId');
 
         // `$keywords` is the search string.
         $keywords = $request->get('keywords');
@@ -55,11 +55,16 @@ class AjaxController extends Controller
 
         $paginator = $this->dataService->findByType(
             $model,
-            ['resultsPerPage' => 10],
-            function ($query) use ($uuidCollection, $keywords, $model, $lookupSubtype, $itemId) {
-                // Never show the item being edited. Is there ever a need for an item to be its own parent? None that I
-                // can think of
-                $query->where('id', '!=', $itemId);
+            [
+                'outerModelType' => $modelKey,
+                'innerModelType' => $listModelKey,
+                'outerItemId' => $outerItemId,
+                'resultsPerPage' => 10,
+                'isFromAjaxController' => true,
+            ],
+            function ($query) use ($uuidCollection, $keywords, $model, $lookupSubtype, $outerItemId) {
+                // Never show the item being edited.
+                $query->where('id', '!=', $outerItemId);
 
                 // If there are selected items, add them to the top of the query results (so they don't get lost when
                 // searching -- it could be confusing).
