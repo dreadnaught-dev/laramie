@@ -506,6 +506,10 @@ function loadAggregateFieldsHelper(data, $newItem) {
   for (var inputKey in data) {
     var inputValue = data[inputKey];
 
+    if (inputValue === null) {
+      continue;
+    }
+
     var $wrapper = $newItem.find('[data-field-key="'+inputKey+'"]');
 
     switch ($wrapper.data('fieldType')) {

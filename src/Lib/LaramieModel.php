@@ -182,7 +182,7 @@ class LaramieModel
         return $modelData;
     }
 
-    final protected static function getLaramieQueryBuilder($functionToInvoke, $arguments = [])
+    protected static function getLaramieQueryBuilder($functionToInvoke, $arguments = [])
     {
         $builder = new LaramieQueryBuilder(new static());
 
