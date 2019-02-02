@@ -14,7 +14,7 @@ class LaramieHelpers
      *
      * @return string Augmented URL
      */
-    public function getCurrentUrlWIthModifiedQS(array $qsParts)
+    public function getCurrentUrlWithModifiedQS(array $qsParts)
     {
         $qs = request()->all();
         $curSort = array_get($qs, 'sort', array_get($qsParts, 'sort'));

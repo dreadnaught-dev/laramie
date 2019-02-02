@@ -195,157 +195,157 @@ class LaramieModel
      */
     final public static function where($column, string $operator = null, $value = null, string $boolean = 'and')
     {
-        return self::getLaramieQueryBuilder('where', func_get_args());
+        return static::getLaramieQueryBuilder('where', func_get_args());
     }
 
     final public static function whereRaw(string $sql, $bindings = [], string $boolean = 'and')
     {
-        return self::getLaramieQueryBuilder('whereRaw', func_get_args());
+        return static::getLaramieQueryBuilder('whereRaw', func_get_args());
     }
 
     final public static function whereIn(string $column, $values, string $boolean = 'and', bool $not = false)
     {
-        return self::getLaramieQueryBuilder('whereIn', func_get_args());
+        return static::getLaramieQueryBuilder('whereIn', func_get_args());
     }
 
     final public static function whereNotIn(string $column, $values, string $boolean = 'and')
     {
-        return self::getLaramieQueryBuilder('whereNotIn', func_get_args());
+        return static::getLaramieQueryBuilder('whereNotIn', func_get_args());
     }
 
     final public static function whereNull(string $column, string $boolean = 'and', bool $not = false)
     {
-        return self::getLaramieQueryBuilder('whereNull', func_get_args());
+        return static::getLaramieQueryBuilder('whereNull', func_get_args());
     }
 
     final public static function whereNotNull(string $column, string $boolean = 'and')
     {
-        return self::getLaramieQueryBuilder('whereNotNull', func_get_args());
+        return static::getLaramieQueryBuilder('whereNotNull', func_get_args());
     }
 
     final public static function whereTag($tag)
     {
-        return self::getLaramieQueryBuilder('whereTag', [$tag]);
+        return static::getLaramieQueryBuilder('whereTag', [$tag]);
     }
 
     final public static function whereNotTag($tag)
     {
-        return self::getLaramieQueryBuilder('whereNotTag', [$tag]);
+        return static::getLaramieQueryBuilder('whereNotTag', [$tag]);
     }
 
     final public static function orderBy(string $field, string $direction = 'asc')
     {
-        return self::getLaramieQueryBuilder('orderBy', func_get_args());
+        return static::getLaramieQueryBuilder('orderBy', func_get_args());
     }
 
     final public static function orderByDesc(string $field)
     {
-        return self::getLaramieQueryBuilder('orderByDesc', func_get_args());
+        return static::getLaramieQueryBuilder('orderByDesc', func_get_args());
     }
 
     final public static function orderByRaw(string $sql, array $bindings = [])
     {
-        return self::getLaramieQueryBuilder('orderByRaw', func_get_args());
+        return static::getLaramieQueryBuilder('orderByRaw', func_get_args());
     }
 
     final public static function latest(string $column = 'created_at')
     {
-        return self::getLaramieQueryBuilder('latest', func_get_args());
+        return static::getLaramieQueryBuilder('latest', func_get_args());
     }
 
     final public static function oldest(string $column = 'created_at')
     {
-        return self::getLaramieQueryBuilder('oldest', func_get_args());
+        return static::getLaramieQueryBuilder('oldest', func_get_args());
     }
 
     final public static function inRandomOrder(string $seed = '')
     {
-        return self::getLaramieQueryBuilder('orderBy', func_get_args());
+        return static::getLaramieQueryBuilder('orderBy', func_get_args());
     }
 
     final public static function skip(int $val)
     {
-        return self::getLaramieQueryBuilder('skip', func_get_args());
+        return static::getLaramieQueryBuilder('skip', func_get_args());
     }
 
     final public static function offset(int $val)
     {
-        return self::getLaramieQueryBuilder('offset', func_get_args());
+        return static::getLaramieQueryBuilder('offset', func_get_args());
     }
 
     final public static function take(int $val)
     {
-        return self::getLaramieQueryBuilder('take', func_get_args());
+        return static::getLaramieQueryBuilder('take', func_get_args());
     }
 
     final public static function limit(int $val)
     {
-        return self::getLaramieQueryBuilder('limit', func_get_args());
+        return static::getLaramieQueryBuilder('limit', func_get_args());
     }
 
     final public static function all()
     {
-        return self::getLaramieQueryBuilder('get');
+        return static::getLaramieQueryBuilder('get');
     }
 
     final public static function get()
     {
-        return self::getLaramieQueryBuilder('get');
+        return static::getLaramieQueryBuilder('get');
     }
 
     final public static function paginate(int $resultsPerPage = 15)
     {
-        return self::getLaramieQueryBuilder('paginate', func_get_args());
+        return static::getLaramieQueryBuilder('paginate', func_get_args());
     }
 
     final public static function first()
     {
-        return self::getLaramieQueryBuilder('first');
+        return static::getLaramieQueryBuilder('first');
     }
 
     final public static function firstOrFail()
     {
-        return self::getLaramieQueryBuilder('firstOrFail');
+        return static::getLaramieQueryBuilder('firstOrFail');
     }
 
     final public static function find($id, $maxPrefetchDepth = 5)
     {
-        return self::getLaramieQueryBuilder('find', func_get_args());
+        return static::getLaramieQueryBuilder('find', func_get_args());
     }
 
     final public static function findSuperficial($id)
     {
-        return self::getLaramieQueryBuilder('findSuperficial', func_get_args());
+        return static::getLaramieQueryBuilder('findSuperficial', func_get_args());
     }
 
     final public static function findOrFail($id, $maxPrefetchDepth = 5)
     {
-        return self::getLaramieQueryBuilder('findOrFail', func_get_args());
+        return static::getLaramieQueryBuilder('findOrFail', func_get_args());
     }
 
     final public static function count(string $columns = '*')
     {
-        return self::getLaramieQueryBuilder('count', func_get_args());
+        return static::getLaramieQueryBuilder('count', func_get_args());
     }
 
     final public static function min(string $column)
     {
-        return self::getLaramieQueryBuilder('min', func_get_args());
+        return static::getLaramieQueryBuilder('min', func_get_args());
     }
 
     final public static function max(string $column)
     {
-        return self::getLaramieQueryBuilder('max', func_get_args());
+        return static::getLaramieQueryBuilder('max', func_get_args());
     }
 
     final public static function sum(string $column)
     {
-        return self::getLaramieQueryBuilder('sum', func_get_args());
+        return static::getLaramieQueryBuilder('sum', func_get_args());
     }
 
     final public static function avg(string $column)
     {
-        return self::getLaramieQueryBuilder('avg', func_get_args());
+        return static::getLaramieQueryBuilder('avg', func_get_args());
     }
 
     final public static function average(string $column)
@@ -358,12 +358,12 @@ class LaramieModel
     {
         $item = self::load($attributes);
 
-        return self::getLaramieQueryBuilder('save', [$item, $validate]);
+        return static::getLaramieQueryBuilder('save', [$item, $validate]);
     }
 
     public function save($validate = true)
     {
-        return self::getLaramieQueryBuilder('save', [$this, $validate]);
+        return static::getLaramieQueryBuilder('save', [$this, $validate]);
     }
 
     public function update(array $attributes = [], $validate = true)
@@ -377,7 +377,7 @@ class LaramieModel
 
     public function delete($isDeleteHistory = false)
     {
-        return self::getLaramieQueryBuilder('deleteById', [$this->id, $isDeleteHistory]);
+        return static::getLaramieQueryBuilder('deleteById', [$this->id, $isDeleteHistory]);
     }
 
     final public static function newModelInstance(array $attributes = [])
@@ -390,31 +390,31 @@ class LaramieModel
         $ids = is_array($ids) ? $ids : [$ids];
 
         foreach ($ids as $id) {
-            return self::getLaramieQueryBuilder('deleteById', [$this->id, $isDeleteHistory]);
+            return static::getLaramieQueryBuilder('deleteById', [$this->id, $isDeleteHistory]);
         }
     }
 
     public function getComments()
     {
-        return self::getLaramieQueryBuilder('getComments', [$this->id]);
+        return static::getLaramieQueryBuilder('getComments', [$this->id]);
     }
 
     public function getTags()
     {
-        return self::getLaramieQueryBuilder('getTags', [$this->id]);
+        return static::getLaramieQueryBuilder('getTags', [$this->id]);
     }
 
     public function addTag($tag)
     {
         // @todo -- case where id is null (or item is new)
-        return self::getLaramieQueryBuilder('addTag', [$this->id, $tag]);
+        return static::getLaramieQueryBuilder('addTag', [$this->id, $tag]);
     }
 
 
     public function addComment($comment)
     {
         // @todo -- case where id is null (or item is new)
-        return self::getLaramieQueryBuilder('addComment', [$this->id, $comment]);
+        return static::getLaramieQueryBuilder('addComment', [$this->id, $comment]);
     }
 
     /**

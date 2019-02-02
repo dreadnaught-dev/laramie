@@ -20,7 +20,7 @@ class LaramieQueryBuilder
 
     protected $qb;
 
-    private $searchOptions = [
+    protected $searchOptions = [
         'preList' => false,
         'resultsPerPage' => 0,
     ];
@@ -421,7 +421,7 @@ class LaramieQueryBuilder
             : $result;
     }
 
-    private function translateColumn($column, $isWrapInDBRaw = true)
+    protected function translateColumn($column, $isWrapInDBRaw = true)
     {
         if (gettype($column) == 'string') {
             $sql = $this->dataService->getSearchSqlFromFieldName($this->callingClass::getJsonClass(), $column);
