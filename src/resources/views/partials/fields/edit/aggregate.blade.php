@@ -27,29 +27,31 @@
             </script>
         @endif
 
-        <script id="{{ $metaId . $field->_template }}" type="text/x-handlebars-template">
-            <div class="media field">
-                @if ($isRepeatable)
-                    <figure class="media-left">
-                        <span class="icon drag-{{ $field->_fieldName }}">
-                            <i class="fas fa-grip-vertical"></i>
-                        </span>
-                    </figure>
-                @endif
-                <div class="media-content">
-                    @foreach (object_get($aggregateField, 'fields') as $fieldKey => $field)
-                        @if ($field->isEditable)
-                            @includeIfFallback('laramie::partials.fields.edit.'.$field->type, 'laramie::partials.fields.edit.generic')
-                        @endif
-                    @endforeach
+        @push('aggregate-scripts')
+            <script id="{{ $metaId . $field->_template }}" type="text/x-handlebars-template">
+                <div class="media field">
+                    @if ($isRepeatable)
+                        <figure class="media-left">
+                            <span class="icon drag-{{ $field->_fieldName }}">
+                                <i class="fas fa-grip-vertical"></i>
+                            </span>
+                        </figure>
+                    @endif
+                    <div class="media-content">
+                        @foreach (object_get($aggregateField, 'fields') as $fieldKey => $field)
+                            @if ($field->isEditable)
+                                @includeIfFallback('laramie::partials.fields.edit.'.$field->type, 'laramie::partials.fields.edit.generic')
+                            @endif
+                        @endforeach
+                    </div>
+                    @if ($isRepeatable)
+                        <figure class="media-right">
+                            <a class="delete js-remove-aggregate" title="Remove this {{ $aggregateField->label }}"></a>
+                        </figure>
+                    @endif
                 </div>
-                @if ($isRepeatable)
-                    <figure class="media-right">
-                        <a class="delete js-remove-aggregate" title="Remove this {{ $aggregateField->label }}"></a>
-                    </figure>
-                @endif
-            </div>
-        </script>
+            </script>
+        @endpush
     </div>
 </div>
 

@@ -33,5 +33,7 @@
             @includeIfFallback('laramie::partials.fields.edit.'.$field->type, 'laramie::partials.fields.edit.generic')
         @endif
     @endforeach
+
+    @stack('aggregate-scripts')
 </form>
 
