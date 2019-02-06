@@ -185,9 +185,6 @@ class ModelLoader
                 $model->defaultSort = object_get($model, 'defaultSort', '_created_at');
                 $model->defaultSortDirection = object_get($model, 'defaultSortDirection', preg_match('/_at$/', $model->defaultSort) ? 'desc' : 'asc');
 
-                // Set validation schema
-                $model->_jsonValidator = static::getValidationSchema($model);
-
                 // Save the processed model back to the models object
                 $models->{$key} = $model;
             }
@@ -232,6 +229,11 @@ class ModelLoader
             }
 
             event(new ConfigLoaded($config));
+
+            // Add json validation _post_ `ConfigLoaded` event in case fields were dynamically added to models via `ConfigLoaded` event
+            foreach ($models as $model) {
+                $model->_jsonValidator = static::getValidationSchema($model);
+            }
 
             // Save the processed config to storage so we don't have to that processing on every request.
             file_put_contents($cachedConfigPath, json_encode($config, JSON_PRETTY_PRINT));
