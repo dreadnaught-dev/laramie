@@ -97,6 +97,8 @@ class LaramieModel
         $tmp = new static();
         $tmp->fill($data);
 
+        $tmp->hydrated($data);
+
         return $tmp;
     }
 
@@ -108,13 +110,17 @@ class LaramieModel
      *
      * @return static
      */
-    public static function rehydrate(LaramieModel $data)
+    public static function hydrateWithModel(LaramieModel $data)
     {
         $tmp = new static();
         $tmp->fill($data);
 
+        $tmp->hydrated($data);
+
         return $tmp;
     }
+
+    public function hydrated() { }
 
     /**
      * Hydrate `$data` into a LaramieModel -- take json data and hoist its
@@ -308,6 +314,11 @@ class LaramieModel
         return static::getLaramieQueryBuilder('firstOrFail');
     }
 
+    final public static function singular()
+    {
+        return static::getLaramieQueryBuilder('singular');
+    }
+
     final public static function find($id, $maxPrefetchDepth = 5)
     {
         return static::getLaramieQueryBuilder('find', func_get_args());
@@ -415,6 +426,11 @@ class LaramieModel
     {
         // @todo -- case where id is null (or item is new)
         return static::getLaramieQueryBuilder('addComment', [$this->id, $comment]);
+    }
+
+    public function depth($maxPrefetchDepth)
+    {
+        return static::getLaramieQueryBuilder('depth', [$maxPrefetchDepth]);
     }
 
     /**

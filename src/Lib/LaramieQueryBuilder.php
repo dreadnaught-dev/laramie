@@ -25,6 +25,8 @@ class LaramieQueryBuilder
         'resultsPerPage' => 0,
     ];
 
+    protected $maxPrefetchDepth = 5;
+
     public function __construct($callingClass)
     {
         $this->callingClass = $callingClass;
@@ -45,6 +47,13 @@ class LaramieQueryBuilder
                 $query->offset($this->qb->offset);
             }
         };
+    }
+
+    public function depth($maxPrefetchDepth)
+    {
+        $this->maxPrefetchDepth = $maxPrefetchDepth;
+
+        return $this;
     }
 
     public function where($column, string $operator = null, $value = null, string $boolean = 'and')
@@ -206,16 +215,16 @@ class LaramieQueryBuilder
         $callingClass = $this->callingClass;
 
         $results = $this->dataService
-            ->findByType($callingClass::getJsonClass(), $this->searchOptions, $this->queryCallback);
+            ->findByType($callingClass::getJsonClass(), $this->searchOptions, $this->queryCallback, $this->maxPrefetchDepth);
 
         // Convert the LaramieModel results to
         if ($results instanceof LengthAwarePaginator) {
             $results->setCollection(collect(array_map(function ($e) use ($callingClass) {
-                return $callingClass::rehydrate($e);
+                return $callingClass::hydrateWithModel($e);
             }, $results->items())));
         } elseif ($results instanceof Collection) {
             return $results->map(function ($e) use ($callingClass) {
-                return $callingClass::rehydrate($e);
+                return $callingClass::hydrateWithModel($e);
             });
         }
 
@@ -244,15 +253,22 @@ class LaramieQueryBuilder
         return $item;
     }
 
-    public function find($id, $maxPrefetchDepth = 5)
+    public function singular()
     {
-        return $this->callingClass::rehydrate($this->dataService
-            ->findById($this->callingClass::getJsonClass(), $id, $maxPrefetchDepth));
+        $id = $this->dataService->getSingularItemId($this->callingClass::getJsonClass());
+
+        return $this->find($id, $this->maxPrefetchDepth);
     }
 
-    public function findOrFail($id, $maxPrefetchDepth = 5)
+    public function find($id)
     {
-        $item = $this->find($id, $maxPrefetchDepth);
+        return $this->callingClass::hydrateWithModel($this->dataService
+            ->findById($this->callingClass::getJsonClass(), $id, $this->maxPrefetchDepth));
+    }
+
+    public function findOrFail($id)
+    {
+        $item = $this->find($id, $this->maxPrefetchDepth);
         if (!object_get($item, 'id')) {
             throw new Exception('Item not found');
         }
@@ -262,7 +278,7 @@ class LaramieQueryBuilder
 
     public function findSuperficial($id)
     {
-        return $this->callingClass::rehydrate($this->dataService
+        return $this->callingClass::hydrateWithModel($this->dataService
             ->findByIdSuperficial($this->callingClass::getJsonClass(), $id));
     }
 
@@ -274,7 +290,7 @@ class LaramieQueryBuilder
 
     public function save(LaramieModel $item, $validate = true)
     {
-        return $this->callingClass::rehydrate($this->dataService
+        return $this->callingClass::hydrateWithModel($this->dataService
             ->save($this->callingClass::getJsonClass(), $item, $validate));
     }
 
