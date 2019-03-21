@@ -14,7 +14,7 @@ class LaramieHelpers
      *
      * @return string Augmented URL
      */
-    public function getCurrentUrlWithModifiedQS(array $qsParts)
+    public static function getCurrentUrlWithModifiedQS(array $qsParts)
     {
         $qs = request()->all();
         $curSort = array_get($qs, 'sort', array_get($qsParts, 'sort'));
@@ -94,13 +94,13 @@ class LaramieHelpers
             case 'boolean':
                 return $value ? 'yes' : 'no';
             case 'date':
-                return $value ? \Carbon\Carbon::parse($value)->toDateString() : '';
+                return $value ? \Carbon\Carbon::parse($value, config('laramie.timezone'))->toDateString() : '';
             case 'datetime':
             case 'datetime-local':
-                return $value ? \Carbon\Carbon::parse($value)->toDateTimeString() : '';
+                return $value ? \Carbon\Carbon::parse($value, config('laramie.timezone'))->toDateTimeString() : '';
             case 'dateDiff':
                 if ($value) {
-                    return \Carbon\Carbon::parse($value)->diffForHumans();
+                    return \Carbon\Carbon::parse($value, config('laramie.timezone'))->diffForHumans();
                 }
                 // no break
             case 'file':
@@ -142,7 +142,7 @@ class LaramieHelpers
         $comment->_userFirstInitial = strtoupper(substr(object_get($comment, '_user', '?'), 0, 1));
         $comment->_user = $comment->_user ?: 'Unknown';
         $comment->_color = self::getOrdinalColor(ord(strtolower($comment->_userFirstInitial)));
-        $comment->lastModified = \Carbon\Carbon::parse($comment->updated_at)->diffForHumans();
+        $comment->lastModified = \Carbon\Carbon::parse($comment->updated_at, config('laramie.timezone'))->diffForHumans();
 
         return $comment;
     }

@@ -93,6 +93,8 @@ class AjaxController extends Controller
                         $alias = object_get($model, 'fields.'.$model->alias);
                         if ($alias->type == 'computed') {
                             $query->orWhere(\DB::raw($alias->sql), 'ilike', '%'.$keywords.'%');
+                        } elseif ($alias->type == 'markdown') {
+                            $query->orWhere(\DB::raw('data#>>\'{'.$alias->_fieldName.',markdown}\''), 'ilike', '%'.$keywords.'%');
                         } elseif (in_array($alias->type, ['id', 'created_at', 'updated_at'])) {
                             $query->orWhere(\DB::raw($alias->id), 'ilike', '%'.$keywords.'%');
                         } else {
@@ -117,9 +119,16 @@ class AjaxController extends Controller
         // The name only needs to be unique per reference in case it's a radio select (this value isn't being submitted).
         $name = str_random(10);
 
+        $alias = object_get($model, 'fields.'.$model->alias);
+
         $paginator->setCollection($paginator->getCollection()
-            ->map(function ($e) use ($model, $name) {
-                return (object) ['id' => $e->id, 'name' => $name, 'label' => object_get($e, $model->alias), 'selected' => object_get($e, 'selected') == 1];
+            ->map(function ($e) use ($alias, $name) {
+                return (object) [
+                    'id' => $e->id,
+                    'name' => $name,
+                    'label' => LaramieHelpers::formatListValue($alias, object_get($e, $alias->id), true),
+                    'selected' => object_get($e, 'selected') == 1
+                ];
             }));
 
         return $paginator;

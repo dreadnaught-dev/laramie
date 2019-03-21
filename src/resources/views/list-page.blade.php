@@ -7,9 +7,12 @@
 
     $filterableFields = collect($model->fields)
         ->filter(function($e){
-            return $e->isListable
-                && !object_get($e, 'isMetaField', false)
-                && object_get($e, 'isSearchable') !== false;
+            return object_get($e, 'isSearchable') === true
+                || (
+                    $e->isListable
+                    && !object_get($e, 'isMetaField', false)
+                    && object_get($e, 'isSearchable') !== false
+                );
         })
         ->sortBy('label');
 

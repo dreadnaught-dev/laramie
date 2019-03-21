@@ -58,7 +58,7 @@ class LaramieQueryBuilder
 
     public function where($column, string $operator = null, $value = null, string $boolean = 'and')
     {
-        $column = $this->translateColumn($column);
+        $column = $this->translateColumn($column, $operator == null ? $value : $operator);
         $this->qb->where($column, $operator, $value, $boolean);
 
         return $this;
@@ -66,10 +66,7 @@ class LaramieQueryBuilder
 
     public function orWhere($column, string $operator = null, $value = null)
     {
-        $column = $this->translateColumn($column);
-        $this->qb->orWhere($column, $operator, $value);
-
-        return $this;
+        return $this->where($column, $operator, $value, 'or');
     }
 
     public function whereRaw(string $sql, $bindings = [], string $boolean = 'and')
@@ -89,7 +86,7 @@ class LaramieQueryBuilder
     public function whereIn(string $column, $values, string $boolean = 'and', bool $not = false)
     {
         $column = $this->translateColumn($column);
-        $this->qb->whereIn($sql, $bindings, $boolean);
+        $this->qb->whereIn($column, $values, $boolean, $not);
 
         return $this;
     }
@@ -262,6 +259,10 @@ class LaramieQueryBuilder
 
     public function find($id)
     {
+        if (!$id) {
+            return null;
+        }
+
         return $this->callingClass::hydrateWithModel($this->dataService
             ->findById($this->callingClass::getJsonClass(), $id, $this->maxPrefetchDepth));
     }
@@ -425,7 +426,7 @@ class LaramieQueryBuilder
 
     private function castColumnAsNumeric(string $column)
     {
-        return DB::raw('('.$this->translateColumn($column, false).')::numeric');
+        return DB::raw('('.$this->translateColumn($column, null, false).')::numeric');
     }
 
     private function castResultAsNumeric($result)
@@ -437,10 +438,10 @@ class LaramieQueryBuilder
             : $result;
     }
 
-    protected function translateColumn($column, $isWrapInDBRaw = true)
+    protected function translateColumn($column, $value = null, $isWrapInDBRaw = true)
     {
         if (gettype($column) == 'string') {
-            $sql = $this->dataService->getSearchSqlFromFieldName($this->callingClass::getJsonClass(), $column);
+            $sql = $this->dataService->getSearchSqlFromFieldName($this->callingClass::getJsonClass(), $column, $value);
 
             return $isWrapInDBRaw
                 ? DB::raw($sql)

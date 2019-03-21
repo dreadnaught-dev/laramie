@@ -4,6 +4,8 @@ namespace Laramie\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Validator;
+
 use Laramie\Http\Middleware\RequestLogger;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Services\LaramieDataService;
@@ -109,6 +111,15 @@ class LaramieServiceProvider extends ServiceProvider
                 }
             ?>
 EOT;
+        });
+
+        Validator::extend('laramie_image', function ($attribute, $value, $parameters, $validator) {
+            $extension = $value->getClientOriginalExtension();
+            return in_array(strtolower($extension), $parameters);
+        });
+
+        Validator::replacer('laramie_image', function ($message, $attribute, $rule, $parameters) {
+            return 'This must be a file of type:' . implode(', ', $parameters);
         });
     }
 

@@ -366,7 +366,7 @@ class ModelLoader
                     $validationRules[] = 'url';
                     break;
                 case 'image':
-                    $validationRules[] = 'mimes:'.implode(',', config('laramie.allowed_image_types'));
+                    $validationRules[] = 'laramie_image:'.implode(',', config('laramie.allowed_image_types'));
                     break;
             }
         }
@@ -379,11 +379,12 @@ class ModelLoader
             case 'reference-many':
                 if ($field->type == 'reference-many') {
                     $field->subtype = 'many';
+                    $field->sortBy = object_get($field, 'sortBy'); // by default, don't allow sorting of reference fields -- only allow if the user has explicitly specified a sort.
                 } else {
                     $field->subtype = object_get($field, 'subtype', 'single');
+                    $field->sortBy = property_exists($field, 'sortBy') ? $field->sortBy : $fieldName; // Allow a field to specify null as sortBy. If null, that field won't be sortable.
                 }
                 $field->type = 'reference';
-                $field->sortBy = object_get($field, 'sortBy'); // by default, don't allow sorting of reference fields -- only allow if the user has explicitly specified a sort.
                 break;
             case 'file':
             case 'image':

@@ -13,7 +13,7 @@
     </header>
     <div id="revisions-card-content" class="card-content {{ $hideRevisions ? 'is-hidden' : '' }}">
         <div class="revision-item">
-            <span title="by: {{ object_get($lastEditor, 'user', '--') }}">Current <em><small>({{ \Carbon\Carbon::parse($item->updated_at)->toDayDateTimeString() }})</small></em></span>
+            <span title="by: {{ object_get($lastEditor, 'user', '--') }}">Current <em><small>({{ \Carbon\Carbon::parse($item->updated_at, config('laramie.timezone'))->toDayDateTimeString() }})</small></em></span>
             <div>
                 <a href="{{ route('laramie::compare-revisions', ['modelKey' => $model->_type, 'revisionId' => $item->id, 'is-child' => 1]) }}" target="_blank" class="js-compare-revisions">View changes</a>
             </div>
@@ -21,7 +21,7 @@
         @foreach ($revisions as $revision)
             <div class="revision-item {{ $loop->index >= config('laramie.visible_revisions') ? 'show-more' : '' }}">
                 <hr style="margin: .5rem 0;">
-                <i class="fas fa-book" style="line-height: inherit; font-size: inherit"></i>&nbsp;<span title="by: {{ $revision->user }}">{{ \Carbon\Carbon::parse($revision->updated_at)->toDayDateTimeString() }}</span>
+                <i class="fas fa-book" style="line-height: inherit; font-size: inherit"></i>&nbsp;<span title="by: {{ $revision->user }}">{{ \Carbon\Carbon::parse($revision->updated_at, config('laramie.timezone'))->toDayDateTimeString() }}</span>
                 <div>
                     <a href="{{ route('laramie::compare-revisions', ['modelKey' => $model->_type, 'revisionId' => $revision->id, 'is-child' => 1]) }}" target="_blank" class="js-compare-revisions">View changes</a> |
                     <a href="javascript:void(0);" class="js-restore-revision">Restore</a> |

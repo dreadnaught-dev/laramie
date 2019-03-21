@@ -348,7 +348,7 @@ class LaramieListener
                     // @optimize -- move thumb gen to postsave
                     // If the item is an image, create thumbnails (for use by the admin)
                     $storageDisk = config('laramie.storage_disk');
-                    if ($item->extension && in_array($item->extension, config('laramie.allowed_image_types'))) {
+                    if ($item->extension && in_array($item->extension, ['jpeg', 'jpg', 'png', 'gif'])) { // only try to take thumbnails of a subset of allowed image types:
                         $filePath = LaramieHelpers::getLocalFilePath($item);
                         $manager = new ImageManager(['driver' => LaramieHelpers::getInterventionImageDriver()]);
                         $thumbWidths = [50]; // Currently only make one small thumbnail
@@ -378,6 +378,7 @@ class LaramieListener
                         try {
                             Storage::disk('public')->delete($item->path);
                         } catch (Exception $e) { /* don't error if the public version of the file can't be deleted -- may have been manually deleted */
+                            dd($e->getMessage());
                         }
                     }
                 } catch (Exception $e) { /* there was some issue with creating thumbs... don't bork too hard, though */

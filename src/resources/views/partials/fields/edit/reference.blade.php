@@ -31,7 +31,7 @@
             </blockquote>
         </div>
         <div class="columns reference-search" data-type="{{ $model->_type }}" data-lookup-type="{{ $referencedModelKey }}" data-is-single-reference="{{ $isSingleReference ? 1 : 0 }}" style="display:none;">
-            <div class="column is-narrow">
+            <div class="column is-half">
                 <nav class="panel">
                     <p class="panel-heading">
                         {{ $referencedModelNamePlural }}

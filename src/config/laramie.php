@@ -124,4 +124,11 @@ return [
     |--------------------------------------------------------------------------
     */
     'default_bulk_actions' => ['Delete', 'Duplicate', 'Export (to CSV)'],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Timezone - when searching by date, interpret dates to be in this timezone
+    |--------------------------------------------------------------------------
+    */
+    'timezone' => 'America/Chicago',
 ];

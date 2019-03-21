@@ -188,6 +188,12 @@ class LaramieDataService
             })
             ->all();
 
+        $singularReferenceFields = $fieldCollection
+            ->filter(function ($field) {
+                return $field->type == 'reference' && $field->subtype == 'single';
+            })
+            ->all();
+
         $markdownFields = $fieldCollection
             ->filter(function ($field) {
                 return $field->type == 'markdown';
@@ -208,6 +214,13 @@ class LaramieDataService
             } elseif (in_array($sort, array_keys($markdownFields))) {
                 // Sort markdown fields by inner markdown
                 $query->orderBy(DB::raw('(data #>> \'{"'.$sort.'","markdown"}\')'), array_get($options, 'sortDirection', 'asc'));
+            } elseif (in_array($sort, array_keys($singularReferenceFields))) {
+                // Sort singular reference fields by alias of relation
+                $field = array_get($singularReferenceFields, $sort);
+                $relatedModel = $this->getModelByKey($field->relatedModel);
+                $relatedAlias = object_get($relatedModel->fields, $relatedModel->alias);
+                $fieldSql = $relatedAlias->type == 'computed' ? $relatedAlias->sql : sprintf('n2.data->>\'%s\'', $relatedAlias->_fieldName);
+                $query->orderBy(DB::raw('(select '.$fieldSql.' from laramie_data as n2 where (laramie_data.data->>\''.$field->_fieldName.'\')::uuid = n2.id)'), array_get($options, 'sortDirection', 'asc'));
             } elseif (object_get($model->fields, $sort)) {
                 // Otherwise, check to see if the sort is part one of the model's dynamic fields:
                 $query->orderBy(DB::raw('data #>> \'{"'.$sort.'"}\''), array_get($options, 'sortDirection', 'asc'));
@@ -216,17 +229,28 @@ class LaramieDataService
 
         $filters = array_get($options, 'filters', []);
         foreach ($filters as $filter) {
+            $operation = $filter->operation;
+            $value = $filter->value;
+
             // @TODO -- document that one can specify custom sql to search a field by via adding a `sql` attribute to the filter in `PreList`
             $field = object_get($filter, 'sql')
                 ? $filter->sql
-                : $this->getSearchSqlFromFieldName($model, $filter->field);
+                : $this->getSearchSqlFromFieldName($model, $filter->field, $value);
 
             if (!$field) {
                 continue; // aggregate fields will return null and may not be searched against currently
             }
 
-            $operation = $filter->operation;
-            $value = $filter->value;
+            // Check to see if we need to manipulate `$value` for searching (currently limited to date fields):
+            $modelField = object_get($model->fields, $filter->field);
+            if (in_array($filter->field, ['_created_at', '_updated_at'])
+                || in_array(object_get($modelField, 'type'), ['timestamp', 'date', 'datetime-local']))
+            {
+                try {
+                    $value = \Carbon\Carbon::parse($value, config('laramie.timezone'))->timestamp;
+                } catch (Exception $e) { $value = 0; }
+            }
+
             switch ($operation) {
                 case 'contains':
                     $query->where(DB::raw($field), 'ilike', '%'.$value.'%');
@@ -284,7 +308,7 @@ class LaramieDataService
         return $query;
     }
 
-    public function getSearchSqlFromFieldName($model, $field)
+    public function getSearchSqlFromFieldName($model, $field, $value = null)
     {
         $model = $this->getModelByKey($model);
 
@@ -295,7 +319,10 @@ class LaramieDataService
 
         $modelField = object_get($model->fields, $field);
 
-        if ($field == '_tags') {
+        if (in_array($field, ['_created_at', '_updated_at'])) {
+            // If we're searching by created_at or updated_at, the sql we're searching against to unix timestamp values. We'll be doing a similar conversion to the values being searched for.
+            $field = 'date_part(\'epoch\', '.preg_replace('/^_/', '', $field).'::timestamp)::int';
+        } elseif ($field == '_tags') {
             $field = '(select string_agg(ldm.data->>\'text\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
         } elseif ($field == '_comments') {
             $field = '(select string_agg(ldm.data->>\'markdown\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
@@ -307,17 +334,33 @@ class LaramieDataService
             return null;
         } elseif ($modelField->type == 'computed') {
             $field = $modelField->sql;
+        } elseif ($modelField->type == 'timestamp') {
+            $field = '(data #>> \'{start,timestamp}\')::numeric';
+        } elseif (in_array($modelField->type, ['date', 'datetime-local'])) {
+            $field = 'date_part(\'epoch\', (data->>\''.$field.'\')::timestamp)::int';
         } elseif ($modelField->type == 'reference') {
-            $field = 'data->>\''.$field.'\'';
-            $relatedModel = $this->getModelByKey($modelField->relatedModel);
-            $relatedAlias = object_get($relatedModel->fields, $relatedModel->alias);
-            $tmp = $relatedAlias->type == 'computed' ? $relatedAlias->sql : sprintf('data->>\'%s\'', $relatedAlias->_fieldName);
+            // If the value we're searching by is a valid uuid (or collection of uuids), don't try to search by alias
+            if (Uuid::isValid($value)
+                || (collect($value)->every(function($item){ return Uuid::isValid($item); }))
+            )
+            {
+                $field = 'data->>\''.$field.'\'';
+            }
+            else {
+                // If we're searching a reference field by a UUID, don't do the gymnastics of searching by its alias
+                $field = 'data->>\''.$field.'\'';
+                $relatedModel = $this->getModelByKey($modelField->relatedModel);
+                $relatedAlias = object_get($relatedModel->fields, $relatedModel->alias);
 
-            if ($modelField->subtype == 'many') {
-                // @optimize -- this subselect takes a long time for large tables. Change to something like `data->>'field' in (select id::text from laramie_data where type='$relatedType' and data->>'$field' ilike 'keywords%')
-                $field = '(select string_agg('.$tmp.', \'|\') from laramie_data as n2 where n2.id::text in (select * from json_array_elements_text((laramie_data.data->>\''.$modelField->_fieldName.'\')::json)))';
-            } else {
-                $field = '(select string_agg('.$tmp.', \'|\') from laramie_data as n2 where n2.id::text in (laramie_data.data->>\''.$modelField->_fieldName.'\'))';
+                // If the reference's alias is a computed field, modify the SQL, replacing `laramie_data` with `n2`, because we're nesting the subquery
+                $fieldSql = $relatedAlias->type == 'computed' ? preg_replace('/laramie_data\./', 'n2.', $relatedAlias->sql) : sprintf('n2.data->>\'%s\'', $relatedAlias->_fieldName);
+
+                if ($modelField->subtype == 'many') {
+                    // @optimize -- this subselect takes a long time for large tables. Change to something like `data->>'field' in (select id::text from laramie_data where type='$relatedType' and data->>'$field' ilike 'keywords%')
+                    $field = '(select string_agg('.$fieldSql.', \'|\') from laramie_data as n2 where n2.id::text in (select * from json_array_elements_text((laramie_data.data->>\''.$modelField->_fieldName.'\')::json)))';
+                } else {
+                    $field = '(select '.$fieldSql.' from laramie_data as n2 where (laramie_data.data->>\''.$modelField->_fieldName.'\')::uuid = n2.id)';
+                }
             }
         } else {
             $field = 'data->>\''.$field.'\'';
@@ -614,9 +657,9 @@ class LaramieDataService
         // is slightly different. It finds reference fields within aggregates and
         // hydrates them (which in turn is a recursive process).
         foreach ($aggregateFields as $aggregateKey => $aggregateField) {
-            $tmpData = object_get($item, $aggregateKey);
-            $tmpData = ($tmpData && is_array($tmpData)) ? $tmpData : [$tmpData];
-            foreach ($tmpData as $data) {
+            $aggregateData = object_get($item, $aggregateKey);
+            $aggregateData = ($aggregateData && is_array($aggregateData)) ? $aggregateData : [$aggregateData];
+            foreach ($aggregateData as $data) {
                 $this->spiderAggregates($aggregateField, $data);
             }
         }
@@ -823,11 +866,11 @@ class LaramieDataService
 
         $data = clone $laramieModel;
         $data->id = $data->id ?: Uuid::uuid1()->toString();
-        $data->updated_at = \Carbon\Carbon::now()->toDateTimeString();
+        $data->updated_at = \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString();
         if (!object_get($data, '_origId')) {
             // Insert
             $data->type = $model->_type;
-            $data->created_at = object_get($data, 'created_at', \Carbon\Carbon::now()->toDateTimeString());
+            $data->created_at = object_get($data, 'created_at', \Carbon\Carbon::now('laramie.timezone')->toDateTimeString());
         }
 
         // Relation fields are transformed into the id(s) of the items they
@@ -959,6 +1002,16 @@ class LaramieDataService
         $storageDisk = config('laramie.storage_disk');
         $storageDriver = config('filesystems.disks.'.$storageDisk.'.driver');
 
+        // There's an issue with certain file types not getting an extension
+        // set with `$file->store` (namely svg). Instead of relying on
+        // Laravel/Symfony to auto-generate a file name, create one ourselves:
+        $storeAsName = sprintf('%s.%s',
+            preg_replace('/[-]/', '', Uuid::uuid4()->toString()),
+            $file->getExtension()
+                ? $file->getExtension()
+                : $file->getClientOriginalExtension()
+        );
+
         $id = Uuid::uuid1()->toString();
         $laramieUpload = new LaramieModel();
         $laramieUpload->id = $id;
@@ -966,7 +1019,7 @@ class LaramieDataService
         $laramieUpload->name = $file->getClientOriginalName();
         $laramieUpload->extension = $file->getClientOriginalExtension();
         $laramieUpload->mimeType = $file->getClientMimeType();
-        $laramieUpload->path = $file->store('laramie', $storageDisk); // this is our master copy, it should always be private (with the exception of its admin-generated thumbs; we'll make those public if the file is public).
+        $laramieUpload->path = $file->storeAs('laramie', $storeAsName, ['visibility' => 'private', 'disk' => $storageDisk]); // this is our master copy, it should always be private (with the exception of its admin-generated thumbs; we'll make those public if the file is public).
         $laramieUpload->isPublic = $isPublic;
 
         $laramieUpload->fullPath = Storage::disk($storageDisk)->url($laramieUpload->path);
@@ -977,24 +1030,24 @@ class LaramieDataService
         $model = $this->getModelByKey('LaramieUpload');
 
         // Save and get the Laramie model
-        $tmp = $this->save($model, $laramieUpload);
+        $laramieUpload = $this->save($model, $laramieUpload);
 
         // But really, we're only interested in the `data` attribute of the model, so get that:
-        $tmp = $this->getBaseQuery($model)
-            ->where('id', $tmp->id)
+        $laramieUpload = $this->getBaseQuery($model)
+            ->where('id', $laramieUpload->id)
             ->first();
 
-        return json_decode($tmp->data);
+        return json_decode($laramieUpload->data);
     }
 
     public function getFileInfo($id)
     {
         if (Uuid::isValid($id)) {
-            $tmp = $this->getBaseQuery($this->getModelByKey('LaramieUpload'))
+            $laramieUpload = $this->getBaseQuery($this->getModelByKey('LaramieUpload'))
                 ->where('id', $id)
                 ->first();
 
-            return object_get($tmp, 'id') ? json_decode($tmp->data) : null;
+            return object_get($laramieUpload, 'id') ? json_decode($laramieUpload->data) : null;
         }
 
         return null;

@@ -27,7 +27,7 @@
                 if ($meta->updatedAt) {
                     $lastModified = sprintf('<p><small>Last modified by %s on %s</small></p>',
                         $meta->user ?: '??',
-                        \Carbon\Carbon::parse($meta->updatedAt)->toDayDateTimeString());
+                        \Carbon\Carbon::parse($meta->updatedAt, config('laramie.timezone'))->toDayDateTimeString());
                 }
 
                 $numItems = $meta->count . ' ' . str_plural('item', $meta->count);

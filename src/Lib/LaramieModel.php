@@ -113,14 +113,17 @@ class LaramieModel
     public static function hydrateWithModel(LaramieModel $data)
     {
         $tmp = new static();
-        $tmp->fill($data);
+
+        foreach ($data as $key => $value) {
+            $tmp->{$key} = $value;
+        }
 
         $tmp->hydrated($data);
 
         return $tmp;
     }
 
-    public function hydrated() { }
+    public function hydrated($data) { }
 
     /**
      * Hydrate `$data` into a LaramieModel -- take json data and hoist its
@@ -367,14 +370,20 @@ class LaramieModel
     // Save new item and return instance
     final public static function create(array $attributes, $validate = true)
     {
-        $item = self::load($attributes);
+        $item = self::load((object) $attributes);
 
         return static::getLaramieQueryBuilder('save', [$item, $validate]);
     }
 
     public function save($validate = true)
     {
-        return static::getLaramieQueryBuilder('save', [$this, $validate]);
+        $updatedItem = static::getLaramieQueryBuilder('save', [$this, $validate]);
+
+        foreach ($updatedItem as $key => $value) {
+            $this->{$key} = $value;
+        }
+
+        return $this;
     }
 
     public function update(array $attributes = [], $validate = true)
@@ -428,9 +437,14 @@ class LaramieModel
         return static::getLaramieQueryBuilder('addComment', [$this->id, $comment]);
     }
 
-    public function depth($maxPrefetchDepth)
+    public static function depth($maxPrefetchDepth)
     {
         return static::getLaramieQueryBuilder('depth', [$maxPrefetchDepth]);
+    }
+
+    public static function superficial()
+    {
+        return static::depth(0);
     }
 
     /**

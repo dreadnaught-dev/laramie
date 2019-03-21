@@ -390,6 +390,20 @@ class AdminController extends Controller
 
         // If there's an error on the post, `item` will have been flashed to the session
         $item = session('item') ?: $this->dataService->findById($model, $id);
+
+        // If we're editing a new item, check to see if we need to pre-set any of the singular relationships (from QS)
+        if ($item->_isNew && !session('isFromPost')) {
+            $singularRefs = collect($model->fields)
+                ->filter(function($item, $key) use($request) {
+                    return $item->type == 'reference'
+                    && $item->subtype == 'single'
+                    && $request->get($key);
+                });
+            foreach ($singularRefs as $key => $field) {
+                $item->{$key} = $this->dataService->findById($field->relatedModel, $request->get($key));
+            }
+        }
+
         $lastEditor = null;
         $lastEditorId = object_get($item, 'user_id');
         if (Uuid::isValid($lastEditorId)) {
@@ -525,6 +539,7 @@ class AdminController extends Controller
 
             return redirect()
                 ->to($previousUrl)
+                ->with('isFromPost', true)
                 ->with('item', $item)
                 ->with('alert', $alert)
                 ->with('metaId', $metaId)
@@ -770,7 +785,7 @@ class AdminController extends Controller
     {
         $item = $this->dataService->restoreRevision($revisionId);
         $model = $this->dataService->getModelByKey($item->type);
-        $alert = (object) ['class' => 'is-warning', 'title' => 'Revision loaded', 'alert' => sprintf('The revision from %s has been loaded successfully.', \Carbon\Carbon::parse($item->updated_at)->toDayDateTimeString())];
+        $alert = (object) ['class' => 'is-warning', 'title' => 'Revision loaded', 'alert' => sprintf('The revision from %s has been loaded successfully.', \Carbon\Carbon::parse($item->updated_at, config('laramie.timezone'))->toDayDateTimeString())];
 
         return redirect()->route('laramie::edit', ['modelKey' => $model->_type, 'id' => $item->laramie_data_id])
             ->with('alert', $alert);
@@ -870,8 +885,8 @@ class AdminController extends Controller
         }
 
         $hasPrevious = (bool) $previousItem->id;
-        $leftLabel = $hasPrevious ? sprintf('Item from %s', \Carbon\Carbon::parse($previousItem->updated_at)->toDayDateTimeString()) : '--';
-        $rightLabel = sprintf('Item from %s', \Carbon\Carbon::parse($item->updated_at)->toDayDateTimeString());
+        $leftLabel = $hasPrevious ? sprintf('Item from %s', \Carbon\Carbon::parse($previousItem->updated_at, config('laramie.timezone'))->toDayDateTimeString()) : '--';
+        $rightLabel = sprintf('Item from %s', \Carbon\Carbon::parse($item->updated_at, config('laramie.timezone'))->toDayDateTimeString());
 
         return view(request()->ajax() ? 'laramie::partials.revision-comparison-table' : 'laramie::revision-compare')
             ->with('model', $model)
