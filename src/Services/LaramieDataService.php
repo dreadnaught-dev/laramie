@@ -870,7 +870,7 @@ class LaramieDataService
         if (!object_get($data, '_origId')) {
             // Insert
             $data->type = $model->_type;
-            $data->created_at = object_get($data, 'created_at', \Carbon\Carbon::now('laramie.timezone')->toDateTimeString());
+            $data->created_at = object_get($data, 'created_at', \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString());
         }
 
         // Relation fields are transformed into the id(s) of the items they
