@@ -22,12 +22,25 @@ $(document).ready(function() {
   $(".edit-container")
     .find(".aggregate-holder")
     .each(function() {
-      var itemId = $(this).closest('.edit-container').data('itemId');
+      var itemId = $(this)
+        .closest(".edit-container")
+        .data("itemId");
       var $holder = $(this);
       var itemData = objectGet(window, "globals.aggregates." + itemId, {});
       loadAggregateFields($holder, itemData);
+      globals.serializedEditForm = $("#edit-form").serialize();
       $.event.trigger("aggregates-loaded");
     });
+
+  $(window).bind("beforeunload", function() {
+    // If submitting the form, don't prevent unload. Otherwise, check to see if the form has changed when user is navigating away from the page. If yes, alert them
+    if (!globals.isSubmitting && globals.serializedEditForm != $("#edit-form").serialize()) {
+      return "Cancel edit? Any unsaved changes will be lost.";
+    }
+
+    // Form is unchanged. Don't show alert (by returning `undefined`)
+    return undefined;
+  });
 
   // Update wysiwyg editors (needed for those inside aggregates -- the linked
   // hidden field values are updated by `loadAggregateFields`, but the editor's
@@ -131,7 +144,12 @@ $(document).ready(function() {
     debounce(function() {
       var $textarea = $(this);
       // determine if the markdown preview is visible; if not, don't do anything
-      if (!$textarea.closest('.columns').find('.markdown-html').is(':visible')) {
+      if (
+        !$textarea
+          .closest(".columns")
+          .find(".markdown-html")
+          .is(":visible")
+      ) {
         return;
       }
       $.post(globals.adminUrl + "/ajax/markdown", { markdown: $textarea.val() }, function(data) {
@@ -143,25 +161,20 @@ $(document).ready(function() {
     }, 300)
   );
 
-  $(document).on(
-    "click.preview-markdown",
-    ".js-preview-markdown",
-    function(e) {
-      var $modal = $("#markdown-preview-modal")
-        .find('.content')
-          .html('Loading...')
-          .end()
-        .toggleClass("is-active");
+  $(document).on("click.preview-markdown", ".js-preview-markdown", function(e) {
+    var $modal = $("#markdown-preview-modal")
+      .find(".content")
+      .html("Loading...")
+      .end()
+      .toggleClass("is-active");
 
-      var $textarea = $(e.target)
-        .closest('.columns')
-        .find('textarea');
+    var $textarea = $(e.target)
+      .closest(".columns")
+      .find("textarea");
 
-      $.post(globals.adminUrl + "/ajax/markdown", { markdown: $textarea.val() }, function(data) {
-          $modal
-            .find('.content')
-            .html(data.html);
-      });
+    $.post(globals.adminUrl + "/ajax/markdown", { markdown: $textarea.val() }, function(data) {
+      $modal.find(".content").html(data.html);
+    });
   });
 
   $(".js-compare-revisions").on("click", function() {
@@ -288,12 +301,12 @@ $(document).ready(function() {
       .hide();
   });
 
-  $(".js-save").click(function() {
-    $("#edit-form").submit();
+  $("#edit-form").submit(function() {
+    globals.isSubmitting = true;
   });
 
-  $(".js-cancel-edit").click(function() {
-    return confirm("Cancel edit? Any unsaved changes will be lost.");
+  $(".js-save").click(function() {
+    $("#edit-form").submit();
   });
 
   $(".js-delete").click(function() {
@@ -510,10 +523,10 @@ function loadAggregateFieldsHelper(data, $newItem) {
       continue;
     }
 
-    var $wrapper = $newItem.find('[data-field-key="'+inputKey+'"]');
+    var $wrapper = $newItem.find('[data-field-key="' + inputKey + '"]');
 
-    switch ($wrapper.data('fieldType')) {
-      case 'file':
+    switch ($wrapper.data("fieldType")) {
+      case "file":
         $wrapper
           .find("[name$=" + inputKey + "]:checkbox")
           .closest(".file-wrapper")
@@ -533,22 +546,22 @@ function loadAggregateFieldsHelper(data, $newItem) {
           );
         break;
 
-      case 'password':
+      case "password":
         $wrapper
           .find(".password-wrapper")
           .addClass("has-password")
           .find("[name$=" + inputKey + "]:checkbox")
           .prop("checked", true)
           .val(inputValue.encryptedValue);
-          break;
+        break;
 
-      case 'timestamp':
+      case "timestamp":
         $wrapper.find("[name$=" + inputKey + "-date]").val(inputValue.date);
         $wrapper.find("[name$=" + inputKey + "-time]").val(inputValue.time);
         $wrapper.find("[name$=" + inputKey + "-timezone]").val(inputValue.timezone);
         break;
 
-      case 'markdown':
+      case "markdown":
         $wrapper
           .find("[name$=" + inputKey + "]")
           .val(inputValue.markdown)
@@ -557,17 +570,17 @@ function loadAggregateFieldsHelper(data, $newItem) {
           .html(inputValue.html);
         break;
 
-      case 'checkbox':
-          $wrapper.find("[name$=" + inputKey + "]:checkbox").prop("checked", inputValue);
-          break;
+      case "checkbox":
+        $wrapper.find("[name$=" + inputKey + "]:checkbox").prop("checked", inputValue);
+        break;
 
-      case 'boolean':
+      case "boolean":
         $wrapper.find("[id$=" + inputKey + "-" + (inputValue ? "yes" : "no") + "]").prop("checked", true);
         break;
 
-      case 'radio':
+      case "radio":
         var radios = $wrapper.find(":radio").toArray();
-        for (var i = 0, found = false; i < radios.length && !found; i ++) {
+        for (var i = 0, found = false; i < radios.length && !found; i++) {
           var $r = $(radios[i]);
           if ($r.val() == inputValue) {
             found = true;
@@ -576,7 +589,7 @@ function loadAggregateFieldsHelper(data, $newItem) {
         }
         break;
 
-      case 'reference':
+      case "reference":
         var tmp = (Array.isArray(inputValue) ? inputValue : [inputValue]).filter(function(e) {
           return !!e && e.id !== null;
         });
@@ -607,18 +620,15 @@ function loadAggregateFieldsHelper(data, $newItem) {
         }
         break;
 
-      case 'select':
+      case "select":
         if (Array.isArray(inputValue)) {
           for (var i = 0; i < inputValue.length; i++) {
             $wrapper
               .find("[name$=" + inputKey + '\\[\\]] option[value="' + inputValue[i] + '"]')
               .prop("selected", true);
           }
-        }
-        else {
-          $wrapper
-            .find("[name$=" + inputKey + "]")
-            .val(inputValue)
+        } else {
+          $wrapper.find("[name$=" + inputKey + "]").val(inputValue);
         }
         $wrapper.find("[name$=" + inputKey + "\\[\\]]").trigger("change");
         break;

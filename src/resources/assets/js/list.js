@@ -115,8 +115,8 @@ $(document).ready(function() {
       $.post($(this).data("action"), { _method: "DELETE" }, function(data) {
         if (data.success) {
           $row.remove();
-          ['viewing-end', 'viewing-total'].forEach(function(item){
-            $('#' + item).text((Number($('#' + item).text()) || 1) - 1);
+          ["viewing-end", "viewing-total"].forEach(function(item) {
+            $("#" + item).text((Number($("#" + item).text()) || 1) - 1);
           });
         } else {
           alert(data.message);
@@ -136,7 +136,11 @@ $(document).ready(function() {
   });
 
   $("#bulk-action-operation").change(function() {
-    var operation = $(this).val().toLowerCase().replace(/\([^\)]+\)/, "").trim();
+    var operation = $(this)
+      .val()
+      .toLowerCase()
+      .replace(/\([^\)]+\)/, "")
+      .trim();
     if (operation) {
       if (confirm("Are you sure you want to " + operation + " these items?")) {
         //<input type="hidden" id="bulk-action-all-selected" name="bulk-action-all-selected" value="">
