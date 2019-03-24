@@ -28,9 +28,11 @@ $(document).ready(function() {
       var $holder = $(this);
       var itemData = objectGet(window, "globals.aggregates." + itemId, {});
       loadAggregateFields($holder, itemData);
-      globals.serializedEditForm = $("#edit-form").serialize();
       $.event.trigger("aggregates-loaded");
     });
+
+  resetFormSerialization();
+  $(document).on('aggregates-loaded', resetFormSerialization);
 
   $(window).bind("beforeunload", function() {
     // If submitting the form, don't prevent unload. Otherwise, check to see if the form has changed when user is navigating away from the page. If yes, alert them
@@ -651,6 +653,10 @@ function defaultEmptyTimezonesToBrowserValue() {
       $timezone.val(Intl.DateTimeFormat().resolvedOptions().timeZone);
     }
   });
+}
+
+function resetFormSerialization() {
+  globals.serializedEditForm = $("#edit-form").serialize();
 }
 
 // Transform multiple selects (or selects with class `select2`) into select2 elements:
