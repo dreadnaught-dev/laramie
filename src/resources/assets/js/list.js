@@ -76,6 +76,8 @@ $(document).ready(function() {
     return false;
   });
 
+  $(document).on('keyup keydown', function(e){ globals.isShiftDetected = e.shiftKey; } );
+
   $(".js-select-all, .js-item-id").click(function() {
     var isChecked = $(this).is(":checked");
 
@@ -83,6 +85,17 @@ $(document).ready(function() {
       $("#main-list-table .js-item-id").prop("checked", isChecked);
     } else if (!isChecked) {
       $(".js-select-all").prop("checked", false);
+    } else if (isChecked) {
+      var $tr = $(this).closest('tr');
+      if (globals.lastRowSelected && globals.isShiftDetected) {
+        $trs = $("#main-list-table tbody tr");
+        var start = $trs.index($tr);
+        var end = $trs.index(globals.lastRowSelected);
+        for (var i = $trs.index($tr); i != $trs.index(globals.lastRowSelected); i += (end >= start ? 1 : -1)) {
+          $trs.eq(i).find('.js-item-id').prop("checked", true);
+        }
+      }
+      globals.lastRowSelected = $tr;
     }
 
     var isAllSelected =
