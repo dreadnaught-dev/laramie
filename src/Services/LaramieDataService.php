@@ -98,7 +98,10 @@ class LaramieDataService
         $query = $this->getBaseQuery($model);
         $query = $this->augmentListQuery($query, $model, $options, $queryCallback);
         $resultsPerPage = array_get($options, 'resultsPerPage', 15);
-        $laramieModels = LaramieModel::load($resultsPerPage === 0 ? $query->get() : $query->paginate($resultsPerPage));
+
+        $factory = array_get($options, 'factory', LaramieModel::class);
+
+        $laramieModels = $factory::load($resultsPerPage === 0 ? $query->get() : $query->paginate($resultsPerPage));
 
         // If we're not running in the console, whitelist qs params we need to be appended to pagination links
         if (!app()->runningInConsole() && $resultsPerPage > 0) {
@@ -335,7 +338,7 @@ class LaramieDataService
         } elseif ($modelField->type == 'computed') {
             $field = $modelField->sql;
         } elseif ($modelField->type == 'timestamp') {
-            $field = '(data #>> \'{start,timestamp}\')::numeric';
+            $field = '(data #>> \'{'.$field.',timestamp}\')::numeric';
         } elseif (in_array($modelField->type, ['date', 'datetime-local'])) {
             $field = 'date_part(\'epoch\', (data->>\''.$field.'\')::timestamp)::int';
         } elseif ($modelField->type == 'reference') {

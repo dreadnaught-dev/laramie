@@ -220,6 +220,8 @@ class LaramieListener
 
         $dataService = $this->getLaramieDataService();
 
+        $postData['quickSearch'] = array_get($postData, 'quick-search');
+
         // @note -- switching on the slugified version of the bulk action
         switch (str_slug($nameOfBulkAction)) {
             case 'delete':

@@ -211,19 +211,10 @@ class LaramieQueryBuilder
     {
         $callingClass = $this->callingClass;
 
+        $this->searchOptions['factory'] = get_class($callingClass);
+
         $results = $this->dataService
             ->findByType($callingClass::getJsonClass(), $this->searchOptions, $this->queryCallback, $this->maxPrefetchDepth);
-
-        // Convert the LaramieModel results to
-        if ($results instanceof LengthAwarePaginator) {
-            $results->setCollection(collect(array_map(function ($e) use ($callingClass) {
-                return $callingClass::hydrateWithModel($e);
-            }, $results->items())));
-        } elseif ($results instanceof Collection) {
-            return $results->map(function ($e) use ($callingClass) {
-                return $callingClass::hydrateWithModel($e);
-            });
-        }
 
         return $results;
     }

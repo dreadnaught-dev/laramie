@@ -104,6 +104,8 @@ $(document).ready(function() {
     if (isAllSelected && $("#bulk-action-helper").data("hasAdditionalPages") == "1") {
       $(".js-select-all").prop("checked", true);
       $("#bulk-action-helper").show();
+    } else if (isAllSelected) {
+      $("#bulk-action-all-selected").val("1");
     } else {
       $("#bulk-action-helper")
         .hide()
