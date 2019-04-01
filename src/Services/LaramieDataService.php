@@ -203,6 +203,12 @@ class LaramieDataService
             })
             ->all();
 
+        $numericFields = $fieldCollection
+            ->filter(function ($field) {
+                return in_array($field->type, ['currency', 'number', 'range']);
+            })
+            ->all();
+
         $sort = array_get($options, 'sort', $model->defaultSort);
         $sortDirection = array_get($options, 'sortDirection', $model->defaultSortDirection);
         if ($sort) {
@@ -224,6 +230,8 @@ class LaramieDataService
                 $relatedAlias = object_get($relatedModel->fields, $relatedModel->alias);
                 $fieldSql = $relatedAlias->type == 'computed' ? $relatedAlias->sql : sprintf('n2.data->>\'%s\'', $relatedAlias->_fieldName);
                 $query->orderBy(DB::raw('(select '.$fieldSql.' from laramie_data as n2 where (laramie_data.data->>\''.$field->_fieldName.'\')::uuid = n2.id)'), array_get($options, 'sortDirection', 'asc'));
+            } elseif (in_array($sort, array_keys($numericFields))) {
+                $query->orderBy(DB::raw('(data #>> \'{"'.$sort.'"}\')::float'), array_get($options, 'sortDirection', 'asc'));
             } elseif (object_get($model->fields, $sort)) {
                 // Otherwise, check to see if the sort is part one of the model's dynamic fields:
                 $query->orderBy(DB::raw('data #>> \'{"'.$sort.'"}\''), array_get($options, 'sortDirection', 'asc'));
