@@ -209,8 +209,9 @@ class LaramieDataService
             })
             ->all();
 
-        $sort = array_get($options, 'sort', $model->defaultSort);
-        $sortDirection = array_get($options, 'sortDirection', $model->defaultSortDirection);
+        $sort = array_get($options, 'sort') ?: $model->defaultSort;
+        $sortDirection = array_get($options, 'sortDirection') ?: $model->defaultSortDirection;
+
         if ($sort) {
             if (in_array($sort, array_keys($computedFields))
                 || in_array($sort, ['id', 'created_at', 'updated_at'])
