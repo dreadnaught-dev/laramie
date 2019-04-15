@@ -182,7 +182,7 @@ class ModelLoader
                 }
 
                 // Default sort "column" and direction
-                $model->defaultSort = object_get($model, 'defaultSort', '_created_at');
+                $model->defaultSort = object_get($model, 'defaultSort', 'created_at');
                 $model->defaultSortDirection = object_get($model, 'defaultSortDirection', preg_match('/_at$/', $model->defaultSort) ? 'desc' : 'asc');
 
                 // Save the processed model back to the models object
