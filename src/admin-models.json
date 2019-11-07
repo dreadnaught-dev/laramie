@@ -28,7 +28,8 @@
                 "publicPath": { "type": "text", "@note": "relative path to asset (from public directory) if local, or full path to s3 asset", "required": false, "listByDefault": false },
                 "mimeType": { "type": "text", "required": false, "listByDefault": false },
                 "extension": { "type": "text", "required": false, "listByDefault": false },
-                "isPublic": { "type": "boolean", "listByDefault": false }
+                "isPublic": { "type": "boolean", "listByDefault": false },
+                "source": { "type": "hidden", "isVisibleOnEdit": false, "required": false, "listByDefault": false }
             }
         },
         "LaramieUser": {
@@ -39,7 +40,7 @@
             "fields": {
                 "user": { "type": "text", "required": true },
                 "password": { "type": "password", "label": "password" },
-                "role": {
+                "roles": {
                     "type": "reference-many",
                     "relatedModel": "LaramieRole"
                 },

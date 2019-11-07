@@ -10,6 +10,9 @@ class Globals
     /** @var string UUID of the admin role */
     const AdminRoleId = '50890cb6-2b9a-11e7-a7e2-be1ff74bace0';
 
+    /** @var Dummy UUID that will likely never be in the DB */
+    const DummyId = '31415926-5358-9793-2384-626433832795';
+
     /** @var int Length of string to use for basic auth username and password fields * */
     const API_TOKEN_LENGTH = 32;
 

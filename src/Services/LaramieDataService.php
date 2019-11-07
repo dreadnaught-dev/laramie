@@ -13,8 +13,7 @@ use Laramie\Events\PreSave;
 use Laramie\Events\PostSave;
 use Laramie\Events\PreDelete;
 use Laramie\Events\PostDelete;
-use Laramie\Events\PreList;
-use Laramie\Events\PostList;
+use Laramie\Events\ShapeListQuery;
 use JsonSchema\Validator;
 
 class LaramieDataService
@@ -115,12 +114,6 @@ class LaramieDataService
 
         $this->prefetchRelationships($model, $laramieModels, $maxPrefetchDepth, $curDepth);
 
-        if ($curDepth == 0
-            && array_get($options, 'postList', true) !== false)
-        {
-            event(new PostList($model, $laramieModels, $this->getUser(), $options));
-        }
-
         return $laramieModels;
     }
 
@@ -171,8 +164,8 @@ class LaramieDataService
          * the ability to dynamically change the query that retrieves items based
          * on the injected arguments.
          */
-        if (object_get($options, 'preList', true) !== false) {
-            event(new PreList($model, $query, $this->getUser(), $options));
+        if (object_get($options, 'shapeListQuery', true) !== false) {
+            event(new ShapeListQuery($model, $query, $this->getUser(), $options));
         }
 
         $options = (array) $options;
@@ -244,7 +237,7 @@ class LaramieDataService
             $operation = $filter->operation;
             $value = $filter->value;
 
-            // @TODO -- document that one can specify custom sql to search a field by via adding a `sql` attribute to the filter in `PreList`
+            // @TODO -- document that one can specify custom sql to search a field by via adding a `sql` attribute to the filter in `ShapeListQuery`
             $field = object_get($filter, 'sql')
                 ? $filter->sql
                 : $this->getSearchSqlFromFieldName($model, $filter->field, $value);
@@ -388,7 +381,7 @@ class LaramieDataService
         $modelKey = $model->_type;
         $userUuid = $this->getUserUuid();
 
-        return $this->findByType($this->getModelByKey('LaramieSavedReport'), ['resultsPerPage' => 0, 'postList' => false], function ($query) use ($modelKey, $userUuid) {
+        return $this->findByType($this->getModelByKey('LaramieSavedReport'), ['resultsPerPage' => 0], function ($query) use ($modelKey, $userUuid) {
             $query->where(DB::raw('data->>\'relatedModel\''), $modelKey)
                 ->where(function ($query) use ($userUuid) {
                     $query->where(DB::raw('data->>\'user\''), $userUuid)
@@ -435,7 +428,7 @@ class LaramieDataService
                     $this->getModelByKey($modelKey),
                     [
                         'resultsPerPage' => 0,
-                        'preList' => false,
+                        'shapeListQuery' => false,
                     ],
                     function ($query) use ($uuidList) {
                         $query->whereIn('id', array_unique($uuidList));
@@ -957,7 +950,14 @@ class LaramieDataService
          * such as deliver email or implement a custom workflow for a model. To
          * aid serialization, we're only injecting the string of the model type
          * and the id of the item saved.
+         *
+         * Note that because we're selecting the item from the db, we need to
+         * pass additional context with the item to help listeners determine if
+         * it was a new item or not:
          */
+
+        $item->_wasNew = !object_get($data, '_origId');
+
         event(new PostSave($model, $item, $this->getUser()));
 
         return $item;
@@ -1009,7 +1009,7 @@ class LaramieDataService
         return $newId;
     }
 
-    public function saveFile($file, $isPublic)
+    public function saveFile($file, $isPublic, $source = null)
     {
         $storageDisk = config('laramie.storage_disk');
         $storageDriver = config('filesystems.disks.'.$storageDisk.'.driver');
@@ -1033,6 +1033,7 @@ class LaramieDataService
         $laramieUpload->mimeType = $file->getClientMimeType();
         $laramieUpload->path = $file->storeAs('laramie', $storeAsName, ['visibility' => 'private', 'disk' => $storageDisk]); // this is our master copy, it should always be private (with the exception of its admin-generated thumbs; we'll make those public if the file is public).
         $laramieUpload->isPublic = $isPublic;
+        $laramieUpload->source = $source;
 
         $laramieUpload->fullPath = Storage::disk($storageDisk)->url($laramieUpload->path);
         if ($storageDriver == 'local') {

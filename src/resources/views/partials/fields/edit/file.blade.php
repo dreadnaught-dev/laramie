@@ -16,12 +16,14 @@
                 <div class="column is-half">
                     <input type="file" class="input is-{{ $field->type }}" id="{{ $field->id }}" name="{{ $field->id }}" {{ $field->extra }} {{ $field->required ? 'required' : '' }}>
                 </div>
-                <div class="column is-half">
-                    <a class="tag js-toggle-reference-search">Choose from library</a>
-                </div>
+                @if (object_get($field, 'canChooseFromLibrary') !== false)
+                    <div class="column is-half">
+                        <a class="tag js-toggle-reference-search">Choose from library</a>
+                    </div>
+                @endif
             </div>
         </div>
-        <div class="columns reference-search hide-when-file" data-type="{{ $model->_type }}" data-lookup-type="LaramieUpload" data-lookup-subtype="{{ $uploadType }}" data-is-single-reference="1" style="display:none">
+        <div class="columns reference-search hide-when-file" data-field="{{ data_get($field, '_fieldName') }}" data-type="{{ $model->_type }}" data-lookup-type="LaramieUpload" data-lookup-subtype="{{ $uploadType }}" data-is-single-reference="1" style="display:none">
             <div class="column is-half">
                 <nav class="panel">
                     <div class="panel-heading">

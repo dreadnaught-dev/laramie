@@ -36,7 +36,11 @@ class AjaxController extends Controller
      */
     public function getList($modelKey, $listModelKey, Request $request)
     {
+        $outerModel = $this->dataService->getModelByKey($modelKey);
         $model = $this->dataService->getModelByKey($listModelKey);
+        $fieldInvokingRequest = $request->get('field');
+
+        $isTypeSpecific = data_get($outerModel, sprintf('fields.%s.isTypeSpecific', $fieldInvokingRequest)) === true;
 
         // Ensure that if items are selected, they're valid uuids
         $uuidCollection = collect(preg_split('/\s*[,|]\s*/', $request->get('selectedItems')))
@@ -62,7 +66,7 @@ class AjaxController extends Controller
                 'resultsPerPage' => 10,
                 'isFromAjaxController' => true,
             ],
-            function ($query) use ($uuidCollection, $keywords, $model, $lookupSubtype, $outerItemId) {
+            function ($query) use ($uuidCollection, $keywords, $model, $lookupSubtype, $outerItemId, $modelKey, $fieldInvokingRequest, $isTypeSpecific) {
                 // Never show the item being edited.
                 $query->where('id', '!=', $outerItemId);
 
@@ -113,6 +117,10 @@ class AjaxController extends Controller
                         });
                     }
                 });
+                // Limit by model type / field.
+                if ($isTypeSpecific) {
+                    $query->where(\DB::raw('data->>\'source\''), 'ilike', sprintf('%s.%s', $modelKey, $fieldInvokingRequest));
+                }
             }
         );
 
@@ -126,7 +134,9 @@ class AjaxController extends Controller
                 return (object) [
                     'id' => $e->id,
                     'name' => $name,
-                    'label' => LaramieHelpers::formatListValue($alias, object_get($e, $alias->id), true),
+                    'label' => $alias
+                        ? LaramieHelpers::formatListValue($alias, object_get($e, $alias->id), true)
+                        : null,
                     'selected' => object_get($e, 'selected') == 1
                 ];
             }));

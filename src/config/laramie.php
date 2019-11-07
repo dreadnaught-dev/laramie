@@ -20,7 +20,7 @@ return [
     | name of a model whose list page should serve as the admin dashboard.
     |
     */
-    'dashboard_override' => 'vanilla',
+    //'dashboard_override' => 'vanilla',
 
     /*
     |--------------------------------------------------------------------------

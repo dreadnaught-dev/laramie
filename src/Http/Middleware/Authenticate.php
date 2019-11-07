@@ -81,7 +81,7 @@ class Authenticate
                     }
                 }
 
-                $userRoles = object_get($user, 'role', []);
+                $userRoles = object_get($user, 'roles', []);
                 $abilities = [];
                 $isSuperAdmin = false;
                 $isAdmin = false;

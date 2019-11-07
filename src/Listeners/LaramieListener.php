@@ -27,9 +27,13 @@ class LaramieListener
             'Laramie\Events\ConfigLoaded',
             'Laramie\Listeners\LaramieListener@configLoaded'
         );
+        //$events->listen(
+            //'Laramie\Events\PreList',
+            //'Laramie\Listeners\LaramieListener@preList'
+        //);
         $events->listen(
-            'Laramie\Events\PreList',
-            'Laramie\Listeners\LaramieListener@preList'
+            'Laramie\Events\ShapeListQuery',
+            'Laramie\Listeners\LaramieListener@shapeListQuery'
         );
         $events->listen(
             'Laramie\Events\PostList',
@@ -39,6 +43,10 @@ class LaramieListener
             'Laramie\Events\PreEdit',
             'Laramie\Listeners\LaramieListener@preEdit'
         );
+        //$events->listen(
+            //'Laramie\Events\TransformModelForEdit',
+            //'Laramie\Listeners\LaramieListener@transformModelForEdit'
+        //);
         $events->listen(
             'Laramie\Events\PreSave',
             'Laramie\Listeners\LaramieListener@preSave'
@@ -87,9 +95,9 @@ class LaramieListener
      *
      * Only show system roles to super admins on list page.
      *
-     * @param $event Laramie\Events\PreList
+     * @param $event Laramie\Events\ShapeListQuery
      */
-    public function preList($event)
+    public function shapeListQuery($event)
     {
         $model = $event->model;
         $query = $event->query;
@@ -98,7 +106,7 @@ class LaramieListener
 
         switch ($type) {
             case 'LaramieRole':
-                // The only way we can hit preList and not have a user is on
+                // The only way we can hit shapeListQuery and not have a user is on
                 // authentication -- we don't need to worry about limiting the
                 // query by the user in this case -- it's just to get the list of
                 // their roles.
@@ -129,9 +137,9 @@ class LaramieListener
         $model = $event->model;
         $items = $event->items;
         $user = $event->user;
-        $options = $event->options;
+        $extra = $event->extra;
 
-        $listFields = array_get($options, 'listFields');
+        $listFields = data_get($extra, 'listFields');
 
         $ids = [];
 

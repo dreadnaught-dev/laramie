@@ -17,11 +17,11 @@ class PostList
      * @param stdClass                          $model JSON-decoded model definition (from laramie-models.json, etc).
      * @param Laramie\Lib\LaramieModel          $user  laramie's version of the logged in user
      */
-    public function __construct($model, &$items, $user, $options)
+    public function __construct($model, &$items, $user, &$extra = null)
     {
         $this->model = $model;
         $this->items = $items;
         $this->user = $user;
-        $this->options = $options;
+        $this->extra = $extra;
     }
 }

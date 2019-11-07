@@ -10,9 +10,12 @@ use Ramsey\Uuid\Uuid;
 use cogpowered\FineDiff\Granularity\Word;
 use cogpowered\FineDiff\Diff;
 use Laramie\Lib\LaramieHelpers;
-use Laramie\Events\PreEdit;
-use Laramie\Events\PreBulkAction;
 use Laramie\Events\BulkAction;
+use Laramie\Events\PreList;
+use Laramie\Events\PostList;
+use Laramie\Events\PreBulkAction;
+use Laramie\Events\PreEdit;
+use Laramie\Events\TransformModelForEdit;
 use Laramie\Lib\LaramieModel;
 use Laramie\Services\LaramieDataService;
 
@@ -24,6 +27,7 @@ class AdminController extends Controller
 {
     protected $dataService;
     private $validationRules = [];
+    private $modelKey = null;
 
     /**
      * Create a new AdminController.
@@ -124,6 +128,15 @@ class AdminController extends Controller
             return $this->redirectToSingularEdit($model);
         }
 
+        $extra = (object) [];
+
+        // Fire the `PreList` event. This allows for
+        event(new PreList($model, $this->dataService->getUser(), $extra));
+
+        if (data_get($extra, 'response')) {
+            return data_get($extra, 'response');
+        }
+
         $filters = $this->getFilters($options);
 
         $options['filters'] = $filters;
@@ -136,13 +149,14 @@ class AdminController extends Controller
 
         $reports = $this->dataService->getUserReportsForModel($model);
 
+        $models = $this->dataService->findByType($model, $options);
+
         $listableFields = $this->getListableFields($model, (object) object_get($userPrefs, $modelKey.'.listFields', []));
 
         $listFields = $this->getListedFields($listableFields);
 
-        $options['listFields'] = $listFields; // passing this so we have context in the post list event
-
-        $models = $this->dataService->findByType($model, $options);
+        $extra = (object) ['listFields' => array_get($options, 'listFields', $listFields)]; // passing this so we have context in the post list event;
+        event(new PostList($model, $models, $this->dataService->getUser(), $extra));
 
         return view('laramie::list-page')
             ->with('model', $model)
@@ -446,6 +460,10 @@ class AdminController extends Controller
 
         $extraInfoToPassToEvents->sidebars = $sidebars;
 
+        // Generally speaking, if you need to dynamically alter your model for edit, do so in this event:
+        event(new TransformModelForEdit($model,  $item, $user));
+
+        // If you need to modify your _item_ for edit, generally do so here:
         event(new PreEdit($model, $item, $user, $extraInfoToPassToEvents));
 
         if (object_get($extraInfoToPassToEvents, 'response')) {
@@ -476,12 +494,16 @@ class AdminController extends Controller
      */
     public function postEdit(Request $request, $modelKey, $id)
     {
+        $this->modelKey = $modelKey;
         $model = $this->dataService->getModelByKey($modelKey);
         $item = $this->dataService->findById($model, $id);
         $metaId = $request->get('_metaId');
         $selectedTab = $request->get('_selectedTab');
 
         $isNew = $item->_isNew;
+
+        // Fire `PreEdit` again to give opportunity to hook to change model (to dynamically change field types, etc).
+        event(new TransformModelForEdit($model, $item, $this->dataService->getUser()));
 
         // Load item with new values _before_ validation. If there are errors, flash updated item and redirect.
         foreach ($model->fields as $fieldName => $field) {
@@ -648,7 +670,8 @@ class AdminController extends Controller
 
                     return $this->dataService->saveFile(
                         $request->file($fieldName),
-                        object_get($field, 'isPublic', config('laramie.files_are_public_by_default', false))
+                        object_get($field, 'isPublic', config('laramie.files_are_public_by_default', false)),
+                        sprintf('%s.%s', $this->modelKey, $fieldName)
                     );
                 } elseif ($request->get('_'.$fieldName)) {
                     // The 'keep' checkbox was checked.

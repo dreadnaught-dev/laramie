@@ -42,7 +42,7 @@ class ApiAuthenticate
             // Success, creds match, users match, etc. Now find and set their access rights / abilities:
             $laramieDataService = app(LaramieDataService::class);
             $laramieUser = $laramieDataService->findById($laramieDataService->getModelByKey('LaramieUser'), $laramieUser->id);
-            $userRoles = object_get($laramieUser, 'role', []);
+            $userRoles = object_get($laramieUser, 'roles', []);
             $abilities = [];
             $isSuperAdmin = false;
             $isAdmin = false;

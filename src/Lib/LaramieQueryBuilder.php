@@ -21,7 +21,7 @@ class LaramieQueryBuilder
     protected $qb;
 
     protected $searchOptions = [
-        'preList' => false,
+        'shapeListQuery' => false,
         'resultsPerPage' => 0,
     ];
 
@@ -254,8 +254,13 @@ class LaramieQueryBuilder
             return null;
         }
 
-        return $this->callingClass::hydrateWithModel($this->dataService
-            ->findById($this->callingClass::getJsonClass(), $id, $this->maxPrefetchDepth));
+        $item = $this->dataService->findById($this->callingClass::getJsonClass(), $id, $this->maxPrefetchDepth);
+
+        if (!$item) {
+            return null;
+        }
+
+        return $this->callingClass::hydrateWithModel($item);
     }
 
     public function findOrFail($id)

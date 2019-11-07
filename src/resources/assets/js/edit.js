@@ -417,6 +417,7 @@ function doSearch($searchWrapper) {
   var keywords = $searchWrapper.find(".keywords").val();
   var lookupSubtype = $searchWrapper.data("lookupSubtype");
   var isSingleReference = $searchWrapper.data("isSingleReference") == "1";
+  var field = $searchWrapper.data("field");
   $.getJSON(
     globals.adminUrl + "/ajax/" + $searchWrapper.data("type") + "/" + $searchWrapper.data("lookupType"),
     {
@@ -424,6 +425,7 @@ function doSearch($searchWrapper) {
       keywords: keywords,
       lookupSubtype: lookupSubtype,
       itemId: globals.metaId,
+      field: field,
     },
     function(data) {
       $searchWrapper.find(".js-select-reference").removeClass("is-loading");

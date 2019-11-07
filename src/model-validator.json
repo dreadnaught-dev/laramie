@@ -31,6 +31,7 @@
             "editCss": { "type": "string" },
             "listJs": { "type": "string" },
             "listCss": { "type": "string" },
+            "addNewText": { "type": "string" },
             "fields": {
                 "oneOf": [
                     { "type": "object" },
@@ -110,7 +111,9 @@
         "file": {
             "properties": {
                 "isPublic": { "type": "boolean" },
-                "subtype": { "enum": [ "file", "image" ] }
+                "subtype": { "enum": [ "file", "image" ] },
+                "canChooseFromLibrary": { "type": "boolean" },
+                "isTypeSpecific": { "type": "boolean" }
             }
         },
         "html": {
@@ -119,7 +122,11 @@
             }
         },
         "markdown": {},
-        "hidden": {},
+        "hidden": {
+            "properties": {
+                "isVisibleOnEdit": { "type": "boolean" }
+            }
+        },
         "currency": {
             "properties": {
                 "sign": { "enum": [ "dollar", "euro", "pound", "yen" ] },
