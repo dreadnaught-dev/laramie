@@ -131,4 +131,13 @@ return [
     |--------------------------------------------------------------------------
     */
     'timezone' => 'America/Chicago',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Enable Local API -- allow logged in users to hit the API (as well as
+    | users authenticated via basic auth). Will add some overhead to requests
+    | as setting to true will require loading sessions.
+    |--------------------------------------------------------------------------
+    */
+    'enable_local_api' => false,
 ];

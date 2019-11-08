@@ -25,6 +25,11 @@ class ApiAuthenticate
      */
     public function handle($request, $next)
     {
+        if ($request->hasSession() && $request->session()->has('_laramie')) {
+            $a = new Authenticate(auth());
+            return $a->handle($request, $next);
+        }
+
         // Get the username and password from request headers. Leverage Laravel's `Auth::onceUsingId` if a corresponding Laramie user is found
         // The username and password are not the user's acutal username and password, but correspond to the user's `api` username and password.
         $authArray = explode(':', base64_decode(trim(str_replace('Basic', '', $request->header('Authorization', '')))));

@@ -34,7 +34,7 @@ class ApiController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getList($modelKey, Request $request, LaramieHelpers $viewHelper)
+    public function getList(Request $request, $modelKey, LaramieHelpers $viewHelper)
     {
         $model = $this->dataService->getModelByKey($modelKey);
 
@@ -56,13 +56,17 @@ class ApiController extends Controller
     }
 
     /**
-     * Return the detail view for a particular item. Traverses the item a little more deeply than the list page does.
+     * Return the detail view for a particular item.
      *
      * @return \Illuminate\Http\Response
      */
-    public function getItem($modelKey, $id)
+    public function getItem(Request $request, $modelKey, $id)
     {
-        $item = $this->dataService->findById($this->dataService->getModelByKey($modelKey), $id);
+        $depth = (int) $request->get('depth', '0');
+
+        $depth = min($depth, 5);
+
+        $item = $this->dataService->findById($this->dataService->getModelByKey($modelKey), $id, (int) $depth);
 
         return response()->json($item);
     }

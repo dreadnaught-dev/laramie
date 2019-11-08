@@ -14,7 +14,9 @@ use Laramie\Http\Middleware\ShareAlertFromSession;
  */
 Route::group(
     [
-        'middleware' => [LaramieApiAuthenticate::class, RequestLogger::class],
+        'middleware' => config('laramie.enable_local_api')
+            ? ['web', 'auth', LaramieApiAuthenticate::class, RequestLogger::class]
+            : [LaramieApiAuthenticate::class, RequestLogger::class],
         'namespace' => '\Laramie\Http\Controllers',
         'prefix' => config('laramie.admin_url').'/api',
         'as' => 'laramie::api',

@@ -21,7 +21,7 @@ use Ramsey\Uuid\Uuid;
  * Note that the admin is never going to use your extended model when editing.
  * The admin will always use the standard LaramieModel.
  */
-class LaramieModel
+class LaramieModel implements \JsonSerializable
 {
     public $id = null;
     public $user_id = null;
@@ -463,5 +463,14 @@ class LaramieModel
         }
 
         return lcfirst(class_basename(get_called_class())); // `class_basename` is a Laravel Helper
+    }
+
+    public function jsonSerialize() {
+        foreach ($this as $key => $value) {
+            if (strpos($key, '_') === 0) {
+                unset($this->{$key});
+            }
+        }
+        return $this;
     }
 }
