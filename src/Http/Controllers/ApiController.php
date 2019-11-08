@@ -49,6 +49,8 @@ class ApiController extends Controller
         $filters = $this->getFilters($options);
 
         $options['filters'] = $filters;
+        $options['quickSearch'] = $request->get('quick-search');
+        $options['sortDirection'] = $request->get('sort-direction');
 
         $items = $this->dataService->findByType($model, $options);
 
