@@ -20,6 +20,8 @@ class CreateDataTable extends Migration
             $table->timestamps();
 
             $table->primary('id');
+            $table->index('created_at');
+            $table->index('updated_at');
         });
         \DB::statement('CREATE INDEX on laramie_data (type)');
         \DB::statement('CREATE INDEX on laramie_data USING GIN (data jsonb_path_ops)');

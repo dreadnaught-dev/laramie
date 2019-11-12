@@ -82,7 +82,7 @@
             "fields": {
                 "metaId": { "type": "hidden", "isListable": false, "isEditable": false },
                 "author": { "type": "reference-single", "relatedModel": "LaramieUser", "isListable": false, "isEditable": false },
-                "_authorName": { "type": "computed", "label": "From", "sql": "(select data->>'user' from laramie_data as ld2 where ld2.type = 'LaramieUser' and ld2.id::text = laramie_data.data->>'author')" },
+                "_authorName": { "type": "computed", "label": "From", "sql": "(select data->>'user' from laramie_data as ld2 where ld2.type = 'LaramieUser' and ld2.id::text = laramie_data.data->>'author' limit 1)" },
                 "recipient": { "type": "reference-single", "relatedModel": "LaramieUser", "isListable": false, "isEditable": false },
                 "message": { "type": "markdown", "required": true },
                 "status": {

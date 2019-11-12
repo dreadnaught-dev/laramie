@@ -340,6 +340,7 @@ class ModelLoader
                     if (!preg_match('/^[(].*[)]$/', $sql)) {
                         throw new Exception('Computed field `sql` content MUST be enclosed in parenthesis');
                     }
+                    $field->required = false; // Computed fields can't be required -- they are not actually part of the model being saved.
                     break;
                 case 'email':
                     $validationRules[] = 'email';

@@ -359,21 +359,6 @@ $(document).ready(function() {
   transformSelectsToSelect2();
 });
 
-function getQS(querystring) {
-  querystring = querystring || "";
-  querystring = querystring.replace("?", "");
-  var qs = {};
-  var kvps = querystring.split("&");
-  for (i = 0; i < kvps.length; i++) {
-    var kvp = kvps[i].split("=");
-    if (kvp.length != 2) {
-      continue;
-    }
-    qs[kvp[0]] = kvp[1];
-  }
-  return qs;
-}
-
 function dynamicFileHref(e) {
   var tmp = $(e)
     .text()

@@ -22,6 +22,8 @@ class CreateLaramieDataMetaTable extends Migration
 
             $table->primary('id');
             $table->index('laramie_data_id');
+            $table->index('created_at');
+            $table->index('updated_at');
         });
     }
 
