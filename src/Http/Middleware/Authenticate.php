@@ -2,12 +2,14 @@
 
 namespace Laramie\Http\Middleware;
 
-use Laramie\Services\LaramieDataService;
-use Laramie\Globals;
 use DB;
 use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Auth\Factory as Auth;
+
+use Laramie\Globals;
+use Laramie\LaramieUser;
+use Laramie\Services\LaramieDataService;
 
 class Authenticate
 {
@@ -54,17 +56,12 @@ class Authenticate
 
         // If the user is already logged, we don't need go any further
         if (!$request->session()->has('_laramie')) {
-            // Get the LaramieUser that's linked to the Laravel one (via `$linkedField`)
-            $userRecord = DB::table('laramie_data')
-                ->where('type', 'LaramieUser')
-                ->where(DB::raw('data->>\'user\''), '=', $this->auth->user()->{$linkedField})
-                ->where(DB::raw('data->>\'status\''), '=', 'Active')
+            // Get the laramieUser that's linked to the Laravel one (via `$linkedField`)
+            $user = LaramieUser::where('user', '=', $this->auth->user()->{$linkedField})
+                ->where('status', '=', 'Active')
                 ->first();
 
-            if ($userRecord) {
-                $laramieDataService = app(LaramieDataService::class);
-                $user = $laramieDataService->findById($laramieDataService->getModelByKey('LaramieUser'), $userRecord->id);
-
+            if ($user) {
                 // Check two-factor authentication (can be enabled/disabled at the application or user level)
                 $mfaGloballyEnabled = config('laramie.enable_mfa', false);
 

@@ -164,7 +164,7 @@ class LaramieDataService
          * the ability to dynamically change the query that retrieves items based
          * on the injected arguments.
          */
-        if (object_get($options, 'shapeListQuery', true) !== false) {
+        if (config('laramie.suppress_events') !== true && object_get($options, 'shapeListQuery', true) !== false) {
             event(new ShapeListQuery($model, $query, $this->getUser(), $options));
         }
 
@@ -381,7 +381,7 @@ class LaramieDataService
         $modelKey = $model->_type;
         $userUuid = $this->getUserUuid();
 
-        return $this->findByType($this->getModelByKey('LaramieSavedReport'), ['resultsPerPage' => 0], function ($query) use ($modelKey, $userUuid) {
+        return $this->findByType($this->getModelByKey('laramieSavedReport'), ['resultsPerPage' => 0], function ($query) use ($modelKey, $userUuid) {
             $query->where(DB::raw('data->>\'relatedModel\''), $modelKey)
                 ->where(function ($query) use ($userUuid) {
                     $query->where(DB::raw('data->>\'user\''), $userUuid)
@@ -827,20 +827,20 @@ class LaramieDataService
         foreach ($fieldHolder->fields as $key => $field) {
             if ($field->type == 'reference') {
                 if ($field->subtype == 'single') {
-                    $data->{$key} = object_get($data->{$key}, 'id');
+                    $data->{$key} = data_get($data, $key.'.id');
                 } else {
-                    $data->{$key} = collect($data->{$key})
+                    $data->{$key} = collect(data_get($data, $key))
                         ->map(function ($e) {
-                            return object_get($e, 'id');
+                            return data_get($e, 'id');
                         })
                         ->filter()
                         ->values()
                         ->all();
                 }
             } elseif ($field->type == 'file') {
-                $data->{$key} = object_get($data->{$key}, 'uploadKey');
+                $data->{$key} = data_get($data, $key.'.uploadKey');
             } elseif ($field->type == 'aggregate') {
-                $aggregateData = object_get($data, $key, null);
+                $aggregateData = data_get($data, $key, null);
                 if (is_array($aggregateData)) {
                     for ($i = 0; $i < count($aggregateData); ++$i) {
                         $aggregateData[$i] = $this->flattenRelationships($field, $aggregateData[$i]);
@@ -855,7 +855,7 @@ class LaramieDataService
         return $data;
     }
 
-    public function save($model, LaramieModel $laramieModel, $validate = true)
+    public function save($model, LaramieModel $laramieModel, $validate = true, $maxPrefetchDepth = 5)
     {
         $model = $this->getModelByKey($model);
         // Save a record of the original id. After saving, we'll reset the item's id back to the original so we have
@@ -867,10 +867,12 @@ class LaramieDataService
          * enables the ability to dynamically alter the model that will be
          * saved based on the injected arguments.
          */
-        event(new PreSave($model, $laramieModel, $this->getUser()));
+        if (config('laramie.suppress_events') !== true) {
+            event(new PreSave($model, $laramieModel, $this->getUser()));
+        }
 
         $data = clone $laramieModel;
-        $data->id = $data->id ?: Uuid::uuid1()->toString();
+        $data->id = $data->id ?: data_get($data, '_metaId', Uuid::uuid1()->toString());
         $data->updated_at = \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString();
         if (!object_get($data, '_origId')) {
             // Insert
@@ -942,7 +944,7 @@ class LaramieDataService
         }
 
         // Refresh the data from the db (because computed fields may have changed, etc):
-        $item = $this->findById($model, $data->id);
+        $item = $this->findById($model, $data->id, $maxPrefetchDepth);
 
         /*
          * Fire post-save event: listeners MAY be asynchronous. This event
@@ -958,7 +960,9 @@ class LaramieDataService
 
         $item->_wasNew = !object_get($data, '_origId');
 
-        event(new PostSave($model, $item, $this->getUser()));
+        if (config('laramie.suppress_events') !== true) {
+            event(new PostSave($model, $item, $this->getUser()));
+        }
 
         return $item;
     }
@@ -976,7 +980,9 @@ class LaramieDataService
         \DB::beginTransaction();
 
         try {
-            event(new PreDelete($model, $item, $this->getUser()));
+            if (config('laramie.suppress_events') !== true) {
+                event(new PreDelete($model, $item, $this->getUser()));
+            }
 
             if ($isDeleteHistory) {
                 DB::table('laramie_data_archive')
@@ -990,7 +996,9 @@ class LaramieDataService
                 ->where('id', $id)
                 ->delete();
 
-            event(new PostDelete($model, $item, $this->getUser()));
+            if (config('laramie.suppress_events') !== true) {
+                event(new PostDelete($model, $item, $this->getUser()));
+            }
 
             DB::commit();
         } catch (\Exception $e) {
@@ -1040,7 +1048,7 @@ class LaramieDataService
             $laramieUpload->fullPath = Storage::disk($storageDisk)->getDriver()->getAdapter()->applyPathPrefix($laramieUpload->path);
         }
 
-        $model = $this->getModelByKey('LaramieUpload');
+        $model = $this->getModelByKey('laramieUpload');
 
         // Save and get the Laramie model
         $laramieUpload = $this->save($model, $laramieUpload);
@@ -1056,7 +1064,7 @@ class LaramieDataService
     public function getFileInfo($id)
     {
         if (Uuid::isValid($id)) {
-            $laramieUpload = $this->getBaseQuery($this->getModelByKey('LaramieUpload'))
+            $laramieUpload = $this->getBaseQuery($this->getModelByKey('laramieUpload'))
                 ->where('id', $id)
                 ->first();
 

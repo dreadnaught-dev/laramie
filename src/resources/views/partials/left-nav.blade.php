@@ -6,9 +6,9 @@
             $tmp->printMenu();
         @endphp
 
-        @if ($user->isSuperAdmin || $user->isAdmin || in_array('LaramieUpload', $user->abilities))
+        @if ($user->isSuperAdmin || $user->isAdmin || in_array('laramieUpload', $user->abilities))
             <li>
-                <a href="{{ route('laramie::list', ['modelKey' => 'LaramieUpload']) }}">Uploads</a>
+                <a href="{{ route('laramie::list', ['modelKey' => 'laramieUpload']) }}">Uploads</a>
             </li>
         @endif
     </ul>
@@ -17,10 +17,10 @@
         <p class="menu-label">System</p>
         <ul class="menu-list">
             <li>
-                <a href="{{ route('laramie::list', ['modelKey' => 'LaramieUser']) }}">Users</a>
+                <a href="{{ route('laramie::list', ['modelKey' => 'laramieUser']) }}">Users</a>
             </li>
             <li>
-                <a href="{{ route('laramie::list', ['modelKey' => 'LaramieRole']) }}">Roles</a>
+                <a href="{{ route('laramie::list', ['modelKey' => 'laramieRole']) }}">Roles</a>
             </li>
         </ul>
     @endif

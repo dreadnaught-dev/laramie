@@ -357,6 +357,23 @@ $(document).ready(function() {
 
   defaultEmptyTimezonesToBrowserValue();
   transformSelectsToSelect2();
+  loadReferences();
+
+  $(document).on('change.change-inverted-ref', 'select.inverted-ref', function(e) {
+    $panel = $(e.target).closest('.reference-panel');
+    $.post(
+      globals.adminUrl + "/ajax/modify-ref/" + $panel.data("lookupType"),
+      {
+        itemId: $(e.target).data('id'),
+        field: $panel.data('field'),
+        referenceId: globals.metaId,
+        selected: $(e.target).val(),
+      },
+      function(data) {
+        console.log(data);
+      }
+    );
+  });
 });
 
 function dynamicFileHref(e) {
@@ -649,6 +666,39 @@ function resetFormSerialization() {
 // Transform multiple selects (or selects with class `select2`) into select2 elements:
 function transformSelectsToSelect2() {
   $("select[multiple]:not(.select2-hidden-accessible), select.select2:not(.select2-hidden-accessible)").select2();
+}
+
+function loadReferences() {
+  $(".reference-panel").each(function() {
+    var $panel = $(this);
+
+    doInvertedSearch($panel);
+
+    $panel.find(".keywords").keyup(
+      debounce(function() {
+        doInvertedSearch($panel);
+      }, 500)
+    );
+  });
+}
+
+function doInvertedSearch($panel) {
+  var keywords = $panel.find('.keywords').val();
+  $.getJSON(
+    globals.adminUrl + "/ajax/" + $panel.data("type") + "/" + $panel.data("lookupType"),
+    {
+      keywords: keywords,
+      itemId: globals.metaId,
+      field: $panel.data('field'),
+      invertSearch: true,
+    },
+    function(data) {
+      $panel.find(".js-select-reference").removeClass("is-loading");
+      $panel.find("tbody tr").remove();
+      var template = handlebarsTemplates["inverted-reference-option"];
+      $panel.find("tbody").append(template(data));
+    }
+  );
 }
 
 function getKey() {

@@ -41,7 +41,7 @@ class AssetController extends Controller
      */
     public function showCropper(Request $request, $imageKey)
     {
-        $item = $this->dataService->findById('LaramieUpload', $imageKey);
+        $item = $this->dataService->findById('laramieUpload', $imageKey);
 
         return view('laramie::cropper', [
             'item' => $item,
@@ -59,9 +59,9 @@ class AssetController extends Controller
      */
     public function cropImage(Request $request, $imageKey)
     {
-        $item = $this->dataService->findById('LaramieUpload', $imageKey);
+        $item = $this->dataService->findById('laramieUpload', $imageKey);
         $item->alt = strip_tags($request->get('alt'));
-        $this->dataService->save('LaramieUpload', $item);
+        $this->dataService->save('laramieUpload', $item);
 
         $image = $this->getInterventionImage($imageKey);
 
@@ -96,7 +96,7 @@ class AssetController extends Controller
             }
         }
 
-        $uploadModel = $this->dataService->getModelByKey('LaramieUpload');
+        $uploadModel = $this->dataService->getModelByKey('laramieUpload');
         $item = $this->dataService->findById($uploadModel, $imageKey);
 
         // Leverage intervention image to save, then copy to Laramie's storage disk:

@@ -35,7 +35,7 @@
         <div class="navbar-end">
 
             <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link" href="{{ route('laramie::list', ['modelKey' => 'LaramieAlert']) }}" title="Notifications">
+                <a class="navbar-link" href="{{ route('laramie::list', ['modelKey' => 'laramieAlert']) }}" title="Notifications">
                     <span class="icon" style="font-size: 1.2em;">
                         <span class="fa-layers fa-fw">
                             <i class="far fa-bell"></i>
@@ -102,8 +102,8 @@
             <div class="navbar-item has-dropdown is-hidden-desktop">
                 <a class="navbar-link is-active">System</a>
                 <div class="navbar-dropdown">
-                    <a class="navbar-item" href="{{ route('laramie::list', ['modelKey' => 'LaramieRole']) }}">Roles</a>
-                    <a class="navbar-item" href="{{ route('laramie::list', ['modelKey' => 'LaramieUser']) }}">Users</a>
+                    <a class="navbar-item" href="{{ route('laramie::list', ['modelKey' => 'laramieRole']) }}">Roles</a>
+                    <a class="navbar-item" href="{{ route('laramie::list', ['modelKey' => 'laramieUser']) }}">Users</a>
                 </div>
             </div>
         </div>

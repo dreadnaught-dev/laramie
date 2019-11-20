@@ -64,6 +64,7 @@ Route::group(
         Route::post('/ajax/meta/{modelKey}/{id}/add-tag', 'AjaxController@addTag')->name('add-tag')->middleware(LaramieAuthorize::class);
         Route::post('/ajax/meta/{modelKey}/{id}/add-comment', 'AjaxController@addComment')->name('add-comment')->middleware(LaramieAuthorize::class);
         Route::post('/ajax/dismiss-alert/{id}', 'AjaxController@dismissAlert');
+        Route::post('/ajax/modify-ref/{modelKey}', 'AjaxController@modifyRef')->name('ajax-list')->middleware(LaramieAuthorize::class);
 
         Route::get('/revisions/compare/{modelKey}/{revisionId}', 'AdminController@compareRevisions')->name('compare-revisions')->middleware([LaramieAuthorize::class, ShareAlertFromSession::class]);
         Route::post('/revisions/restore/{modelKey}/{revisionId}', 'AdminController@restoreRevision')->name('restore-revision')->middleware(LaramieAuthorize::class);

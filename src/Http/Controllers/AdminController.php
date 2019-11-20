@@ -59,7 +59,7 @@ class AdminController extends Controller
      *     ...
      *     // Inject data into the admin dashboard:
      *     \View::composer(['laramie::dashboard'], function ($view) {
-     *         $view->with('data', app(LaramieDataService::class)->findByType('LaramieUser'));
+     *         $view->with('data', app(LaramieDataService::class)->findByType('laramieUser'));
      *     });
      * }
      *```
@@ -113,7 +113,7 @@ class AdminController extends Controller
             if (strpos($referrer, $currentUrl) !== 0) {
                 $defaultReport = $request->cookie('default_'.$modelKey);
                 if ($defaultReport) {
-                    $report = $this->dataService->findById('LaramieSavedReport', $defaultReport);
+                    $report = $this->dataService->findById('laramieSavedReport', $defaultReport);
                     if (object_get($report, 'id')) {
                         return $this->reportRedirect($report);
                     }
@@ -298,7 +298,7 @@ class AdminController extends Controller
      */
     public function loadReport($id)
     {
-        $report = $this->dataService->findById($this->dataService->getModelByKey('LaramieSavedReport'), $id);
+        $report = $this->dataService->findById($this->dataService->getModelByKey('laramieSavedReport'), $id);
 
         return $this->reportRedirect($report);
     }
@@ -323,7 +323,7 @@ class AdminController extends Controller
      */
     public function modifyReport($id, Request $request)
     {
-        $report = $this->dataService->findById('LaramieSavedReport', $id);
+        $report = $this->dataService->findById('laramieSavedReport', $id);
         $relatedModel = object_get($report, 'relatedModel');
 
         if ($relatedModel) {
@@ -334,7 +334,7 @@ class AdminController extends Controller
                     return response('OK')->cookie('default_'.$relatedModel, $id, (10 * 365 * 24 * 60));
                     break;
                 case 'delete':
-                    $this->dataService->deleteById('LaramieSavedReport', $report->id, true);
+                    $this->dataService->deleteById('laramieSavedReport', $report->id, true);
                     break;
                 break;
             }
@@ -356,7 +356,7 @@ class AdminController extends Controller
 
         $userUuid = $this->dataService->getUserUuid();
 
-        $reportModel = $this->dataService->getModelByKey('LaramieSavedReport');
+        $reportModel = $this->dataService->getModelByKey('laramieSavedReport');
 
         // Delete reports with the same name by the same user for the same model
         // @TODO -- move this out of the controller
@@ -421,7 +421,7 @@ class AdminController extends Controller
         $lastEditor = null;
         $lastEditorId = object_get($item, 'user_id');
         if (Uuid::isValid($lastEditorId)) {
-            $lastEditor = $this->dataService->findByIdSuperficial('LaramieUser', $lastEditorId);
+            $lastEditor = $this->dataService->findByIdSuperficial('laramieUser', $lastEditorId);
         }
         $metaId = session('metaId') ?: ($item->_isUpdate ? $item->id : Uuid::uuid1()->toString());
         $selectedTab = session('selectedTab') ?: '_main';
@@ -437,7 +437,7 @@ class AdminController extends Controller
 
         $lastUserToUpdate = null;
         if ($item->_isUpdate) {
-            $lastUserToUpdate = $this->dataService->findByIdSuperficial($this->dataService->getModelByKey('LaramieUser'), $item->user_id);
+            $lastUserToUpdate = $this->dataService->findByIdSuperficial($this->dataService->getModelByKey('laramieUser'), $item->user_id);
         }
 
         /*
@@ -536,6 +536,7 @@ class AdminController extends Controller
         if ($success) {
             DB::beginTransaction();
             try {
+                $item->_metaId = $metaId;
                 $item = $this->dataService->save($model, $item);
                 DB::commit();
             } catch (\Exception $e) {

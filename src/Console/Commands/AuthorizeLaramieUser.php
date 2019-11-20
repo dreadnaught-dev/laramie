@@ -31,7 +31,7 @@ class AuthorizeLaramieUser extends Command
      */
     public function handle(LaramieDataService $dataService)
     {
-        $model = $dataService->getModelByKey('LaramieUser');
+        $model = $dataService->getModelByKey('laramieUser');
         $user = $this->argument('user');
         $password = $this->option('password');
 
@@ -97,7 +97,6 @@ class AuthorizeLaramieUser extends Command
                 'secret' => $google2fa->generateSecretKey(),
             ];
 
-            $laramieModel->_isFromConsole = true;
             $laramieModel->password = $laramiePassword;
         } else {
             // The user already exists
@@ -106,14 +105,15 @@ class AuthorizeLaramieUser extends Command
 
         $laramieModel->status = 'Active';
 
-        // Get the LaramieRole
-        $role = $dataService->findById($dataService->getModelByKey('LaramieRole'), $role);
+        // Get the laramieRole
+        $role = $dataService->findById($dataService->getModelByKey('laramieRole'), $role);
 
         // Set the user's role:
         $laramieModel->user = $user;
         $laramieModel->roles = [$role];
 
-        // Save the user
+        // Save the user, but prevent events -- we've created everything by hand, don't want LaramieUser's pre/post save events to try to double that work:
+        config(['laramie.suppress_events' => true]);
         $dataService->save($model, $laramieModel);
 
         $this->info('Done');

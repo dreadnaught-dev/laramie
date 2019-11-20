@@ -2,6 +2,7 @@
 
 namespace Laramie\Http\Controllers;
 
+use DB;
 use Illuminate\Http\Request;
 use Ramsey\Uuid\Uuid;
 use Laramie\Lib\LaramieHelpers;
@@ -50,6 +51,10 @@ class AjaxController extends Controller
 
         // `$outerItemId` refers to the id of the item being edited (may be null).
         $outerItemId = $request->get('itemId');
+        if (!Uuid::isValid($outerItemId)) {
+            $outerItemId = null;
+        }
+        $invertSearch = $request->get('invertSearch') === 'true';
 
         // `$keywords` is the search string.
         $keywords = $request->get('keywords');
@@ -66,7 +71,7 @@ class AjaxController extends Controller
                 'resultsPerPage' => 10,
                 'isFromAjaxController' => true,
             ],
-            function ($query) use ($uuidCollection, $keywords, $model, $lookupSubtype, $outerItemId, $modelKey, $fieldInvokingRequest, $isTypeSpecific) {
+            function ($query) use ($uuidCollection, $keywords, $model, $lookupSubtype, $outerItemId, $modelKey, $fieldInvokingRequest, $isTypeSpecific, $invertSearch) {
                 // Never show the item being edited.
                 $query->where('id', '!=', $outerItemId);
 
@@ -81,8 +86,12 @@ class AjaxController extends Controller
                     $query->addSelect(\DB::raw('(case id '.$uuidSql.' else 2 end) as selected'));
                     $query->orderBy('selected', 'asc');
                 }
-                // If searching LaramieUploads, limit returned extensions if the subtype is `image`.
-                if ($model->_type == 'LaramieUpload' && $lookupSubtype == 'image') {
+                if ($invertSearch) {
+                    $query->addSelect(\DB::raw('(case when data->>\''.$fieldInvokingRequest.'\' like \'%'.$outerItemId.'%\' then 1 else 2 end) as selected'));
+                    $query->orderBy('selected', 'asc');
+                }
+                // If searching laramieUploads, limit returned extensions if the subtype is `image`.
+                if ($model->_type == 'laramieUpload' && $lookupSubtype == 'image') {
                     $query->whereRaw(\DB::raw('data->>\'extension\' in (\''.implode("','", config('laramie.allowed_image_types')).'\')'));
                 }
                 // Limit by keyword
@@ -137,7 +146,8 @@ class AjaxController extends Controller
                     'label' => $alias
                         ? LaramieHelpers::formatListValue($alias, object_get($e, $alias->id), true)
                         : null,
-                    'selected' => object_get($e, 'selected') == 1
+                    'selected' => object_get($e, 'selected') == 1,
+                    'created_at' => \Carbon\Carbon::parse(data_get($e, 'created_at'), config('laramie.timezone'))->diffForHumans(),
                 ];
             }));
 
@@ -210,12 +220,12 @@ class AjaxController extends Controller
     public function dismissAlert($id)
     {
         // First, ensure that the the id maps to an alert (don't let this be a vector for arbitrarily deleting items).
-        $alert = $this->dataService->findById('LaramieAlert', $id);
+        $alert = $this->dataService->findById('laramieAlert', $id);
 
         // If the item exists (as an alert), delete it:
         if (object_get($alert, 'id')) {
             $alert->status = 'Read';
-            $this->dataService->save('LaramieAlert', $alert);
+            $this->dataService->save('laramieAlert', $alert);
         }
 
         // Always return success. Not concerned by failure (either due to an
@@ -247,6 +257,63 @@ class AjaxController extends Controller
         $userPrefs->hideTags = $request->get('hideTags') == '1';
         $userPrefs->hideRevisions = $request->get('hideRevisions') == '1';
         $this->dataService->saveUserPrefs($userPrefs);
+
+        return response()->json((object) ['success' => true]);
+    }
+
+    public function modifyRef(Request $request, $modelKey)
+    {
+        $itemId = $request->get('itemId');
+        if (!Uuid::isValid($itemId)) {
+            $itemId = null;
+        }
+
+        $referenceItemId = $request->get('referenceId');
+        if (!Uuid::isValid($referenceItemId)) {
+            $referenceItemId = null;
+        }
+
+        if (!$itemId || !$referenceItemId) {
+            abort(403);
+        }
+
+        $field = $request->get('field');
+
+        $model = $this->dataService->getModelByKey($modelKey);
+        $referenceField = data_get($model, sprintf( 'fields.%s', $field));
+        $referenceFieldName = data_get($model, sprintf( 'fields.%s._fieldName', $field));
+        $isSelected = $request->get('selected') === '1';
+
+        $item = $this->dataService->findByIdSuperficial($model, $itemId);
+        // TODO -- validate referenceItemId is NOT in the db (new item) or belongs to type: `data_get($referenceField, 'relatedModel')`
+
+        $data = json_decode(data_get($item, '_origData', '{}'));
+
+        // Single reference -- only one allowed at a time
+        if (data_get($referenceField, 'subtype') == 'single') {
+            $data->{$referenceFieldName} = $isSelected
+                ? $referenceItemId
+                : null;
+        } else { // multiple reference, may have many -- we've got to do some book keeping:
+            $existingSelection = collect(data_get($data, $referenceFieldName, []));
+            $existingSelection->push($referenceItemId);
+            $data->{$referenceFieldName} = $existingSelection
+                ->filter(function($item) use($isSelected, $referenceItemId) {
+                    return $isSelected
+                        ? true
+                        : $item != $referenceItemId;
+                })
+                ->unique()
+                ->values()
+                ->toArray();
+        }
+
+        DB::table('laramie_data')
+            ->where('id', $item->id)
+            ->update([
+                'updated_at' => \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString(),
+                'data' => json_encode($data),
+            ]);
 
         return response()->json((object) ['success' => true]);
     }

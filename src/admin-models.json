@@ -1,6 +1,6 @@
 {
     "models": {
-        "LaramieRole": {
+        "laramieRole": {
             "isSystemModel": true,
             "alias": "name",
             "defaultSort": "_created_at",
@@ -9,7 +9,7 @@
                 "name": { "type": "text", "required": true }
             }
         },
-        "LaramieUpload": {
+        "laramieUpload": {
             "name": "Upload",
             "namePlural": "Uploads",
             "isSystemModel": true,
@@ -32,7 +32,7 @@
                 "source": { "type": "hidden", "isVisibleOnEdit": false, "required": false, "listByDefault": false }
             }
         },
-        "LaramieUser": {
+        "laramieUser": {
             "isSystemModel": true,
             "alias": "user",
             "defaultSort": "_created_at",
@@ -42,7 +42,7 @@
                 "password": { "type": "password", "label": "password" },
                 "roles": {
                     "type": "reference-many",
-                    "relatedModel": "LaramieRole"
+                    "relatedModel": "laramieRole"
                 },
                 "api": {
                     "type": "aggregate",
@@ -72,7 +72,7 @@
                 }
             }
         },
-        "LaramieAlert": {
+        "laramieAlert": {
             "name": "Notification",
             "namePlural": "Notifications",
             "isSystemModel": true,
@@ -81,9 +81,9 @@
             "defaultSortDirection": "desc",
             "fields": {
                 "metaId": { "type": "hidden", "isListable": false, "isEditable": false },
-                "author": { "type": "reference-single", "relatedModel": "LaramieUser", "isListable": false, "isEditable": false },
-                "_authorName": { "type": "computed", "label": "From", "sql": "(select data->>'user' from laramie_data as ld2 where ld2.type = 'LaramieUser' and ld2.id::text = laramie_data.data->>'author' limit 1)" },
-                "recipient": { "type": "reference-single", "relatedModel": "LaramieUser", "isListable": false, "isEditable": false },
+                "author": { "type": "reference-single", "relatedModel": "laramieUser", "isListable": false, "isEditable": false },
+                "_authorName": { "type": "computed", "label": "From", "sql": "(select data->>'user' from laramie_data as ld2 where ld2.type = 'laramieUser' and ld2.id::text = laramie_data.data->>'author' limit 1)" },
+                "recipient": { "type": "reference-single", "relatedModel": "laramieUser", "isListable": false, "isEditable": false },
                 "message": { "type": "markdown", "required": true },
                 "status": {
                     "type": "select",
@@ -93,12 +93,12 @@
                 }
             }
         },
-        "LaramieSavedReport": {
+        "laramieSavedReport": {
             "isSystemModel": true,
             "isListable": false,
             "isEditable": false,
             "fields": {
-                "user": { "type": "reference-single", "relatedModel": "LaramieUser" },
+                "user": { "type": "reference-single", "relatedModel": "laramieUser" },
                 "relatedModel": { "type": "text", "required": true },
                 "name": { "type": "text", "required": true },
                 "key": { "type": "text", "required": true },

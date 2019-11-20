@@ -60,7 +60,7 @@ class LaramieServiceProvider extends ServiceProvider
         \View::composer(['laramie::layout'], function ($view) {
             $view->with('systemUsers',
                 collect(app(LaramieDataService::class)->findByType(
-                    'LaramieUser',
+                    'laramieUser',
                     ['resultsPerPage' => 0],
                     function ($query) {
                         $query->where(\DB::raw('data->>\'status\''), '=', 'Active');
@@ -75,7 +75,7 @@ class LaramieServiceProvider extends ServiceProvider
         \View::composer(['laramie::partials.header'], function ($view) {
             $service = app(LaramieDataService::class);
             $alerts = $service->findByType(
-                    'LaramieAlert',
+                    'laramieAlert',
                     ['resultsPerPage' => 0],
                     function ($query) use ($service) {
                         $query->where(\DB::raw('data->>\'recipient\''), '=', $service->getUserUuid())

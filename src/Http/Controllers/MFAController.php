@@ -70,7 +70,7 @@ class MFAController extends Controller
 
         if ($isValid) {
             $user->mfa->registrationCompleted = true;
-            $this->dataService->save('LaramieUser', $user);
+            $this->dataService->save('laramieUser', $user);
             $request->session()->put('_mfa', 'allow');
 
             return redirect()->intended(route('laramie::dashboard'));
@@ -84,7 +84,7 @@ class MFAController extends Controller
     {
         $linkedField = config('laramie.username');
         $userRecord = DB::table('laramie_data')
-            ->where('type', 'LaramieUser')
+            ->where('type', 'laramieUser')
             ->where(DB::raw('data->>\'user\''), '=', auth()->user()->{$linkedField})
             ->where(DB::raw('data->>\'status\''), '=', 'Active')
             ->first();
@@ -93,6 +93,6 @@ class MFAController extends Controller
             abort(401);
         }
 
-        return $this->dataService->findById('LaramieUser', $userRecord->id);
+        return $this->dataService->findById('laramieUser', $userRecord->id);
     }
 }

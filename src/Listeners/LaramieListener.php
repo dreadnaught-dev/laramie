@@ -74,7 +74,7 @@ class LaramieListener
     {
         $config = $event->config;
 
-        $laramieRoleModel = object_get($config, 'models.LaramieRole');
+        $laramieRoleModel = object_get($config, 'models.laramieRole');
 
         $nonSystemModels = collect($config->models)
             ->filter(function ($e) {
@@ -105,7 +105,7 @@ class LaramieListener
         $type = $model->_type;
 
         switch ($type) {
-            case 'LaramieRole':
+            case 'laramieRole':
                 // The only way we can hit shapeListQuery and not have a user is on
                 // authentication -- we don't need to worry about limiting the
                 // query by the user in this case -- it's just to get the list of
@@ -114,7 +114,7 @@ class LaramieListener
                     $query->whereNotIn('id', [Globals::SuperAdminRoleId, Globals::AdminRoleId]);
                 }
                 break;
-            case 'LaramieAlert':
+            case 'laramieAlert':
                 // Only show the messages for which the user is the recipient:
                 if ($user !== null) {
                     $query->where(function ($query) use ($user) {
@@ -186,18 +186,18 @@ class LaramieListener
         $type = $model->_type;
 
         switch ($type) {
-            case 'LaramieRole':
+            case 'laramieRole':
                 // Don't allow main system rles to be edited
                 if (in_array($item->id, [Globals::SuperAdminRoleId, Globals::AdminRoleId])) {
                     throw new Exception('Sorry, you may not edit default system roles (Super admin and User management.');
                 }
                 break;
-            case 'LaramieUser':
+            case 'laramieUser':
                 if (!object_get($item, 'api.username')) {
                     $item->api = (object) ['enabled' => false, 'username' => str_random(Globals::API_TOKEN_LENGTH), 'password' => str_random(Globals::API_TOKEN_LENGTH)];
                 }
                 break;
-            case 'LaramieAlert':
+            case 'laramieAlert':
                 if ($item->_isNew) {
                     $model->fields->status->isEditable = false;
                     $model->fields->recipient->isEditable = true;
@@ -208,6 +208,22 @@ class LaramieListener
                     $model->fields->_authorName->type = 'hidden';
                 }
                 break;
+        }
+
+        $dataService = $this->getLaramieDataService();
+        $refs = data_get($model, 'refs', []);
+        if ($refs) {
+            $model->refs = collect($refs)
+                ->map(function($item) use($dataService) {
+                    $relatedModel = $dataService->getModelByKey($item->model);
+                    return (object) [
+                        'label' => data_get($item, 'label', data_get($relatedModel, 'namePlural')),
+                        'type' => data_get($relatedModel, '_type'),
+                        'alias' => data_get($relatedModel, 'alias'),
+                        'field' => data_get($item, 'throughField'),
+                        'quickSearch' => implode(', ', object_get($relatedModel, 'quickSearch')),
+                    ];
+                });
         }
     }
 
@@ -241,7 +257,7 @@ class LaramieListener
                 $q2 = clone $query;
                 $q2->select(['id']);
 
-                if ($type == 'LaramieRole') {
+                if ($type == 'laramieRole') {
                     $q2->whereNotIn('id', [Globals::SuperAdminRoleId, Globals::AdminRoleId]); // don't allow deletion of core Laramie roles.
                 }
 
@@ -319,16 +335,8 @@ class LaramieListener
         $user = $event->user;
         $type = $model->_type;
 
-        // @note -- we're not running preSave commands for LaramieUsers or
-        // LaramieUploads that are initiated by console commands -- right now the
-        // only core console command that touches either is for authorizing users
-        // (which takes care of what it needs).
-        if (object_get($item, '_isFromConsole')) {
-            return;
-        }
-
         switch ($type) {
-            case 'LaramieUser':
+            case 'laramieUser':
                 // If we're saving a new user, we need to create a corresponding Laravel user
                 if (object_get($item, '_isNew')) {
                     \DB::table('users')->insert([
@@ -341,7 +349,7 @@ class LaramieListener
                 } else {
                     // If we're _updating_ a user, we need to grab its state _before_ the update (so that we can map it to its Laravel user).
                     $dataService = $this->getLaramieDataService();
-                    $oldUserInfo = $dataService->findByIdSuperficial($dataService->getModelByKey('LaramieUser'), $item->id);
+                    $oldUserInfo = $dataService->findByIdSuperficial($dataService->getModelByKey('laramieUser'), $item->id);
                     \DB::table('users')
                         ->where(config('laramie.username'), $oldUserInfo->user)
                         ->update([
@@ -353,7 +361,7 @@ class LaramieListener
                 }
                 break;
             // Create thumbnails for images
-            case 'LaramieUpload':
+            case 'laramieUpload':
                 try {
                     // @optimize -- move thumb gen to postsave
                     // If the item is an image, create thumbnails (for use by the admin)
@@ -394,14 +402,14 @@ class LaramieListener
                 } catch (Exception $e) { /* there was some issue with creating thumbs... don't bork too hard, though */
                 }
                 break;
-            case 'LaramieAlert':
+            case 'laramieAlert':
                 // Only show alerts a user has received:
                 if ($item->_isNew) {
                     $item->author = $user;
                     $item->status = 'Unread';
                 } else {
                     $dataService = $this->getLaramieDataService();
-                    $orig = $dataService->findById('LaramieAlert', $item->id);
+                    $orig = $dataService->findById('laramieAlert', $item->id);
                     $item->author = $orig->author;
                     $item->recipient = $orig->recipient;
                 }
@@ -424,14 +432,14 @@ class LaramieListener
 
         switch ($type) {
             // Create thumbnails for images
-            case 'LaramieUpload':
+            case 'laramieUpload':
                 break;
             case '_laramieComment':
                 $plainText = object_get($item, 'comment.markdown');
                 preg_match_all('/@(?<mentions>[a-z0-9\-\.\_]+)/i', $plainText, $matches);
                 $mentions = array_get($matches, 'mentions');
                 foreach ($mentions as $mention) {
-                    $tmpUser = $dataService->findByType('LaramieUser', null, function ($query) use ($mention) {
+                    $tmpUser = $dataService->findByType('laramieUser', null, function ($query) use ($mention) {
                         $query->where(DB::raw('data->>\'user\''), 'ilike', $mention.'%');
                     })->first();
                     if ($tmpUser) {
@@ -442,7 +450,7 @@ class LaramieListener
                             'message' => $item->comment,
                             'status' => 'Unread',
                         ]);
-                        $dataService->save('LaramieAlert', $alert);
+                        $dataService->save('laramieAlert', $alert);
                     }
                 }
         }

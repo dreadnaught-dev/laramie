@@ -140,4 +140,14 @@ return [
     |--------------------------------------------------------------------------
     */
     'enable_local_api' => false,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Suppress most events (pre-save, post-save, shape-list-query, etc).
+    | Useful when you want full and explicit control over modifying a
+    | LaramieModel.
+    | You may set at runtime by `config(['laramie.suppress_events' => true]);`
+    |--------------------------------------------------------------------------
+    */
+    'suppress_events' => false,
 ];

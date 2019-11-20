@@ -13,8 +13,6 @@ use PragmaRX\Google2FA\Google2FA;
 
 class LaramieUser extends LaramieModel
 {
-    protected $jsonClass = 'LaramieUser';
-
     public static function createWithAuth($username, $password, $enableApi = false, $enableMfa = false)
     {
         $tmp = new static();

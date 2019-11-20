@@ -9,6 +9,30 @@
                 @include('laramie::partials.alert')
 
                 @include('laramie::partials.edit.edit-form')
+
+                @if (data_get($model, 'refs', null))
+                <hr class="hr">
+                @foreach (data_get($model, 'refs') as $ref)
+                    <div class="reference-panel" data-type="{{ $model->_type }}" data-lookup-type="{{ $ref->type }}" data-field="{{ $ref->field }}">
+                        <h4 class="title is-4">{{ $ref->label }}</h4>
+                        <p class="control">
+                            <input class="input keywords" type="text" placeholder="Quick Search" title="Quickly search by {{ $ref->quickSearch }}">
+                        </p>
+                        <br>
+                        <table class="table is-fullwidth is-hoverable">
+                            <thead>
+                                <tr>
+                                    <th><a href="javascript:void(0);" class="js-sort" data-field="alias">{{ object_get($model, 'alias') }}</a></th>
+                                    <th><a href="javascript:void(0);" class="js-sort" data-field="created_at">Created</a></th>
+                                    <th><a href="javascript:void(0);" class="js-sort" data-field="exists">Belongs to {{ $model->name }}?</a></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                @endforeach
+                @endif
             </div>
             <div class="column is-narrow edit-sidebar">
                 @foreach ($sidebars as $sidebar => $data)

@@ -23,7 +23,7 @@
                 @endif
             </div>
         </div>
-        <div class="columns reference-search hide-when-file" data-field="{{ data_get($field, '_fieldName') }}" data-type="{{ $model->_type }}" data-lookup-type="LaramieUpload" data-lookup-subtype="{{ $uploadType }}" data-is-single-reference="1" style="display:none">
+        <div class="columns reference-search hide-when-file" data-field="{{ data_get($field, '_fieldName') }}" data-type="{{ $model->_type }}" data-lookup-type="laramieUpload" data-lookup-subtype="{{ $uploadType }}" data-is-single-reference="1" style="display:none">
             <div class="column is-half">
                 <nav class="panel">
                     <div class="panel-heading">

@@ -11,7 +11,7 @@
                 @if (object_get($lastUserToUpdate, 'id'))
                     by
                     @if ($user->isSuperAdmin || $user->isAdmin)
-                        <a href="{{ route('laramie::edit', ['modelKey' => 'LaramieUser', 'id' => $lastUserToUpdate->id]) }}">{{ $lastUserToUpdate->user }}</a>
+                        <a href="{{ route('laramie::edit', ['modelKey' => 'laramieUser', 'id' => $lastUserToUpdate->id]) }}">{{ $lastUserToUpdate->user }}</a>
                     @else
                         {{ $lastUserToUpdate->user }}
                     @endif

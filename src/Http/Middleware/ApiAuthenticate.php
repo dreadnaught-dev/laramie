@@ -4,7 +4,9 @@ namespace Laramie\Http\Middleware;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Access\AuthorizationException;
+
 use Laramie\Globals;
+use Laramie\LaramieUser;
 use Laramie\Services\LaramieDataService;
 
 class ApiAuthenticate
@@ -34,8 +36,8 @@ class ApiAuthenticate
         // The username and password are not the user's acutal username and password, but correspond to the user's `api` username and password.
         $authArray = explode(':', base64_decode(trim(str_replace('Basic', '', $request->header('Authorization', '')))));
 
-        // First find the LaramieUser that corresponds to those creds:
-        $laramieUser = array_first(\DB::select('select id, data->>\'user\' as user from laramie_data where type = \'LaramieUser\' and (data#>>\'{api,enabled}\')::boolean = true and data#>>\'{api,username}\'= ? and data#>>\'{api,password}\' = ? limit 1', [array_get($authArray, 0, -1), array_get($authArray, 1, -1)]));
+        // First find the laramieUser that corresponds to those creds:
+        $laramieUser = array_first(\DB::select('select id, data->>\'user\' as user from laramie_data where type = \'laramieUser\' and (data#>>\'{api,enabled}\')::boolean = true and data#>>\'{api,username}\'= ? and data#>>\'{api,password}\' = ? limit 1', [array_get($authArray, 0, -1), array_get($authArray, 1, -1)]));
 
         // Next find the Laravel user that corresponds to the Laramie user:
         $laravelUser = array_first(\DB::select('select id from users where '.config('laramie.username').' like ?', [object_get($laramieUser, 'user')]));
@@ -46,7 +48,7 @@ class ApiAuthenticate
         if ($success) {
             // Success, creds match, users match, etc. Now find and set their access rights / abilities:
             $laramieDataService = app(LaramieDataService::class);
-            $laramieUser = $laramieDataService->findById($laramieDataService->getModelByKey('LaramieUser'), $laramieUser->id);
+            $laramieUser = LaramieUser::find($laramieUser->id);
             $userRoles = object_get($laramieUser, 'roles', []);
             $abilities = [];
             $isSuperAdmin = false;

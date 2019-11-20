@@ -189,9 +189,9 @@ class ModelLoader
                 $models->{$key} = $model;
             }
 
-            // Set what the label for the LaramieUser model (email, username, etc)
+            // Set what the label for the laramieUser model (email, username, etc)
             $tmp = static::getPrettyNamesFromKey(config('laramie.username'));
-            $models->LaramieUser->fields->user->label = $tmp[0];
+            $models->laramieUser->fields->user->label = $tmp[0];
 
             // Save the processed menu and models to the config
             $config->menu = $menu;
@@ -393,7 +393,7 @@ class ModelLoader
                     $field->subtype = 'image';
                 }
                 $field->type = 'file';
-                $field->relatedModel = 'LaramieUpload';
+                $field->relatedModel = 'laramieUpload';
                 $field->isPublic = object_get($field, 'isPublic', config('laramie.files_are_public_by_default')) !== false; // @note -- add there's a config param to set default file visibility (public meaning it's available outside of the admin).
                 break;
             case 'computed':

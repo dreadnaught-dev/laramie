@@ -26,8 +26,8 @@ class CreateDataTable extends Migration
         \DB::statement('CREATE INDEX on laramie_data (type)');
         \DB::statement('CREATE INDEX on laramie_data USING GIN (data jsonb_path_ops)');
 
-        \DB::statement('INSERT INTO laramie_data (id, user_id, type, data, created_at, updated_at) VALUES(\''.Globals::SuperAdminRoleId.'\', null, \'LaramieRole\', \'{"name": "Super Admin"}\', now(), now())');
-        \DB::statement('INSERT INTO laramie_data (id, user_id, type, data, created_at, updated_at) VALUES(\''.Globals::AdminRoleId.'\', null, \'LaramieRole\', \'{"name": "Admin"}\', now(), now())');
+        \DB::statement('INSERT INTO laramie_data (id, user_id, type, data, created_at, updated_at) VALUES(\''.Globals::SuperAdminRoleId.'\', null, \'laramieRole\', \'{"name": "Super Admin"}\', now(), now())');
+        \DB::statement('INSERT INTO laramie_data (id, user_id, type, data, created_at, updated_at) VALUES(\''.Globals::AdminRoleId.'\', null, \'laramieRole\', \'{"name": "Admin"}\', now(), now())');
     }
 
     /**
