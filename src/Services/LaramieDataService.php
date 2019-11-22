@@ -825,31 +825,33 @@ class LaramieDataService
     private function flattenRelationships($fieldHolder, $data)
     {
         foreach ($fieldHolder->fields as $key => $field) {
-            if ($field->type == 'reference') {
-                if ($field->subtype == 'single') {
-                    $data->{$key} = data_get($data, $key.'.id');
-                } else {
-                    $data->{$key} = collect(data_get($data, $key))
-                        ->map(function ($e) {
-                            return data_get($e, 'id');
-                        })
-                        ->filter()
-                        ->values()
-                        ->all();
-                }
-            } elseif ($field->type == 'file') {
-                $data->{$key} = data_get($data, $key.'.uploadKey');
-            } elseif ($field->type == 'aggregate') {
-                $aggregateData = data_get($data, $key, null);
-                if (is_array($aggregateData)) {
-                    for ($i = 0; $i < count($aggregateData); ++$i) {
-                        $aggregateData[$i] = $this->flattenRelationships($field, $aggregateData[$i]);
+            try {
+                if ($field->type == 'reference') {
+                    if ($field->subtype == 'single') {
+                        $data->{$key} = data_get($data, $key.'.id');
+                    } else {
+                        $data->{$key} = collect(data_get($data, $key))
+                            ->map(function ($e) {
+                                return data_get($e, 'id');
+                            })
+                            ->filter()
+                            ->values()
+                            ->all();
                     }
-                } else {
-                    $aggregateData = $this->flattenRelationships($field, $aggregateData);
+                } elseif ($field->type == 'file') {
+                    $data->{$key} = data_get($data, $key.'.uploadKey');
+                } elseif ($field->type == 'aggregate') {
+                    $aggregateData = data_get($data, $key, null);
+                    if (is_array($aggregateData)) {
+                        for ($i = 0; $i < count($aggregateData); ++$i) {
+                            $aggregateData[$i] = $this->flattenRelationships($field, $aggregateData[$i]);
+                        }
+                    } else {
+                        $aggregateData = $this->flattenRelationships($field, $aggregateData);
+                    }
+                    $data->{$key} = $aggregateData;
                 }
-                $data->{$key} = $aggregateData;
-            }
+            } catch (Exception $e) { dd($key, $field, $data); }
         }
 
         return $data;

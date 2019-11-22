@@ -6,15 +6,17 @@
     $aggregateDepth = isset($aggregateDepth) ? $aggregateDepth + 1 : 1;
 @endphp
 
-<div class="aggregate-outer-wrapper {{ object_get($aggregateField, 'asTab') ? 'is-tab tab-'.str_slug($aggregateField->label) . ($selectedTab == str_slug($aggregateField->label) ? ' is-active' : '') : '' }}" style="margin-bottom: 1.5rem;">
-    <label class="label">
-        {{ $aggregateField->isRepeatable ? $aggregateField->labelPlural : $aggregateField->label }}
-        @if ($isRepeatable)
-            &nbsp;&nbsp;<a class="tag is-primary js-add-aggregate" data-type="{{ $field->_fieldName }}">Add {{ preg_match('/^[aeiou]/i', $field->label) ? 'an' : 'a'}} {{ $field->label }}</a>
-        @endif
-    </label>
+<div class="aggregate-outer-wrapper has-margin-bottom {{ object_get($aggregateField, 'asTab') ? 'is-tab tab-'.str_slug($aggregateField->label) . ($selectedTab == str_slug($aggregateField->label) ? ' is-active' : '') : '' }}" {!! data_get($aggregateField, 'showWhen') ? 'data-show-when="'.preg_replace('/_[^_]+_\b/', '_'.data_get($aggregateField, 'showWhen'), $field->id).'"' : '' !!}>
+    @if (object_get($aggregateField, 'hideLabel') !== true)
+        <h4 class="title is-4" style="margin: 1.5rem 0 .75rem">
+            {{ $aggregateField->isRepeatable ? $aggregateField->labelPlural : $aggregateField->label }}
+            @if ($isRepeatable)
+                &nbsp;&nbsp;<a class="tag is-primary js-add-aggregate" data-type="{{ $field->_fieldName }}">Add {{ preg_match('/^[aeiou]/i', $field->label) ? 'an' : 'a'}} {{ $field->label }}</a>
+            @endif
+        </h4>
+    @endif
 
-    <div class="aggregate-holder padded content" data-type="{{ $field->_fieldName }}" data-template="{{ $metaId . $field->_template }}" data-is-repeatable="{{ $field->isRepeatable ? '1' : '0' }}" data-min-items="{{ object_get($field, 'minItems') }}" data-max-items="{{ object_get($field, 'maxItems') }}" data-empty-message="No {{ $aggregateField->labelPlural }} added yet">
+    <div class="aggregate-holder padded content {{ object_get($aggregateField, 'unwrap') === true ? 'unwrapped' : 'wrapped' }}" data-type="{{ $field->_fieldName }}" data-template="{{ $metaId . $field->_template }}" data-is-repeatable="{{ $field->isRepeatable ? '1' : '0' }}" data-min-items="{{ object_get($field, 'minItems') }}" data-max-items="{{ object_get($field, 'maxItems') }}" data-empty-message="No {{ $aggregateField->labelPlural }} added yet">
         @if ($isRepeatable)
             <?php /*<p>No {{ $aggregateField->labelPlural }} added yet</p>*/ ?>
         @endif

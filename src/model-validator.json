@@ -84,7 +84,8 @@
                     ]
                 },
                 "isSortable": { "type": "boolean" },
-                "isMetaField": { "type": "boolean" }
+                "isMetaField": { "type": "boolean" },
+                "showWhen": { "type": "string" }
             },
             "patternProperties": {
                 "^_" : [ ],
@@ -184,7 +185,9 @@
                 "fields": { "type": "object" },
                 "isRepeatable": { "type": "boolean" },
                 "minItems": { "type": "integer" },
-                "maxItems": { "type": "integer" }
+                "maxItems": { "type": "integer" },
+                "unwrap": { "type": "boolean" },
+                "hideLabel": { "type": "boolean" }
             }
         }
     }

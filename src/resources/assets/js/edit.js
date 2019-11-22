@@ -18,6 +18,7 @@ $(window).scroll(function() {
 
 $(document).ready(function() {
   loadHandlebarsTemplates();
+  $('[data-show-when]').conditionallyHide();
 
   $(".edit-container")
     .find(".aggregate-holder")
@@ -28,6 +29,7 @@ $(document).ready(function() {
       var $holder = $(this);
       var itemData = objectGet(window, "globals.aggregates." + itemId, {});
       loadAggregateFields($holder, itemData);
+      $holder.find('[data-show-when]').conditionallyHide();
       $.event.trigger("aggregates-loaded");
     });
 
@@ -232,6 +234,7 @@ $(document).ready(function() {
     loadAggregateFields($holder, {}, keys, true);
     defaultEmptyTimezonesToBrowserValue();
     transformSelectsToSelect2();
+    $holder.find('[data-show-when]').conditionallyHide();
   });
 
   $("#edit-form").on("click.remove-aggregate", ".js-remove-aggregate", function(e) {

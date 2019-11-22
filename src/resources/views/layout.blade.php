@@ -49,6 +49,7 @@
         </div>
     </footer>
     <script src="/laramie/admin/js/jquery.min.js"></script>
+    <script src="/laramie/admin/js/jquery.conditionally-hide.js"></script>
     <script src="/laramie/admin/js/handlebars.min.js"></script>
     <script src="/laramie/admin/js/dragula.min.js"></script>
     <script src="/laramie/admin/js/tribute.min.js"></script>
