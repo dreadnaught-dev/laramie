@@ -150,4 +150,12 @@ return [
     |--------------------------------------------------------------------------
     */
     'suppress_events' => false,
+
+    /*
+    |--------------------------------------------------------------------------
+    | When saving, you may apply a prefix to the file to help organize things.
+    | By default, files will be placed in a directory with the id of the user saving.
+    |--------------------------------------------------------------------------
+    */
+    'file_prefix' => '{*user.id*}/',
 ];

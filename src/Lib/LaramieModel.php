@@ -467,7 +467,7 @@ class LaramieModel implements \JsonSerializable
 
     public function jsonSerialize() {
         foreach ($this as $key => $value) {
-            if (strpos($key, '_') === 0) {
+            if (strpos($key, '_') === 0 && $key !== '_alias') {
                 unset($this->{$key});
             }
         }

@@ -47,6 +47,10 @@ class LaramieListener
             //'Laramie\Events\TransformModelForEdit',
             //'Laramie\Listeners\LaramieListener@transformModelForEdit'
         //);
+        //$events->listen(
+            //'Laramie\Events\ModifyFileInfoPreSave',
+            //'Laramie\Listeners\LaramieListener@modifyFileInfoPreSave'
+        //);
         $events->listen(
             'Laramie\Events\PreSave',
             'Laramie\Listeners\LaramieListener@preSave'

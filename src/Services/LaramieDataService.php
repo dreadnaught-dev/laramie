@@ -6,6 +6,8 @@ use DB;
 use Exception;
 use Storage;
 use Ramsey\Uuid\Uuid;
+
+use Laramie\Lib\FileInfo;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
 use Laramie\Lib\ModelLoader;
@@ -14,6 +16,7 @@ use Laramie\Events\PostSave;
 use Laramie\Events\PreDelete;
 use Laramie\Events\PostDelete;
 use Laramie\Events\ShapeListQuery;
+use Laramie\Events\ModifyFileInfoPreSave;
 use JsonSchema\Validator;
 
 class LaramieDataService
@@ -825,33 +828,35 @@ class LaramieDataService
     private function flattenRelationships($fieldHolder, $data)
     {
         foreach ($fieldHolder->fields as $key => $field) {
-            try {
-                if ($field->type == 'reference') {
-                    if ($field->subtype == 'single') {
-                        $data->{$key} = data_get($data, $key.'.id');
-                    } else {
-                        $data->{$key} = collect(data_get($data, $key))
-                            ->map(function ($e) {
-                                return data_get($e, 'id');
-                            })
-                            ->filter()
-                            ->values()
-                            ->all();
-                    }
-                } elseif ($field->type == 'file') {
-                    $data->{$key} = data_get($data, $key.'.uploadKey');
-                } elseif ($field->type == 'aggregate') {
-                    $aggregateData = data_get($data, $key, null);
-                    if (is_array($aggregateData)) {
-                        for ($i = 0; $i < count($aggregateData); ++$i) {
-                            $aggregateData[$i] = $this->flattenRelationships($field, $aggregateData[$i]);
-                        }
-                    } else {
-                        $aggregateData = $this->flattenRelationships($field, $aggregateData);
-                    }
-                    $data->{$key} = $aggregateData;
+            if ($field->type == 'reference') {
+                if ($field->subtype == 'single') {
+                    $data->{$key} = is_string(data_get($data, $key)) && Uuid::isValid($data->{$key})
+                        ? $data->{$key}
+                        : data_get($data, $key.'.id');
+                } else {
+                    $data->{$key} = collect(data_get($data, $key))
+                        ->map(function ($e) {
+                            return is_string($e) && Uuid::isValid($e)
+                                ? $e
+                                : data_get($e, 'id');
+                        })
+                        ->filter()
+                        ->values()
+                        ->all();
                 }
-            } catch (Exception $e) { dd($key, $field, $data); }
+            } elseif ($field->type == 'file') {
+                $data->{$key} = data_get($data, $key.'.uploadKey');
+            } elseif ($field->type == 'aggregate') {
+                $aggregateData = data_get($data, $key, null);
+                if (is_array($aggregateData)) {
+                    for ($i = 0; $i < count($aggregateData); ++$i) {
+                        $aggregateData[$i] = $this->flattenRelationships($field, $aggregateData[$i]);
+                    }
+                } else {
+                    $aggregateData = $this->flattenRelationships($field, $aggregateData);
+                }
+                $data->{$key} = $aggregateData;
+            }
         }
 
         return $data;
@@ -1019,31 +1024,36 @@ class LaramieDataService
         return $newId;
     }
 
-    public function saveFile($file, $isPublic, $source = null)
+    public function saveFile($file, $isPublic, $source = null, $destination = null)
     {
         $storageDisk = config('laramie.storage_disk');
         $storageDriver = config('filesystems.disks.'.$storageDisk.'.driver');
+        $user = $this->getUser();
 
         // There's an issue with certain file types not getting an extension
         // set with `$file->store` (namely svg). Instead of relying on
         // Laravel/Symfony to auto-generate a file name, create one ourselves:
-        $storeAsName = sprintf('%s.%s',
-            preg_replace('/[-]/', '', Uuid::uuid4()->toString()),
-            $file->getExtension()
-                ? $file->getExtension()
-                : $file->getClientOriginalExtension()
-        );
+        $destination = $destination ?: sprintf('%s/%s._fix_extension',
+            data_get($user, 'id', \Laramie\Globals::DummyId),
+            preg_replace('/[-]/', '', Uuid::uuid4()->toString()));
+
+        // `$file` above can be an UploadedFile or a simple Illuminate file. Abstract the name/meta gathering to `FileInfo` -- will also allow a hook for events to modify before saving.
+        $fileInfo = new FileInfo($file, $isPublic, $source, $destination);
+
+        if (config('laramie.suppress_events') !== true) {
+            event(new ModifyFileInfoPreSave($this->getUser(), $fileInfo));
+        }
 
         $id = Uuid::uuid1()->toString();
         $laramieUpload = new LaramieModel();
         $laramieUpload->id = $id;
         $laramieUpload->uploadKey = $id;
-        $laramieUpload->name = $file->getClientOriginalName();
-        $laramieUpload->extension = $file->getClientOriginalExtension();
-        $laramieUpload->mimeType = $file->getClientMimeType();
-        $laramieUpload->path = $file->storeAs('laramie', $storeAsName, ['visibility' => 'private', 'disk' => $storageDisk]); // this is our master copy, it should always be private (with the exception of its admin-generated thumbs; we'll make those public if the file is public).
-        $laramieUpload->isPublic = $isPublic;
-        $laramieUpload->source = $source;
+        $laramieUpload->name = $fileInfo->name;
+        $laramieUpload->extension = $fileInfo->extension;
+        $laramieUpload->mimeType = $fileInfo->mimeType;
+        $laramieUpload->path = Storage::disk($storageDisk)->putFileAs('laramie', $file, $fileInfo->destination, ['visibility' => 'private']); // this is our master copy, it should always be private (with the exception of its admin-generated thumbs; we'll make those public if the file is public).
+        $laramieUpload->isPublic = $fileInfo->isPublic;
+        $laramieUpload->source = $fileInfo->source;
 
         $laramieUpload->fullPath = Storage::disk($storageDisk)->url($laramieUpload->path);
         if ($storageDriver == 'local') {
@@ -1055,12 +1065,7 @@ class LaramieDataService
         // Save and get the Laramie model
         $laramieUpload = $this->save($model, $laramieUpload);
 
-        // But really, we're only interested in the `data` attribute of the model, so get that:
-        $laramieUpload = $this->getBaseQuery($model)
-            ->where('id', $laramieUpload->id)
-            ->first();
-
-        return json_decode($laramieUpload->data);
+        return $laramieUpload;
     }
 
     public function getFileInfo($id)
