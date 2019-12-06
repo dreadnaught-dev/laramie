@@ -22,6 +22,7 @@ use JsonSchema\Validator;
 class LaramieDataService
 {
     protected $jsonConfig;
+    protected $cachedItems = [];
 
     public function __construct()
     {
@@ -93,7 +94,7 @@ class LaramieDataService
 
     // NOTE: For now, we're only diving into aggregate relationships for single
     // item selection. Aggregate references WILL NOT be hydrated by this query.
-    public function findByType($model, $options = null, $queryCallback = null, $maxPrefetchDepth = 1, $curDepth = 0)
+    public function findByType($model, $options = null, $queryCallback = null, $maxPrefetchDepth = 1, $curDepth = 0, $isSpiderAggregates = false)
     {
         $model = $this->getModelByKey($model);
 
@@ -116,6 +117,12 @@ class LaramieDataService
         }
 
         $this->prefetchRelationships($model, $laramieModels, $maxPrefetchDepth, $curDepth);
+
+        if ($isSpiderAggregates) {
+            $laramieModels->each(function($item) use($model) {
+                $this->spiderAggregates($model, $item);
+            });
+        }
 
         return $laramieModels;
     }
@@ -623,6 +630,10 @@ class LaramieDataService
 
     public function findById($model, $id, $maxPrefetchDepth = 5)
     {
+        if (array_key_exists($id, $this->cachedItems)) {
+            return $this->cachedItems[$id];
+        }
+
         $model = $this->getModelByKey($model);
 
         if ($id == 'new') {
@@ -648,6 +659,8 @@ class LaramieDataService
         // selection. What this means is that reference fields within deeply
         // nested aggregates won't be returned by `findByType`.
         $this->spiderAggregates($model, $item);
+
+        $this->cachedItems[$item->id] = $item;
 
         return $item;
     }
@@ -689,8 +702,8 @@ class LaramieDataService
                     })
                     ->all();
                 foreach ($aggregateReferenceFields as $aggregateReferenceFieldKey => $aggregateReferenceField) {
+                    // If `$aggregateData` is an array, we're processing a repeatable aggregate.
                     if (is_array($aggregateData)) {
-                        // If `$aggregateData` is an array, we're processing a repeatable aggregate. @optimize -- should we refactor all aggregates to be essentially repeatable? Simpler handling, conversion of one type to the other...
                         for ($i = 0; $i < count($aggregateData); ++$i) {
                             $aggregateReferenceFieldData = object_get($aggregateData[$i], $aggregateReferenceFieldKey);
                             if (is_array($aggregateReferenceFieldData)) {
@@ -704,7 +717,7 @@ class LaramieDataService
                             $aggregateData[$i]->{$aggregateReferenceFieldKey} = $aggregateReferenceFieldData;
                         }
                     } else {
-                        // Otherwise, it's not repeatable. @optimize -- should we refactor all aggregates to be essentially repeatable? Simpler handling, conversion of one type to the other...
+                        // Otherwise, it's not repeatable.
                         $aggregateReferenceFieldData = object_get($aggregateData, $aggregateReferenceFieldKey);
                         if (is_array($aggregateReferenceFieldData)) {
                             // If `$aggregateReferenceFieldData` is an array, we're processing a `reference-many` field
@@ -885,6 +898,8 @@ class LaramieDataService
             // Insert
             $data->type = $model->_type;
             $data->created_at = object_get($data, 'created_at', \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString());
+        } else if (array_key_exists($data->id, $this->cachedItems)) {
+            unset($this->cachedItems[$data->id]);
         }
 
         // Relation fields are transformed into the id(s) of the items they
