@@ -666,6 +666,8 @@ class LaramieDataService
 
         $this->cachedItems[$item->id] = $item;
 
+        $this->cachedItems[$item->id] = $item;
+
         return $item;
     }
 
