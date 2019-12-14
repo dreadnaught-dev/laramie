@@ -25,7 +25,8 @@ class LaramieQueryBuilder
         'resultsPerPage' => 0,
     ];
 
-    protected $maxPrefetchDepth = 5;
+    protected $maxPrefetchDepth = 3;
+    protected $isSpiderAggregates = false;
 
     public function __construct($callingClass)
     {
@@ -52,6 +53,13 @@ class LaramieQueryBuilder
     public function depth($maxPrefetchDepth)
     {
         $this->maxPrefetchDepth = $maxPrefetchDepth;
+
+        return $this;
+    }
+
+    public function spiderAggregates($isSpiderAggregates = true)
+    {
+        $this->isSpiderAggregates = $isSpiderAggregates;
 
         return $this;
     }
@@ -214,7 +222,7 @@ class LaramieQueryBuilder
         $this->searchOptions['factory'] = get_class($callingClass);
 
         $results = $this->dataService
-            ->findByType($callingClass::getJsonClass(), $this->searchOptions, $this->queryCallback, $this->maxPrefetchDepth);
+            ->findByType($callingClass::getJsonClass(), $this->searchOptions, $this->queryCallback, $this->maxPrefetchDepth, 0, $this->isSpiderAggregates);
 
         return $results;
     }

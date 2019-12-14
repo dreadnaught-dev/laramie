@@ -18,7 +18,8 @@ $(window).scroll(function() {
 
 $(document).ready(function() {
   loadHandlebarsTemplates();
-  $('[data-show-when]').conditionallyHide();
+  //$('[data-show-when]').conditionallyHide();
+  $(document).find('[data-show-when]:not([data-show-when-processed])').attr('data-show-when-processed', '1').conditionallyHide();
 
   $(".edit-container")
     .find(".aggregate-holder")
@@ -29,7 +30,6 @@ $(document).ready(function() {
       var $holder = $(this);
       var itemData = objectGet(window, "globals.aggregates." + itemId, {});
       loadAggregateFields($holder, itemData);
-      $holder.find('[data-show-when]').conditionallyHide();
       $.event.trigger("aggregates-loaded");
     });
 
@@ -234,7 +234,6 @@ $(document).ready(function() {
     loadAggregateFields($holder, {}, keys, true);
     defaultEmptyTimezonesToBrowserValue();
     transformSelectsToSelect2();
-    $holder.find('[data-show-when]').conditionallyHide();
   });
 
   $("#edit-form").on("click.remove-aggregate", ".js-remove-aggregate", function(e) {
@@ -373,7 +372,7 @@ $(document).ready(function() {
         selected: $(e.target).val(),
       },
       function(data) {
-        console.log(data);
+        // @todo -- add visual confirmation of change?
       }
     );
   });
@@ -522,6 +521,7 @@ function loadAggregateFields($holder, itemData, keys, isAddNew) {
 
   // Set state so we don't dive into items repeatedly (repeatable children)
   $holder.data("processed", "1");
+  $holder.find('[data-show-when]:not([data-show-when-processed])').attr('data-show-when-processed', '1').conditionallyHide();
 }
 
 function loadAggregateFieldsHelper(data, $newItem) {

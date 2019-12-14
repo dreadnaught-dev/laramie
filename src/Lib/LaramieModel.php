@@ -442,6 +442,11 @@ class LaramieModel implements \JsonSerializable
         return static::getLaramieQueryBuilder('depth', [$maxPrefetchDepth]);
     }
 
+    public static function spiderAggregates($isSpiderAggregates)
+    {
+        return static::getLaramieQueryBuilder('spiderAggregates', [$isSpiderAggregates]);
+    }
+
     public static function superficial()
     {
         return static::depth(0);

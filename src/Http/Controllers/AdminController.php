@@ -403,7 +403,7 @@ class AdminController extends Controller
         }
 
         // If there's an error on the post, `item` will have been flashed to the session
-        $item = session('item') ?: $this->dataService->findById($model, $id);
+        $item = session('item') ?: $this->dataService->findById($model, $id, 1);
 
         // If we're editing a new item, check to see if we need to pre-set any of the singular relationships (from QS)
         if ($item->_isNew && !session('isFromPost')) {
