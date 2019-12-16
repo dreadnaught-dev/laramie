@@ -432,8 +432,18 @@ class LaramieDataService
             }
 
             // Next, pull those relationships
-            $relatedModelHash = [];
             foreach ($referencedUuids as $modelKey => $uuidList) {
+                $uuidList = collect($uuidList)
+                    ->filter(function($uuid) {
+                        return !array_key_exists($uuid, $this->cachedItems);
+                    })
+                    ->unique()
+                    ->toArray();
+
+                if (count($uuidList) == 0) {
+                    continue;
+                }
+
                 $relatedModels = $this->findByType(
                     $this->getModelByKey($modelKey),
                     [
@@ -441,13 +451,13 @@ class LaramieDataService
                         'shapeListQuery' => false,
                     ],
                     function ($query) use ($uuidList) {
-                        $query->whereIn('id', array_unique($uuidList));
+                        $query->whereIn('id', $uuidList);
                     },
                     $maxPrefetchDepth,
                     $curDepth + 1
                 );
                 foreach ($relatedModels as $relatedModel) {
-                    $relatedModelHash[$relatedModel->id] = $relatedModel;
+                    $this->cachedItems[$relatedModel->id] = $relatedModel;
                 }
             }
 
@@ -458,12 +468,12 @@ class LaramieDataService
                     if (is_array($refs)) {
                         $newRefs = [];
                         foreach ($refs as $ref) {
-                            $newRefs[] = array_get($relatedModelHash, $ref, null);
+                            $newRefs[] = array_get($this->cachedItems, $ref, null);
                         }
                         array_filter($newRefs);
                         $laramieModel->{$fieldKey} = $newRefs;
                     } elseif ($refs) {
-                        $laramieModel->{$fieldKey} = array_get($relatedModelHash, $refs, null);
+                        $laramieModel->{$fieldKey} = array_get($this->cachedItems, $refs, null);
                     }
                 }
             }
@@ -663,8 +673,6 @@ class LaramieDataService
         // selection. What this means is that reference fields within deeply
         // nested aggregates won't be returned by `findByType`.
         $this->spiderAggregates($model, $item, $maxPrefetchDepth);
-
-        $this->cachedItems[$item->id] = $item;
 
         $this->cachedItems[$item->id] = $item;
 

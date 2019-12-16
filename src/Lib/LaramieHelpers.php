@@ -2,6 +2,7 @@
 
 namespace Laramie\Lib;
 
+use Intervention\Image\ImageManager;
 use Illuminate\Http\File;
 use Storage;
 
@@ -265,5 +266,45 @@ class LaramieHelpers
     public static function getLaramieMarkdownObjectFromRawText($rawText)
     {
         return (object) ['markdown' => $rawText, 'html' => self::markdownToHtml($rawText)];
+    }
+
+    public static function postProcessLaramieUpload($upload)
+    {
+        // @optimize -- move thumb gen to postsave
+        // If the upload is an image, create thumbnails (for use by the admin)
+        $storageDisk = config('laramie.storage_disk');
+        if ($upload->extension && in_array($upload->extension, ['jpeg', 'jpg', 'png', 'gif'])) { // only try to take thumbnails of a subset of allowed image types:
+            $filePath = static::getLocalFilePath($upload);
+            $manager = new ImageManager(['driver' => static::getInterventionImageDriver()]);
+            $thumbWidths = [50]; // Currently only make one small thumbnail
+            foreach ($thumbWidths as $width) {
+                $image = $manager->make($filePath);
+                $tmpThumbnailPath = tempnam(sys_get_temp_dir(), 'LAR');
+                $image->fit($width);
+                $image->save($tmpThumbnailPath);
+                // Save to Laramie's configured storage disk:
+                $thumbnail = new File($tmpThumbnailPath);
+                Storage::disk($storageDisk)->putFileAs('', $thumbnail, static::applyPathPostfix($upload->path, '_'.$width), (object_get($upload, 'isPublic') ? 'public' : 'private'));
+            }
+        }
+        // @optimize -- can we add a temp attribute that lets us know if we need to do this
+        // or not? We're doing it every time because it needs to be done in the case of
+        // new upload or a scaled / cropped image. Not in the case of a name being
+        // updated. But we have no way to tell right now _how_ an upload has been updated.
+        // Copy to public if specified
+        if ($upload->isPublic) {
+            $filePath = static::getLocalFilePath($upload);
+
+            // `$filePath` is a pointer to a file on the local filesystem that `File` can load
+            $file = new File($filePath);
+            $tmp = Storage::disk('public')->putFileAs('', $file, $upload->path, 'public');
+            $upload->publicPath = Storage::disk('public')->url($tmp);
+        } else { // delete file if switched from public to private
+            try {
+                Storage::disk('public')->delete($upload->path);
+            } catch (Exception $e) { /* don't error if the public version of the file can't be deleted -- may have been manually deleted */
+                dd($e->getMessage());
+            }
+        }
     }
 }

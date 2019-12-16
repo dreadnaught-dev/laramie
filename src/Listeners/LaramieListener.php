@@ -5,7 +5,6 @@ namespace Laramie\Listeners;
 use DB;
 use Exception;
 use Illuminate\Http\File;
-use Intervention\Image\ImageManager;
 use Ramsey\Uuid\Uuid;
 use Storage;
 use Laramie\Globals;
@@ -367,42 +366,7 @@ class LaramieListener
             // Create thumbnails for images
             case 'laramieUpload':
                 try {
-                    // @optimize -- move thumb gen to postsave
-                    // If the item is an image, create thumbnails (for use by the admin)
-                    $storageDisk = config('laramie.storage_disk');
-                    if ($item->extension && in_array($item->extension, ['jpeg', 'jpg', 'png', 'gif'])) { // only try to take thumbnails of a subset of allowed image types:
-                        $filePath = LaramieHelpers::getLocalFilePath($item);
-                        $manager = new ImageManager(['driver' => LaramieHelpers::getInterventionImageDriver()]);
-                        $thumbWidths = [50]; // Currently only make one small thumbnail
-                        foreach ($thumbWidths as $width) {
-                            $image = $manager->make($filePath);
-                            $tmpThumbnailPath = tempnam(sys_get_temp_dir(), 'LAR');
-                            $image->fit($width);
-                            $image->save($tmpThumbnailPath);
-                            // Save to Laramie's configured storage disk:
-                            $thumbnail = new File($tmpThumbnailPath);
-                            Storage::disk($storageDisk)->putFileAs('', $thumbnail, LaramieHelpers::applyPathPostfix($item->path, '_'.$width), (object_get($item, 'isPublic') ? 'public' : 'private'));
-                        }
-                    }
-                    // @optimize -- can we add a temp attribute that lets us know if we need to do this
-                    // or not? We're doing it every time because it needs to be done in the case of
-                    // new upload or a scaled / cropped image. Not in the case of a name being
-                    // updated. But we have no way to tell right now _how_ an upload has been updated.
-                    // Copy to public if specified
-                    if ($item->isPublic) {
-                        $filePath = LaramieHelpers::getLocalFilePath($item);
-
-                        // `$filePath` is a pointer to a file on the local filesystem that `File` can load
-                        $file = new File($filePath);
-                        $tmp = Storage::disk('public')->putFileAs('', $file, $item->path, 'public');
-                        $item->publicPath = Storage::disk('public')->url($tmp);
-                    } else { // delete file if switched from public to private
-                        try {
-                            Storage::disk('public')->delete($item->path);
-                        } catch (Exception $e) { /* don't error if the public version of the file can't be deleted -- may have been manually deleted */
-                            dd($e->getMessage());
-                        }
-                    }
+                    LaramieHelpers::postProcessLaramieUpload($item);
                 } catch (Exception $e) { /* there was some issue with creating thumbs... don't bork too hard, though */
                 }
                 break;
