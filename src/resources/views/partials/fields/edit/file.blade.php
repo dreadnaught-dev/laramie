@@ -1,6 +1,8 @@
 @extends('laramie::partials.fields.edit._base')
 
 @php
+    use Illuminate\Support\Str;
+
     $fileInfo = object_get($item, $field->id, (object) []);
     $uploadKey = object_get($fileInfo, 'uploadKey');
     $uploadType = object_get($field, 'subtype', object_get($field, 'type'));
@@ -27,7 +29,7 @@
             <div class="modal-background"></div>
             <div class="modal-card">
                 <header class="modal-card-head">
-                    <p class="modal-card-title">{{ str_plural(title_case($uploadType)) }}</p>
+                    <p class="modal-card-title">{{ Str::plural(Str::title($uploadType)) }}</p>
                     <span class="delete js-close-modal"></span>
                 </header>
                 <section class="modal-card-body">

@@ -7,6 +7,7 @@ use Exception;
 use Storage;
 use Ramsey\Uuid\Uuid;
 use JsonSchema\Validator;
+use Illuminate\Support\Arr;
 
 use Laramie\Hook;
 use Laramie\Lib\FileInfo;
@@ -104,9 +105,9 @@ class LaramieDataService
 
         $query = $this->getBaseQuery($model);
         $query = $this->augmentListQuery($query, $model, $options, $queryCallback);
-        $resultsPerPage = array_get($options, 'resultsPerPage', config('laramie.results_per_page', 20));
 
-        $factory = array_get($options, 'factory', data_get($model, 'factory', LaramieModel::class));
+        $resultsPerPage = data_get($options, 'resultsPerPage', config('laramie.results_per_page', 20));
+        $factory = data_get($options, 'factory', data_get($model, 'factory', LaramieModel::class));
 
         $laramieModels = $factory::load($resultsPerPage === 0 ? $query->get() : $query->paginate($resultsPerPage));
 
@@ -231,8 +232,8 @@ class LaramieDataService
             })
             ->all();
 
-        $sort = array_get($options, 'sort') ?: $model->defaultSort;
-        $sortDirection = array_get($options, 'sortDirection') ?: $model->defaultSortDirection;
+        $sort = data_get($options, 'sort') ?: $model->defaultSort;
+        $sortDirection = data_get($options, 'sortDirection') ?: $model->defaultSortDirection;
 
         if ($sort) {
             $field = data_get($fieldCollection, $sort);
@@ -250,23 +251,23 @@ class LaramieDataService
                 $query->orderByRaw(DB::raw('(data #>> \'{'.$sort.',timestamp}\')::integer '.$timestampSort));
             } elseif (in_array($sort, array_keys($markdownFields))) {
                 // Sort markdown fields by inner markdown
-                $query->orderBy(DB::raw('(data #>> \'{"'.$sort.'","markdown"}\')'), array_get($options, 'sortDirection', 'asc'));
+                $query->orderBy(DB::raw('(data #>> \'{"'.$sort.'","markdown"}\')'), data_get($options, 'sortDirection', 'asc'));
             } elseif (in_array($sort, array_keys($singularReferenceFields))) {
                 // Sort singular reference fields by alias of relation
-                $field = array_get($singularReferenceFields, $sort);
+                $field = data_get($singularReferenceFields, $sort);
                 $relatedModel = $this->getModelByKey($field->relatedModel);
                 $relatedAlias = object_get($relatedModel->fields, $relatedModel->alias);
                 $fieldSql = $relatedAlias->type == 'computed' ? $relatedAlias->sql : sprintf('n2.data->>\'%s\'', $relatedAlias->_fieldName);
-                $query->orderBy(DB::raw('(select '.$fieldSql.' from laramie_data as n2 where (laramie_data.data->>\''.$field->_fieldName.'\')::uuid = n2.id)'), array_get($options, 'sortDirection', 'asc'));
+                $query->orderBy(DB::raw('(select '.$fieldSql.' from laramie_data as n2 where (laramie_data.data->>\''.$field->_fieldName.'\')::uuid = n2.id)'), data_get($options, 'sortDirection', 'asc'));
             } elseif (in_array($sort, array_keys($numericFields))) {
-                $query->orderBy(DB::raw('(data #>> \'{"'.$sort.'"}\')::float'), array_get($options, 'sortDirection', 'asc'));
+                $query->orderBy(DB::raw('(data #>> \'{"'.$sort.'"}\')::float'), data_get($options, 'sortDirection', 'asc'));
             } elseif (object_get($model->fields, $sort)) {
                 // Otherwise, check to see if the sort is part one of the model's dynamic fields:
-                $query->orderBy(DB::raw('data #>> \'{"'.$sort.'"}\''), array_get($options, 'sortDirection', 'asc'));
+                $query->orderBy(DB::raw('data #>> \'{"'.$sort.'"}\''), data_get($options, 'sortDirection', 'asc'));
             }
         }
 
-        $filterGroups = collect(array_get($options, 'filters', []))
+        $filterGroups = collect(data_get($options, 'filters', []))
             ->groupBy(function($item) { return data_get($item, 'field'); });
 
         // @TODO -- add laramie config param to dictate how to handle group filter logic (AND or OR). For now, default to ORing within a group (as defined by which field is being searched).
@@ -356,7 +357,7 @@ class LaramieDataService
             });
         }
 
-        $quickSearch = array_get($options, 'quickSearch');
+        $quickSearch = data_get($options, 'quickSearch');
         $quickSearchFields = object_get($model, 'quickSearch');
         if ($quickSearch && $quickSearchFields) {
             $quickSearchFields = collect($quickSearchFields)
@@ -490,7 +491,7 @@ class LaramieDataService
                             return $item && Uuid::isValid($item);
                         })
                         ->all();
-                    $referencedUuids[$field->relatedModel] = array_merge(array_get($referencedUuids, $field->relatedModel, []), $refs);
+                    $referencedUuids[$field->relatedModel] = array_merge(data_get($referencedUuids, $field->relatedModel, []), $refs);
                 }
             }
 
@@ -531,12 +532,12 @@ class LaramieDataService
                     if (is_array($refs)) {
                         $newRefs = [];
                         foreach ($refs as $ref) {
-                            $newRefs[] = array_get($this->cachedItems, $ref, null);
+                            $newRefs[] = data_get($this->cachedItems, $ref, null);
                         }
                         array_filter($newRefs);
                         $laramieModel->{$fieldKey} = $newRefs;
                     } elseif ($refs) {
-                        $laramieModel->{$fieldKey} = array_get($this->cachedItems, $refs, null);
+                        $laramieModel->{$fieldKey} = data_get($this->cachedItems, $refs, null);
                     }
                 }
             }
@@ -750,7 +751,7 @@ class LaramieDataService
 
         $factory = data_get($model, 'factory', LaramieModel::class);
 
-        $item = array_first($this->prefetchRelationships($model, [$factory::load($dbItem)], $maxPrefetchDepth, 0));
+        $item = Arr::first($this->prefetchRelationships($model, [$factory::load($dbItem)], $maxPrefetchDepth, 0));
 
         // NOTE: we're only diving into aggregate relationships for single item
         // selection. What this means is that reference fields within deeply
@@ -855,7 +856,7 @@ class LaramieDataService
         $query = $this->getBaseQuery($model)
             ->where('id', $id);
 
-        return array_first([LaramieModel::load($query->first())]);
+        return Arr::first([LaramieModel::load($query->first())]);
     }
 
     public function findItemRevisions($id)
@@ -906,7 +907,7 @@ class LaramieDataService
         }
 
         // Check to see if we need to archive the primary item (we could be trying to restore the same thing just restored)
-        $shouldArchive = array_get(DB::select('select count(*) as count from laramie_data where id = ? and data != (select data from laramie_data_archive lda where laramie_data_id = laramie_data.id order by created_at desc limit 1)', [$archivedItem->laramie_data_id]), 0)->count > 0;
+        $shouldArchive = data_get(DB::select('select count(*) as count from laramie_data where id = ? and data != (select data from laramie_data_archive lda where laramie_data_id = laramie_data.id order by created_at desc limit 1)', [$archivedItem->laramie_data_id]), 0)->count > 0;
         if ($shouldArchive) {
             // Archive the primary item
             DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [Uuid::uuid1()->toString(), $archivedItem->laramie_data_id]);
@@ -1251,10 +1252,10 @@ class LaramieDataService
 
                 $this->augmentListQuery($query, $model, $postData);
 
-                $isAllSelected = array_get($postData, 'bulk-action-all-selected') === '1';
+                $isAllSelected = data_get($postData, 'bulk-action-all-selected') === '1';
 
                 if (!$isAllSelected) {
-                    $itemIds = collect(array_get($postData, 'bulk-action-ids', []))
+                    $itemIds = collect(data_get($postData, 'bulk-action-ids', []))
                         ->filter(function ($item) {
                             return $item && Uuid::isValid($item);
                         });

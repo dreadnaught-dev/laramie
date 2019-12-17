@@ -4,6 +4,7 @@ namespace Laramie\Http\Controllers;
 
 use DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Services\LaramieDataService;
@@ -145,7 +146,7 @@ class AjaxController extends Controller
         );
 
         // The name only needs to be unique per reference in case it's a radio select (this value isn't being submitted).
-        $name = str_random(10);
+        $name = Str::random(10);
 
         $alias = object_get($model, 'fields.'.$model->alias);
 

@@ -5,6 +5,8 @@ namespace Laramie\Listeners;
 use DB;
 use Exception;
 use Illuminate\Http\File;
+use Illuminate\Support\Str;
+use Intervention\Image\ImageManager;
 use Ramsey\Uuid\Uuid;
 use Storage;
 use Laramie\Globals;
@@ -134,13 +136,13 @@ class LaramieListener
         foreach ($systemMetaFields as $metaField => $countGeneratorCallback) {
             $counts = null;
             $map = [];
-            if (array_get($listFields, $metaField)) {
+            if (data_get($listFields, $metaField)) {
                 $counts = $countGeneratorCallback();
                 foreach ($counts as $count) {
                     $map[$count->laramie_data_id] = $count;
                 }
                 foreach ($items as $item) {
-                    $count = array_get($map, $item->id, null);
+                    $count = data_get($map, $item->id, null);
                     $item->{$metaField} = str_replace('{*count*}', object_get($count, 'count', 0), $item->{$metaField});
                 }
             }
@@ -170,7 +172,7 @@ class LaramieListener
                 break;
             case 'laramieUser':
                 if (!object_get($item, 'api.username')) {
-                    $item->api = (object) ['enabled' => false, 'username' => str_random(Globals::API_TOKEN_LENGTH), 'password' => str_random(Globals::API_TOKEN_LENGTH)];
+                    $item->api = (object) ['enabled' => false, 'username' => Str::random(Globals::API_TOKEN_LENGTH), 'password' => Str::random(Globals::API_TOKEN_LENGTH)];
                 }
                 break;
             case 'laramieAlert':
@@ -220,7 +222,7 @@ class LaramieListener
 
         $dataService = $this->getLaramieDataService();
 
-        $postData['quickSearch'] = array_get($postData, 'quick-search');
+        $postData['quickSearch'] = data_get($postData, 'quick-search');
 
         // @note -- switching on the slugified version of the bulk action
         switch (str_slug($nameOfBulkAction)) {
@@ -255,11 +257,11 @@ class LaramieListener
                     });
 
                 // Have "all" matching records been selected? Great. But limit to `max_csv_records` just in case there are too many records
-                $isAllSelected = array_get($postData, 'bulk-action-all-selected') === '1';
+                $isAllSelected = data_get($postData, 'bulk-action-all-selected') === '1';
                 if ($isAllSelected) {
                     $postData['resultsPerPage'] = config('laramie.max_csv_records');
                 } else {
-                    $itemIds = collect(array_get($postData, 'bulk-action-ids', []))
+                    $itemIds = collect(data_get($postData, 'bulk-action-ids', []))
                         ->filter(function ($item) {
                             return $item && Uuid::isValid($item);
                         });
@@ -401,7 +403,7 @@ class LaramieListener
             case '_laramieComment':
                 $plainText = object_get($item, 'comment.markdown');
                 preg_match_all('/@(?<mentions>[a-z0-9\-\.\_]+)/i', $plainText, $matches);
-                $mentions = array_get($matches, 'mentions');
+                $mentions = data_get($matches, 'mentions');
                 foreach ($mentions as $mention) {
                     $tmpUser = $dataService->findByType('laramieUser', null, function ($query) use ($mention) {
                         $query->where(DB::raw('data->>\'user\''), 'ilike', $mention.'%');

@@ -1,6 +1,8 @@
 @extends('laramie::layout')
 
 @php
+    use Illuminate\Support\Str;
+
     function recursivelyPrintMenus($node, $depth = 0, $user, $dataService)
     {
         foreach ($node as $friendlyName => $modelKeyOrChild) {
@@ -30,7 +32,7 @@
                         \Carbon\Carbon::parse($meta->updatedAt, config('laramie.timezone'))->toDayDateTimeString());
                 }
 
-                $numItems = $meta->count . ' ' . str_plural('item', $meta->count);
+                $numItems = $meta->count . ' ' . Str::plural('item', $meta->count);
                 $listLink = route('laramie::list', ['modelKey' => $modelKeyOrChild]);
                 $addLink = '';
                 $model = $dataService->getModelByKey($modelKeyOrChild);

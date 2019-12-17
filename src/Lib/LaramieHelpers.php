@@ -19,8 +19,10 @@ class LaramieHelpers
     public static function getCurrentUrlWithModifiedQS(array $qsParts)
     {
         $qs = request()->all();
-        $curSort = array_get($qs, 'sort', array_get($qsParts, 'sort'));
-        $curSortDirection = array_get($qs, 'sort-direction', array_get($qsParts, 'sort-direction'));
+        $curSort = data_get($qs, 'sort', data_get($qsParts, 'sort'));
+        $curSortDirection = data_get($qs, 'sort-direction', data_get($qsParts, 'sort-direction'));
+        unset($qs['sort-direction']);
+        unset($qsParts['sort-direction']);
         foreach ($qsParts as $key => $value) {
             $qs[$key] = $value;
         }

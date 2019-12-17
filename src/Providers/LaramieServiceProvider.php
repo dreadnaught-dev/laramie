@@ -2,6 +2,7 @@
 
 namespace Laramie\Providers;
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Validator;
@@ -110,9 +111,9 @@ class LaramieServiceProvider extends ServiceProvider
             return <<<EOT
             <?php
                 if (\$__env->exists({$view})) {
-                    echo \$__env->make({$view}, array_except(get_defined_vars(), array('__data', '__path')))->render();
+                    echo \$__env->make({$view}, Arr::except(get_defined_vars(), array('__data', '__path')))->render();
                 } elseif (\$__env->exists({$fallback})) {
-                    echo \$__env->make({$fallback}, array_except(get_defined_vars(), array('__data', '__path')))->render();
+                    echo \$__env->make({$fallback}, Arr::except(get_defined_vars(), array('__data', '__path')))->render();
                 }
             ?>
 EOT;
