@@ -334,6 +334,8 @@ class LaramieDataService
 
         $modelField = object_get($model->fields, $field);
 
+        $modelFieldType = data_get($modelField, 'type');
+
         if (in_array($field, ['_created_at', '_updated_at'])) {
             // If we're searching by created_at or updated_at, the sql we're searching against to unix timestamp values. We'll be doing a similar conversion to the values being searched for.
             $field = 'date_part(\'epoch\', '.preg_replace('/^_/', '', $field).'::timestamp)::int';
@@ -341,19 +343,21 @@ class LaramieDataService
             $field = '(select string_agg(ldm.data->>\'text\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
         } elseif ($field == '_comments') {
             $field = '(select string_agg(ldm.data->>\'markdown\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
-        } elseif ($modelField->type == 'aggregate') {
+        } elseif ($modelFieldType == 'aggregate') {
             // Aggregate fields aren't eligible to take part in filters --
             // if a fitler is needed on an aggregate, a computed field should
             // be created to selecte the aggregate property that can then be
             // listed/searched be searched.
             return null;
-        } elseif ($modelField->type == 'computed') {
+        } elseif ($modelFieldType == 'computed') {
             $field = $modelField->sql;
-        } elseif ($modelField->type == 'timestamp') {
+        } elseif ($modelFieldType == 'boolean') {
+            $field = '(data->>\''.$field.'\')::boolean';
+        } elseif ($modelFieldType == 'timestamp') {
             $field = '(data #>> \'{'.$field.',timestamp}\')::numeric';
-        } elseif (in_array($modelField->type, ['date', 'datetime-local'])) {
+        } elseif (in_array($modelFieldType, ['date', 'datetime-local'])) {
             $field = 'date_part(\'epoch\', (data->>\''.$field.'\')::timestamp)::int';
-        } elseif ($modelField->type == 'reference') {
+        } elseif ($modelFieldType == 'reference') {
             // If the value we're searching by is a valid uuid (or collection of uuids), don't try to search by alias
             if (Uuid::isValid($value)
                 || (collect($value)->every(function($item){ return Uuid::isValid($item); }))

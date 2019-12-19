@@ -64,7 +64,7 @@ class LaramieQueryBuilder
         return $this;
     }
 
-    public function where($column, string $operator = null, $value = null, string $boolean = 'and')
+    public function where($column, $operator = null, $value = null, string $boolean = 'and')
     {
         $column = $this->translateColumn($column, $operator == null ? $value : $operator);
         $this->qb->where($column, $operator, $value, $boolean);

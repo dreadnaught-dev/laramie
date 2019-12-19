@@ -202,7 +202,7 @@ class LaramieModel implements \JsonSerializable
      * Apply an Eloquent-ish veneer to interacting with the data service. The
      * following methods are NOT eloquent, merely helpful.
      */
-    final public static function where($column, string $operator = null, $value = null, string $boolean = 'and')
+    final public static function where($column, $operator = null, $value = null, string $boolean = 'and')
     {
         return static::getLaramieQueryBuilder('where', func_get_args());
     }
