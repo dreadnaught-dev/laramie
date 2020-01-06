@@ -5,10 +5,9 @@ var gulp     = require('gulp');
 var noop     = require('gulp-noop');
 var plumber  = require('gulp-plumber'); // better error handling; don't totally break on an error, but still show it
 var prettier = require('gulp-prettier');
-var sass     = require('gulp-sass');
+var sass     = require('gulp-dart-sass');
 var uglify   = require('gulp-uglify');
 var watch    = require('gulp-watch'); // more granular watch ability than gulp.watch. For a discussion on gulp.watch vs gulp-watch see http://stackoverflow.com/a/22391756
-sass.compiler = require('node-sass');
 
 var vendorJs = [
   './node_modules/cropperjs/dist/cropper.min.js',
