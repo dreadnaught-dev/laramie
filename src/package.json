@@ -10,8 +10,8 @@
     "cropperjs": "^1.5.6",
     "dragula": "^3.7.2",
     "fixme": "^0.5.0",
-    "gulp": "^3.9.1",
-    "gulp-babel": "^7.0.0",
+    "gulp": "^4.0.2",
+    "gulp-babel": "^8.0.0",
     "gulp-dart-sass": "^0.9.1",
     "gulp-noop": "^1.0.0",
     "gulp-plumber": "^1.2.1",
@@ -21,11 +21,11 @@
     "handlebars": "^4.5.3",
     "jquery": "^3.4.1",
     "prettier": "^1.19.1",
-    "tributejs": "^3.7.3",
-    "trix": "^0.11.1"
+    "tributejs": "^4.1.1",
+    "trix": "^1.2.2"
   },
   "scripts": {
-    "watch": "gulp watch",
+    "watch": "gulp default",
     "copy-vendor": "gulp copy-vendor",
     "prettier": "gulp prettier",
     "notes": "gulp notes"

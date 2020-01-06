@@ -29,20 +29,23 @@ var vendorCss = [
 ];
 
 /* META TASKS (TASKS THAT WRAP OTHERS) */
-gulp.task('default', function () {
-  gulp.start('watch');
-});
-
+gulp.task('default', gulp.series(gulp.parallel(styles, scripts), watchTask));
+function watchTask() {
+  watch(['resources/sass/**/*.scss'], { ignoreInitial: false }, styles);
+  watch(['resources/js/**/*.js'], { ignoreInitial: false }, scripts);
+}
 
 /* CONCRETE TASKS */
-gulp.task('prettier', function() {
-  return gulp.src('resources/assets/js/**/*.js')
+gulp.task('prettier', prettier);
+function prettier() {
+  return gulp.src('resources/js/**/*.js')
     .pipe(plumber())
     .pipe(prettier({printWidth: 120, tabWidth: 2, trailingComma: 'es5'}))
-    .pipe(gulp.dest('./resources/assets/js'))
-});
+    .pipe(gulp.dest('./resources/js'))
+};
 
-gulp.task('copy-vendor', function() {
+gulp.task('copy-vendor', copyVendor);
+function copyVendor() {
   for (var i = 0; i < vendorJs.length; i ++) {
     var dest = './public/js' + (/fontawesome/i.test(vendorJs[i]) ? '/fontawesome' : '');
     gulp.src(vendorJs[i])
@@ -52,24 +55,28 @@ gulp.task('copy-vendor', function() {
     gulp.src(vendorCss[i])
       .pipe(gulp.dest('./public/css'))
   }
-});
+};
 
-gulp.task('js', function() {
-  return gulp.src('resources/assets/js/**/*.js')
-    .pipe(plumber())
-    .pipe(babel())
-    .pipe(uglify())
-    .pipe(gulp.dest('./public/js'))
-    .pipe(process.env.LIVE_COPY ? gulp.dest('../../../../public/laramie/admin/js') : noop());
-});
-
-gulp.task('sass', function() {
-  return gulp.src(['resources/assets/sass/main.scss'])
+gulp.task('sass', styles);
+function styles() {
+  return gulp.src(['resources/sass/main.scss'])
     .pipe(plumber())
     .pipe(sass({outputStyle: 'compressed'}).on('error', sass.logError))
     .pipe(gulp.dest('./public/css'))
-    .pipe(process.env.LIVE_COPY ? gulp.dest('../../../../public/laramie/admin/css') : noop());
-});
+    .pipe(process.env.LIVE_COPY ? gulp.dest('../../../../public/laramie/admin/css') : noop())
+    .on('end', () => console.log('Regenerated styles...'));
+};
+
+gulp.task('scripts', scripts);
+function scripts() {
+  return gulp.src('resources/js/**/*.js')
+    .pipe(plumber())
+    .pipe(babel({presets: ["@babel/preset-env"]}))
+    .pipe(uglify())
+    .pipe(gulp.dest('./public/js'))
+    .pipe(process.env.LIVE_COPY ? gulp.dest('../../../../public/laramie/admin/js') : noop())
+    .on('end', () => console.log('Regenerated scripts...'));
+};
 
 gulp.task('notes', function() {
   fixme({
@@ -81,13 +88,3 @@ gulp.task('notes', function() {
   });
 });
 
-gulp.task('watch', function () {
-  // gulp.start('notes');
-
-  watch(['resources/assets/sass/**/*.scss'], { ignoreInitial: false }, function() {
-    gulp.start('sass');
-  })
-  watch(['resources/assets/js/**/*.js'], { ignoreInitial: false }, function() {
-    gulp.start('js');
-  })
-});
