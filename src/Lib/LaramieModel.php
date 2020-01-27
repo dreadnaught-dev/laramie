@@ -375,6 +375,21 @@ class LaramieModel implements \JsonSerializable
         return static::getLaramieQueryBuilder('save', [$item, $validate]);
     }
 
+    final public static function updateOrCreate(array $conditions, array $attributes = [])
+    {
+        $instance = self::where($conditions)->first();
+        if ($instance) {
+            return $instance->update($attributes);
+        }
+
+        $tmp = new static();
+        foreach (array_merge($conditions, $attributes) as $key => $value) {
+            data_set($tmp, $key, $value);
+        }
+
+        return $tmp->save();
+    }
+
     public function save($validate = true)
     {
         $updatedItem = static::getLaramieQueryBuilder('save', [$this, $validate]);
@@ -440,6 +455,11 @@ class LaramieModel implements \JsonSerializable
     public static function depth($maxPrefetchDepth)
     {
         return static::getLaramieQueryBuilder('depth', [$maxPrefetchDepth]);
+    }
+
+    public static function shapeListQuery(bool $isShapeListQuery)
+    {
+        return static::getLaramieQueryBuilder('shapeListQuery', [$isShapeListQuery]);
     }
 
     public static function spiderAggregates($isSpiderAggregates)

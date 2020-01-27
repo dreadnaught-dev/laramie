@@ -21,7 +21,7 @@ class LaramieQueryBuilder
     protected $qb;
 
     protected $searchOptions = [
-        'shapeListQuery' => false,
+        'shapeListQuery' => true,
         'resultsPerPage' => 0,
     ];
 
@@ -57,6 +57,13 @@ class LaramieQueryBuilder
         return $this;
     }
 
+    public function shapeListQuery(bool $isShapeListQuery)
+    {
+        $this->searchOptions['shapeListQuery'] = $isShapeListQuery;
+
+        return $this;
+    }
+
     public function spiderAggregates($isSpiderAggregates = true)
     {
         $this->isSpiderAggregates = $isSpiderAggregates;
@@ -66,8 +73,19 @@ class LaramieQueryBuilder
 
     public function where($column, $operator = null, $value = null, string $boolean = 'and')
     {
-        $column = $this->translateColumn($column, $operator == null ? $value : $operator);
-        $this->qb->where($column, $operator, $value, $boolean);
+        // If the where is an array, assume it contains kvps that should be added:
+        if (is_array($column)) {
+            $this->qb->where(function($query) use($column) {
+                foreach ($column as $arrKey => $arrValue) {
+                    $column = $this->translateColumn($arrKey, $arrValue);
+                    $query->where($column, '=', $arrValue);
+                }
+            });
+        }
+        else {
+            $column = $this->translateColumn($column, $operator == null ? $value : $operator);
+            $this->qb->where($column, $operator, $value, $boolean);
+        }
 
         return $this;
     }

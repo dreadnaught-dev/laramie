@@ -116,7 +116,7 @@ return [
     | Default visibility of uploaded files
     |--------------------------------------------------------------------------
     */
-    'files_are_public_by_default' => true,
+    'files_are_public_by_default' => false,
 
     /*
     |--------------------------------------------------------------------------

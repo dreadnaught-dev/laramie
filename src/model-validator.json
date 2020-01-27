@@ -120,7 +120,8 @@
                 "isPublic": { "type": "boolean" },
                 "subtype": { "enum": [ "file", "image" ] },
                 "canChooseFromLibrary": { "type": "boolean" },
-                "isTypeSpecific": { "type": "boolean" }
+                "isTypeSpecific": { "type": "boolean" },
+                "disk": { "type": "string" }
             }
         },
         "html": {

@@ -642,10 +642,22 @@ class LaramieDataService
         return false;
     }
 
-    public function findById($model, $id, $maxPrefetchDepth = 5)
+    public function findById($model, $id = null, $maxPrefetchDepth = 5)
     {
+        $id = is_string($model) && Uuid::isValid($model)
+            ? $model
+            : $id;
+
         if (array_key_exists($id, $this->cachedItems)) {
             return $this->cachedItems[$id];
+        }
+
+        if (is_string($model) && Uuid::isValid($model)) {
+            $model = data_get(DB::table('laramie_data')
+                ->where('type', $model->_type)
+                ->select(['type'])
+                ->limit(1)
+                ->first(), 'type');
         }
 
         $model = $this->getModelByKey($model);
@@ -865,6 +877,10 @@ class LaramieDataService
 
     private function flattenRelationships($fieldHolder, $data)
     {
+        if ($data == null) {
+            return null;
+        }
+
         foreach ($fieldHolder->fields as $key => $field) {
             if ($field->type == 'reference') {
                 if ($field->subtype == 'single') {

@@ -129,6 +129,8 @@ class LaramieHelpers
                 }
 
                 return '';
+            case 'html':
+                return $value ?: data_get($field, 'html');
             default:
                 if ($isShowUnsupporteMessage) {
                     return sprintf('%s field type not supported (field: %s)', $field->type, $field->label);
@@ -268,7 +270,8 @@ class LaramieHelpers
         return (object) ['markdown' => $rawText, 'html' => self::markdownToHtml($rawText)];
     }
 
-    public static function postProcessLaramieUpload($upload)
+    // Create thumbnails / etc. Normally, don'throw exception if this step can't complete. Admin thumbnails should be seen as optional.
+    public static function postProcessLaramieUpload($upload, $swallowErrors = true)
     {
         // @optimize -- move thumb gen to postsave
         // If the upload is an image, create thumbnails (for use by the admin)
@@ -278,13 +281,15 @@ class LaramieHelpers
             $manager = new ImageManager(['driver' => static::getInterventionImageDriver()]);
             $thumbWidths = [50]; // Currently only make one small thumbnail
             foreach ($thumbWidths as $width) {
-                $image = $manager->make($filePath);
-                $tmpThumbnailPath = tempnam(sys_get_temp_dir(), 'LAR');
-                $image->fit($width);
-                $image->save($tmpThumbnailPath);
-                // Save to Laramie's configured storage disk:
-                $thumbnail = new File($tmpThumbnailPath);
-                Storage::disk($storageDisk)->putFileAs('', $thumbnail, static::applyPathPostfix($upload->path, '_'.$width), (object_get($upload, 'isPublic') ? 'public' : 'private'));
+                try {
+                    $image = $manager->make($filePath);
+                    $tmpThumbnailPath = tempnam(sys_get_temp_dir(), 'LAR');
+                    $image->fit($width);
+                    $image->save($tmpThumbnailPath);
+                    // Save to Laramie's configured storage disk:
+                    $thumbnail = new File($tmpThumbnailPath);
+                    Storage::disk($storageDisk)->putFileAs('', $thumbnail, static::applyPathPostfix($upload->path, '_'.$width), (object_get($upload, 'isPublic') ? 'public' : 'private'));
+                } catch (\Exception $e) { if (!$swallowErrors) { throw $e; }  }
             }
         }
         // @optimize -- can we add a temp attribute that lets us know if we need to do this

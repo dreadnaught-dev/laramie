@@ -400,7 +400,8 @@ class ModelLoader
                 $field->isEditable = object_get($field, 'isEditable', false); // set this to false by default for computed fields
                 break;
             case 'html':
-                $field->isListable = false; // html fields are not listable -- they're purely for presentation
+                $field->isListable = object_get($field, 'isListable', false); // html should generally not be listed, they're purely for presentation
+                $field->isSearchable = false;
                 break;
             case 'password':
                 $field->isListable = object_get($field, 'isListable') === true; // password fields _can_ be listable, but will only show asterisks
