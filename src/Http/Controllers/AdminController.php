@@ -128,7 +128,7 @@ class AdminController extends Controller
             return $this->redirectToSingularEdit($model);
         }
 
-        $extra = (object) [];
+        $extra = (object) $request->all();
 
         // Fire the `PreList` event. This allows for
         event(new PreList($model, $this->dataService->getUser(), $extra));
