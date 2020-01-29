@@ -338,6 +338,9 @@ class LaramieListener
         $user = $event->user;
         $type = $model->_type;
 
+        $dataService = $this->getLaramieDataService();
+        $dataService->clearCache();
+
         switch ($type) {
             case 'laramieUser':
                 // If we're saving a new user, we need to create a corresponding Laravel user
@@ -351,7 +354,6 @@ class LaramieListener
                     ]);
                 } else {
                     // If we're _updating_ a user, we need to grab its state _before_ the update (so that we can map it to its Laravel user).
-                    $dataService = $this->getLaramieDataService();
                     $oldUserInfo = $dataService->findByIdSuperficial($dataService->getModelByKey('laramieUser'), $item->id);
                     \DB::table('users')
                         ->where(config('laramie.username'), $oldUserInfo->user)
@@ -376,7 +378,6 @@ class LaramieListener
                     $item->author = $user;
                     $item->status = 'Unread';
                 } else {
-                    $dataService = $this->getLaramieDataService();
                     $orig = $dataService->findById('laramieAlert', $item->id);
                     $item->author = $orig->author;
                     $item->recipient = $orig->recipient;
@@ -396,7 +397,9 @@ class LaramieListener
         $item = $event->item;
         $user = $event->user;
         $type = $model->_type;
+
         $dataService = $this->getLaramieDataService();
+        $dataService->clearCache();
 
         switch ($type) {
             // Create thumbnails for images

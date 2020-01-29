@@ -642,6 +642,11 @@ class LaramieDataService
         return false;
     }
 
+    public function clearCache()
+    {
+        $this->cachedItems = [];
+    }
+
     public function findById($model, $id = null, $maxPrefetchDepth = 5)
     {
         $id = is_string($model) && Uuid::isValid($model)

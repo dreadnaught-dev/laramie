@@ -17,7 +17,7 @@ class LaramieUpload extends LaramieModel
     {
         $dataService = app(LaramieDataService::class);
 
-        return $dataService->saveFile($file, $isPublic, $source, $destination);
+        return static::hydrateWithModel($dataService->saveFile($file, $isPublic, $source, $destination));
     }
 
     public static function createFromPath($path, $isPublic = false, $source = null, $destination = null)
