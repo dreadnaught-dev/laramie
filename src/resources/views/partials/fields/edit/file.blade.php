@@ -14,7 +14,7 @@
         <div class="hide-when-file">
             <div class="columns is-vcentered">
                 <div class="column is-half">
-                    <input type="file" class="input is-{{ $field->type }}" id="{{ $field->id }}" name="{{ $field->id }}" {{ $field->extra }} {{ $field->required ? 'required' : '' }}>
+                    <input type="file" class="input is-{{ $field->type }}" id="{{ $field->id }}" name="{{ $field->id }}" {!! $field->extra !!} {{ $field->required ? 'required' : '' }}>
                 </div>
                 @if (object_get($field, 'canChooseFromLibrary') !== false)
                     <div class="column is-half">
