@@ -11,10 +11,11 @@ use Laramie\Lib\FileInfo;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
 use Laramie\Lib\ModelLoader;
-use Laramie\Events\PreSave;
+use Laramie\Events\PostDelete;
+use Laramie\Events\PostFetch;
 use Laramie\Events\PostSave;
 use Laramie\Events\PreDelete;
-use Laramie\Events\PostDelete;
+use Laramie\Events\PreSave;
 use Laramie\Events\ShapeListQuery;
 use Laramie\Events\ModifyFileInfoPreSave;
 use JsonSchema\Validator;
@@ -123,6 +124,9 @@ class LaramieDataService
                 $this->spiderAggregates($model, $item, $maxPrefetchDepth);
             });
         }
+
+        $options['curDepth'] = $curDepth;
+        event(new PostFetch($model, $laramieModels, $this->getUser(), $options));
 
         return $laramieModels;
     }
@@ -696,6 +700,9 @@ class LaramieDataService
         $this->spiderAggregates($model, $item, $maxPrefetchDepth);
 
         $this->cachedItems[$item->id] = $item;
+
+        $itemCollection = collect([$item]); // Wrap the single item in a collection to give `PostFetch` a consistent interface -- it works on collection-like items
+        event(new PostFetch($model, $itemCollection, $this->getUser()));
 
         return $item;
     }

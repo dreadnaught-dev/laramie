@@ -165,7 +165,7 @@ class ModelLoader
 
                 // Add some utility computed fields
                 $fields->_id = (object) ['type' => 'computed', 'dataType' => 'string', 'label' => 'Id', 'sql' => '(id::text)', 'listByDefault' => false, 'weight' => 900];
-                $fields->_created_at = (object) ['type' => 'computed', 'dataType' => 'date', 'label' => 'Created at', 'sql' => '(created_at)', 'listByDefault' => true, 'weight' => 910];
+                $fields->_created_at = (object) ['type' => 'computed', 'dataType' => 'date', 'label' => 'Created at', 'sql' => '(created_at)', 'listByDefault' => false, 'weight' => 910];
                 $fields->_updated_at = (object) ['type' => 'computed', 'dataType' => 'date', 'label' => 'Updated at', 'sql' => '(updated_at)', 'listByDefault' => false, 'weight' => 920];
 
                 if (config('laramie.disable_meta') !== true && object_get($model, 'disableMeta', false) !== true) {

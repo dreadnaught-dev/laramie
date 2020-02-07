@@ -55,6 +55,7 @@ function copyVendor() {
     gulp.src(vendorCss[i])
       .pipe(gulp.dest('./public/css'))
   }
+  return Promise.resolve('Done')
 };
 
 gulp.task('sass', styles);

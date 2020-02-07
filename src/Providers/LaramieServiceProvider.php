@@ -61,7 +61,7 @@ class LaramieServiceProvider extends ServiceProvider
             $view->with('systemUsers',
                 collect(app(LaramieDataService::class)->findByType(
                     'laramieUser',
-                    ['resultsPerPage' => 0],
+                    ['resultsPerPage' => 0, 'forSystemUsers' => 1],
                     function ($query) {
                         $query->where(\DB::raw('data->>\'status\''), '=', 'Active');
                     },

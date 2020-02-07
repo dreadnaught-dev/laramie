@@ -130,7 +130,7 @@ class AdminController extends Controller
 
         $extra = (object) $request->all();
 
-        // Fire the `PreList` event. This allows for
+        // Fire the `PreList` event. This allows for a user to specify a redirect response if necessary
         event(new PreList($model, $this->dataService->getUser(), $extra));
 
         if (data_get($extra, 'response')) {
@@ -156,6 +156,8 @@ class AdminController extends Controller
         $listFields = $this->getListedFields($listableFields);
 
         $extra = (object) ['listFields' => array_get($options, 'listFields', $listFields)]; // passing this so we have context in the post list event;
+
+        // Fire the `PostList` event -- This allows for augmenting the items about to be shown on the list page (strictly for the list page). There's a PostFetch event that one should use if one needs to augment data fetched from the dataService _everywhere_.
         event(new PostList($model, $models, $this->dataService->getUser(), $extra));
 
         return view('laramie::list-page')

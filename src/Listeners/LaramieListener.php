@@ -34,6 +34,10 @@ class LaramieListener
             'Laramie\Events\ShapeListQuery',
             'Laramie\Listeners\LaramieListener@shapeListQuery'
         );
+        //$events->listen(
+            //'Laramie\Events\PostFetch',
+            //'Laramie\Listeners\LaramieListener@PostFetch'
+        //);
         $events->listen(
             'Laramie\Events\PostList',
             'Laramie\Listeners\LaramieListener@postList'

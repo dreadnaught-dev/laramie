@@ -2,17 +2,18 @@
 
 namespace Laramie\Events;
 
-class PostList
+class PostFetch
 {
     public $model;
-    public $query;
+    public $items;
     public $user;
+    public $extra;
 
     /**
-     * Create a new PostList event instance. Listeners **must** be synchronous.
+     * Create a new PostFetch event instance. Listeners **must** be synchronous.
      *
-     * This is called from `Laramie\Http\Controllers\AdminController` just before
-     * sending data to the view for rendering
+     * This is called from `Laramie\Services\LaramieDataService` after fetching
+     * items from the db, but _before_ returning them from `findByType`
      *
      * @param stdClass                          $model JSON-decoded model definition (from laramie-models.json, etc).
      * @param Laramie\Lib\LaramieModel          $user  laramie's version of the logged in user
