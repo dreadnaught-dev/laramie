@@ -100,18 +100,28 @@ class AjaxController extends Controller
                         if (count($uuidCollection)) {
                             $query->orWhereIn('id', $uuidCollection->all());
                         }
-                        // Primarily use the model's alias to search by. If they still can't find what they're looking
 
-                        // for, we'll also search by id and tags
-                        $alias = object_get($model, 'fields.'.$model->alias);
-                        if ($alias->type == 'computed') {
-                            $query->orWhere(\DB::raw($alias->sql), 'ilike', '%'.$keywords.'%');
-                        } elseif ($alias->type == 'markdown') {
-                            $query->orWhere(\DB::raw('data#>>\'{'.$alias->_fieldName.',markdown}\''), 'ilike', '%'.$keywords.'%');
-                        } elseif (in_array($alias->type, ['id', 'created_at', 'updated_at'])) {
-                            $query->orWhere(\DB::raw($alias->id), 'ilike', '%'.$keywords.'%');
-                        } else {
-                            $query->orWhere(\DB::raw('data->>\''.$alias->_fieldName.'\''), 'ilike', '%'.$keywords.'%');
+                        // Search by the model's quickSearch array (will generally be the model's `alias` unless manually set).
+                        foreach ($model->quickSearch as $searchFieldName) {
+                            // for, we'll also search by id and tags
+                            $searchField = object_get($model, 'fields.'.$searchFieldName);
+
+                            // Is the search field is set to an html field? search by whatever the field is pointing to for sorting
+                            if ($searchField->type == 'html') {
+                                if (data_get($searchField, 'sortBy') && object_get($model, 'fields.'.data_get($searchField, 'sortBy'))) {
+                                    $searchField = object_get($model, 'fields.'.$searchField->sortBy);
+                                }
+                            }
+
+                            if ($searchField->type == 'computed') {
+                                $query->orWhere(\DB::raw($searchField->sql), 'ilike', '%'.$keywords.'%');
+                            } elseif ($searchField->type == 'markdown') {
+                                $query->orWhere(\DB::raw('data#>>\'{'.$searchField->_fieldName.',markdown}\''), 'ilike', '%'.$keywords.'%');
+                            } elseif (in_array($searchField->type, ['id', 'created_at', 'updated_at'])) {
+                                $query->orWhere(\DB::raw($searchField->id), 'ilike', '%'.$keywords.'%');
+                            } else {
+                                $query->orWhere(\DB::raw('data->>\''.$searchField->_fieldName.'\''), 'ilike', '%'.$keywords.'%');
+                            }
                         }
 
                         // Also search id just in case an item can't be found by its alias (multiple 'James Smiths' for example)
