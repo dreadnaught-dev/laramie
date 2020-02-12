@@ -64,6 +64,11 @@ class LaramieQueryBuilder
         return $this;
     }
 
+    public function setOption(string $optionName, $optionValue)
+    {
+        $this->searchOptions[$optionName] = $optionValue;
+    }
+
     public function spiderAggregates($isSpiderAggregates = true)
     {
         $this->isSpiderAggregates = $isSpiderAggregates;

@@ -102,6 +102,8 @@ class AdminController extends Controller
             })
             ->all();
 
+        $options['isFromAdmin'] = true;
+
         session()->put('_laramie_last_list_url', $request->fullUrl());
 
         // If there aren't any qs params, check to see if the referrer is
