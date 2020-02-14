@@ -162,7 +162,9 @@ class AdminController extends Controller
         // Fire the `PostList` event -- This allows for augmenting the items about to be shown on the list page (strictly for the list page). There's a PostFetch event that one should use if one needs to augment data fetched from the dataService _everywhere_.
         event(new PostList($model, $models, $this->dataService->getUser(), $extra));
 
-        return view('laramie::list-page')
+        $listView = data_get($model, 'listView', 'laramie::list-page');
+
+        return view($listView)
             ->with('model', $model)
             ->with('listableFields', $listableFields)
             ->with('listFields', $listFields)
@@ -474,7 +476,9 @@ class AdminController extends Controller
             return $extraInfoToPassToEvents->response;
         }
 
-        return view($this->getEditView())
+        $editView = data_get($model, 'editView', 'laramie::edit-page');
+
+        return view($editView)
             ->with('model', $model)
             ->with('modelKey', $modelKey)
             ->with('item', $item)
@@ -483,11 +487,6 @@ class AdminController extends Controller
             ->with('errorMessages', $errorMessages)
             ->with('user', $user)
             ->with('sidebars', data_get($extraInfoToPassToEvents, 'sidebars', []));
-    }
-
-    protected function getEditView()
-    {
-        return 'laramie::edit-page';
     }
 
     /**
