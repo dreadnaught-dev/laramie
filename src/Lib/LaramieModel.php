@@ -459,7 +459,12 @@ class LaramieModel implements \JsonSerializable
 
     public static function shapeListQuery(bool $isShapeListQuery)
     {
-        return static::getLaramieQueryBuilder('shapeListQuery', [$isShapeListQuery]);
+        return static::setOption('shapeListQuery', $isShapeListQuery);
+    }
+
+    public static function setOption(string $optionName, $optionValue)
+    {
+        return static::getLaramieQueryBuilder('setOption', [$optionName, $optionValue]);
     }
 
     public static function spiderAggregates($isSpiderAggregates)

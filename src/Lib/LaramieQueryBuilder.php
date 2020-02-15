@@ -59,14 +59,14 @@ class LaramieQueryBuilder
 
     public function shapeListQuery(bool $isShapeListQuery)
     {
-        $this->searchOptions['shapeListQuery'] = $isShapeListQuery;
-
-        return $this;
+        return $this->setOption('shapeListQuery', $isShapeListQuery);
     }
 
     public function setOption(string $optionName, $optionValue)
     {
         $this->searchOptions[$optionName] = $optionValue;
+
+        return $this;
     }
 
     public function spiderAggregates($isSpiderAggregates = true)
@@ -308,6 +308,11 @@ class LaramieQueryBuilder
     {
         return $this->callingClass::hydrateWithModel($this->dataService
             ->findByIdSuperficial($this->callingClass::getJsonClass(), $id));
+    }
+
+    public function superficial()
+    {
+        return $this->depth(0);
     }
 
     public function deleteById($id, $isDeleteHistory = false)

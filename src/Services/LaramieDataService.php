@@ -126,7 +126,9 @@ class LaramieDataService
         }
 
         $options['curDepth'] = $curDepth;
-        event(new PostFetch($model, $laramieModels, $this->getUser(), $options));
+        if (config('laramie.suppress_events') !== true) {
+            event(new PostFetch($model, $laramieModels, $this->getUser(), $options));
+        }
 
         return $laramieModels;
     }
@@ -620,7 +622,7 @@ class LaramieDataService
     public function createComment($modelId, $comment)
     {
         $comment = $this->createMeta($modelId, 'Comment', $comment);
-        if ($comment) {
+        if ($comment && config('laramie.suppress_events') !== true) {
             // @note: the `_laramieComment` model does not exist, it is simply being used pass info on to a listener
             event(new PostSave((object) ['model' => 'LaramieMeta', '_type' => '_laramieComment'], LaramieModel::load((object) ['metaId' => $comment['id'], 'comment' => json_decode($comment['data'])]), $this->getUser()));
         }
@@ -702,7 +704,9 @@ class LaramieDataService
         $this->cachedItems[$item->id] = $item;
 
         $itemCollection = collect([$item]); // Wrap the single item in a collection to give `PostFetch` a consistent interface -- it works on collection-like items
-        event(new PostFetch($model, $itemCollection, $this->getUser()));
+        if (config('laramie.suppress_events') !== true) {
+            event(new PostFetch($model, $itemCollection, $this->getUser()));
+        }
 
         return $item;
     }
