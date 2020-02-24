@@ -114,6 +114,12 @@ class LaramieModel implements \JsonSerializable
      */
     public static function hydrateWithModel(LaramieModel $data)
     {
+        // If the model was created with a factory and is already an instance of `static::class`, return it.
+        $className = static::class;
+        if ($data instanceof $className) {
+            return $data;
+        }
+
         $tmp = new static();
 
         foreach ($data as $key => $value) {
@@ -498,7 +504,7 @@ class LaramieModel implements \JsonSerializable
             return $tmp->jsonClass;
         }
 
-        return lcfirst(class_basename(get_called_class())); // `class_basename` is a Laravel Helper
+        return lcfirst(class_basename(static::class)); // `class_basename` is a Laravel Helper
     }
 
     public function jsonSerialize() {
