@@ -34,6 +34,7 @@
             "listJs": { "type": "string" },
             "listCss": { "type": "string" },
             "addNewText": { "type": "string" },
+            "factory": { "type": "string" },
             "fields": {
                 "oneOf": [
                     { "type": "object" },

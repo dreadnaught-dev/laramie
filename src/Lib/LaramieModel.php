@@ -33,10 +33,12 @@ class LaramieModel implements \JsonSerializable
     public $_isUpdate = false;
 
     protected static $dataService = null;
+    protected static $globalHidden = [];
 
     protected $tableFields = ['id' => 1, 'user_id' => 1, 'type' => 1, 'data' => 1, 'created_at' => 1, 'updated_at' => 1];
     protected $excludeAttributesOnSave = ['jsonClass' => 1, 'tableFields' => 1, 'excludeAttributesOnSave' => 1];
     protected $jsonClass = null;
+    protected $hidden = [];
 
     /**
      * Load data and return a view-model mapped version of `data`.
@@ -121,6 +123,10 @@ class LaramieModel implements \JsonSerializable
         $tmp->hydrated($data);
 
         return $tmp;
+    }
+
+    public static function setGlobalHidden($hidden) {
+        static::$globalHidden = $hidden;
     }
 
     public function hydrated($data) { }
@@ -496,8 +502,10 @@ class LaramieModel implements \JsonSerializable
     }
 
     public function jsonSerialize() {
+        $hidden = array_merge(static::$globalHidden, $this->hidden);
+
         foreach ($this as $key => $value) {
-            if (strpos($key, '_') === 0 && $key !== '_alias') {
+            if ((strpos($key, '_') === 0 && $key !== '_alias') || in_array($key, $hidden)) {
                 unset($this->{$key});
             }
         }

@@ -103,7 +103,7 @@ class LaramieDataService
         $query = $this->augmentListQuery($query, $model, $options, $queryCallback);
         $resultsPerPage = array_get($options, 'resultsPerPage', 15);
 
-        $factory = array_get($options, 'factory', LaramieModel::class);
+        $factory = array_get($options, 'factory', data_get($model, 'factory', LaramieModel::class));
 
         $laramieModels = $factory::load($resultsPerPage === 0 ? $query->get() : $query->paginate($resultsPerPage));
 
@@ -694,7 +694,9 @@ class LaramieDataService
             return null;
         }
 
-        $item = array_first($this->prefetchRelationships($model, [LaramieModel::load($dbItem)], $maxPrefetchDepth, 0));
+        $factory = data_get($model, 'factory', LaramieModel::class);
+
+        $item = array_first($this->prefetchRelationships($model, [$factory::load($dbItem)], $maxPrefetchDepth, 0));
 
         // NOTE: we're only diving into aggregate relationships for single item
         // selection. What this means is that reference fields within deeply

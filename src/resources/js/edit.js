@@ -13,7 +13,7 @@ $(window).scroll(function() {
     } else if (top < initSaveBoxOffset && saveBoxIsPinned) {
       $(".save-box").removeClass("is-pinned");
     }
-  }, 50); // set slight delay to prevent debounce
+  }, 50); // debounce scroll
 });
 
 $(document).ready(function() {
