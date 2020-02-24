@@ -215,6 +215,7 @@ class AdminController extends Controller
         $postData = $request->all();
         $filters = $this->getFilters($postData);
         $postData['filters'] = $filters;
+        $postData['quickSearch'] = $request->get('quick-search');
         $postData['sort'] = array_get($postData, 'sort', 'id');
 
         $user = $this->dataService->getUser();
