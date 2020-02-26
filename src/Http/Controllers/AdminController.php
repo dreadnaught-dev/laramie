@@ -9,13 +9,14 @@ use Validator;
 use Ramsey\Uuid\Uuid;
 use cogpowered\FineDiff\Granularity\Word;
 use cogpowered\FineDiff\Diff;
+
+use Laramie\Hook;
 use Laramie\Lib\LaramieHelpers;
-use Laramie\Events\BulkAction;
-use Laramie\Events\PreList;
-use Laramie\Events\PostList;
-use Laramie\Events\PreBulkAction;
-use Laramie\Events\PreEdit;
-use Laramie\Events\TransformModelForEdit;
+use Laramie\Hooks\HandleBulkAction;
+use Laramie\Hooks\PreList;
+use Laramie\Hooks\PostList;
+use Laramie\Hooks\PreEdit;
+use Laramie\Hooks\TransformModelForEdit;
 use Laramie\Lib\LaramieModel;
 use Laramie\Services\LaramieDataService;
 
@@ -133,7 +134,7 @@ class AdminController extends Controller
         $extra = (object) $request->all();
 
         // Fire the `PreList` event. This allows for a user to specify a redirect response if necessary
-        event(new PreList($model, $this->dataService->getUser(), $extra));
+        Hook::fire(new PreList($model, $this->dataService->getUser(), $extra));
 
         if (data_get($extra, 'response')) {
             return data_get($extra, 'response');
@@ -160,7 +161,7 @@ class AdminController extends Controller
         $extra = (object) ['listFields' => array_get($options, 'listFields', $listFields)]; // passing this so we have context in the post list event;
 
         // Fire the `PostList` event -- This allows for augmenting the items about to be shown on the list page (strictly for the list page). There's a PostFetch event that one should use if one needs to augment data fetched from the dataService _everywhere_.
-        event(new PostList($model, $models, $this->dataService->getUser(), $extra));
+        Hook::fire(new PostList($model, $models, $this->dataService->getUser(), $extra));
 
         $listView = data_get($model, 'listView', 'laramie::list-page');
 
@@ -200,10 +201,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Handle bulk actions -- these are triggered from the list page.
-     *
-     * Bulk actions trigger events (which must be synchronous) which field the
-     * logic of the bulk action.
+     * Handle bulk actions (triggered from the list page).
      *
      * @return \Illuminate\Http\Response
      */
@@ -230,11 +228,8 @@ class AdminController extends Controller
 
         DB::beginTransaction();
         try {
-            // Give applications the ability to shape the query before execution
-            event(new PreBulkAction($model, $nameOfBulkAction, $query, $postData, $user, $extra));
-
             // Execute the bulk action
-            event(new BulkAction($model, $nameOfBulkAction, $query, $postData, $user, $extra));
+            Hook::fire(new HandleBulkAction($model, $nameOfBulkAction, $query, $postData, $user, $extra));
 
             DB::commit();
         } catch (Exception $e) {
@@ -468,10 +463,10 @@ class AdminController extends Controller
         $extraInfoToPassToEvents->sidebars = $sidebars;
 
         // Generally speaking, if you need to dynamically alter your model for edit, do so in this event:
-        event(new TransformModelForEdit($model,  $item, $user));
+        Hook::fire(new TransformModelForEdit($model,  $item, $user));
 
         // If you need to modify your _item_ for edit, generally do so here:
-        event(new PreEdit($model, $item, $user, $extraInfoToPassToEvents));
+        Hook::fire(new PreEdit($model, $item, $user, $extraInfoToPassToEvents));
 
         if (object_get($extraInfoToPassToEvents, 'response')) {
             return $extraInfoToPassToEvents->response;
@@ -506,8 +501,8 @@ class AdminController extends Controller
 
         $isNew = $item->_isNew;
 
-        // Fire `PreEdit` again to give opportunity to hook to change model (to dynamically change field types, etc).
-        event(new TransformModelForEdit($model, $item, $this->dataService->getUser()));
+        // Fire `TransformModelForEdit` to give opportunity to hooks to change model (to dynamically change field types, etc).
+        Hook::fire(new TransformModelForEdit($model, $item, $this->dataService->getUser()));
 
         // Load item with new values _before_ validation. If there are errors, flash updated item and redirect.
         foreach ($model->fields as $fieldName => $field) {

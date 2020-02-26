@@ -8,6 +8,7 @@ use Illuminate\Http\File;
 use Ramsey\Uuid\Uuid;
 use Storage;
 use Laramie\Globals;
+use Laramie\Hook;
 use Laramie\Services\LaramieDataService;
 use Laramie\Lib\ModelLoader;
 use Laramie\Lib\LaramieHelpers;
@@ -22,52 +23,36 @@ class LaramieListener
      */
     public function subscribe($events)
     {
-        $events->listen(
-            'Laramie\Events\ConfigLoaded',
+        Hook::listen(
+            'Laramie\Hooks\ConfigLoaded',
             'Laramie\Listeners\LaramieListener@configLoaded'
         );
-        //$events->listen(
-            //'Laramie\Events\PreList',
-            //'Laramie\Listeners\LaramieListener@preList'
-        //);
-        $events->listen(
-            'Laramie\Events\ShapeListQuery',
-            'Laramie\Listeners\LaramieListener@shapeListQuery'
+        Hook::listen(
+            'Laramie\Hooks\PreFetch',
+            'Laramie\Listeners\LaramieListener@preFetch'
         );
-        //$events->listen(
-            //'Laramie\Events\PostFetch',
-            //'Laramie\Listeners\LaramieListener@PostFetch'
-        //);
-        $events->listen(
-            'Laramie\Events\PostList',
+        Hook::listen(
+            'Laramie\Hooks\PostList',
             'Laramie\Listeners\LaramieListener@postList'
         );
-        $events->listen(
-            'Laramie\Events\PreEdit',
+        Hook::listen(
+            'Laramie\Hooks\PreEdit',
             'Laramie\Listeners\LaramieListener@preEdit'
         );
-        //$events->listen(
-            //'Laramie\Events\TransformModelForEdit',
-            //'Laramie\Listeners\LaramieListener@transformModelForEdit'
-        //);
-        //$events->listen(
-            //'Laramie\Events\ModifyFileInfoPreSave',
-            //'Laramie\Listeners\LaramieListener@modifyFileInfoPreSave'
-        //);
-        $events->listen(
-            'Laramie\Events\PreSave',
+        Hook::listen(
+            'Laramie\Hooks\PreSave',
             'Laramie\Listeners\LaramieListener@preSave'
         );
-        $events->listen(
-            'Laramie\Events\PostSave',
+        Hook::listen(
+            'Laramie\Hooks\PostSave',
             'Laramie\Listeners\LaramieListener@postSave'
         );
-        $events->listen(
-            'Laramie\Events\BulkAction',
-            'Laramie\Listeners\LaramieListener@bulkAction'
+        Hook::listen(
+            'Laramie\Hooks\HandleBulkAction',
+            'Laramie\Listeners\LaramieListener@handleBulkAction'
         );
-        $events->listen(
-            'Laramie\Events\PreDelete',
+        Hook::listen(
+            'Laramie\Hooks\PreDelete',
             'Laramie\Listeners\LaramieListener@preDelete'
         );
     }
@@ -75,7 +60,7 @@ class LaramieListener
     /**
      * Handle config-loaded event
      *
-     * @param $event Laramie\Events\ConfigLoaded
+     * @param $event Laramie\Hooks\ConfigLoaded
      */
     public function configLoaded($event)
     {
@@ -102,9 +87,9 @@ class LaramieListener
      *
      * Only show system roles to super admins on list page.
      *
-     * @param $event Laramie\Events\ShapeListQuery
+     * @param $event Laramie\Hooks\PreFetch
      */
-    public function shapeListQuery($event)
+    public function preFetch($event)
     {
         $model = $event->model;
         $query = $event->query;
@@ -113,7 +98,7 @@ class LaramieListener
 
         switch ($type) {
             case 'laramieRole':
-                // The only way we can hit shapeListQuery and not have a user is on
+                // The only way we can hit preFetch and not have a user is on
                 // authentication -- we don't need to worry about limiting the
                 // query by the user in this case -- it's just to get the list of
                 // their roles.
@@ -137,7 +122,7 @@ class LaramieListener
     /**
      * Handle post-list event.
      *
-     * @param $event Laramie\Events\PostList
+     * @param $event Laramie\Hooks\PostList
      */
     public function postList($event)
     {
@@ -183,7 +168,7 @@ class LaramieListener
      *
      * Prevent system roles from being edited.
      *
-     * @param $event Laramie\Events\PreEdit
+     * @param $event Laramie\Hooks\PreEdit
      */
     public function preEdit($event)
     {
@@ -237,9 +222,9 @@ class LaramieListener
     /**
      * Handle bulk actions.
      *
-     * @param $event Laramie\Events\BulkAction
+     * @param $event Laramie\Hooks\HandleBulkAction
      */
-    public function bulkAction($event)
+    public function handleBulkAction($event)
     {
         $model = $event->model;
         $nameOfBulkAction = $event->nameOfBulkAction;
@@ -333,7 +318,7 @@ class LaramieListener
      * throw exceptions for custom validation rules, etc and to modify data
      * before saving.
      *
-     * @param $event Laramie\Events\PreSave
+     * @param $event Laramie\Hooks\PreSave
      */
     public function preSave($event)
     {
@@ -393,7 +378,7 @@ class LaramieListener
     /**
      * Handle post-save event.
      *
-     * @param $event Laramie\Events\PostSave
+     * @param $event Laramie\Hooks\PostSave
      */
     public function postSave($event)
     {
@@ -406,7 +391,7 @@ class LaramieListener
         $dataService->clearCache();
 
         switch ($type) {
-            // Create thumbnails for images
+            // Create thumbnails for images?
             case 'laramieUpload':
                 break;
             case '_laramieComment':
@@ -434,7 +419,7 @@ class LaramieListener
     /**
      * Handle pre-delete.
      *
-     * @param $event Laramie\Events\PostSave
+     * @param $event Laramie\Hooks\PostSave
      */
     public function preDelete($event)
     {

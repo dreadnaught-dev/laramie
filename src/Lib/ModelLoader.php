@@ -2,10 +2,12 @@
 
 namespace Laramie\Lib;
 
-use Laramie\Events\ConfigLoaded;
-use Laramie\Events\AugmentModelValidator;
-use JsonSchema\Validator;
 use Exception;
+
+use Laramie\Hook;
+use Laramie\Hooks\ConfigLoaded;
+use Laramie\Hooks\AugmentModelValidator;
+use JsonSchema\Validator;
 
 /**
  * Process and load Laramie configuration files.
@@ -200,7 +202,7 @@ class ModelLoader
             $validator = new Validator();
             $modelValidator = json_decode(file_get_contents(__DIR__.'/../model-validator.json'));
 
-            event(new AugmentModelValidator($modelValidator));
+            Hook::fire(new AugmentModelValidator($modelValidator));
 
             $baseFieldValidator = object_get($modelValidator, 'fields._base');
 
@@ -228,7 +230,7 @@ class ModelLoader
                 throw new Exception($errorString);
             }
 
-            event(new ConfigLoaded($config));
+            Hook::fire(new ConfigLoaded($config));
 
             // Add json validation _post_ `ConfigLoaded` event in case fields were dynamically added to models via `ConfigLoaded` event
             foreach ($models as $model) {

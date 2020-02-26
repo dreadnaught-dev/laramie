@@ -21,7 +21,7 @@ class LaramieQueryBuilder
     protected $qb;
 
     protected $searchOptions = [
-        'shapeListQuery' => true,
+        'filterQuery' => true,
         'resultsPerPage' => 0,
     ];
 
@@ -57,9 +57,9 @@ class LaramieQueryBuilder
         return $this;
     }
 
-    public function shapeListQuery(bool $isShapeListQuery)
+    public function filterQuery(bool $isFilterQuery)
     {
-        return $this->setOption('shapeListQuery', $isShapeListQuery);
+        return $this->setOption('filterQuery', $isFilterQuery);
     }
 
     public function setOption(string $optionName, $optionValue)

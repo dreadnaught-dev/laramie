@@ -6,19 +6,22 @@ use DB;
 use Exception;
 use Storage;
 use Ramsey\Uuid\Uuid;
+use JsonSchema\Validator;
 
+use Laramie\Hook;
 use Laramie\Lib\FileInfo;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
 use Laramie\Lib\ModelLoader;
-use Laramie\Events\PostDelete;
-use Laramie\Events\PostFetch;
-use Laramie\Events\PostSave;
-use Laramie\Events\PreDelete;
-use Laramie\Events\PreSave;
-use Laramie\Events\ShapeListQuery;
-use Laramie\Events\ModifyFileInfoPreSave;
-use JsonSchema\Validator;
+use Laramie\Events\ItemSaved;
+use Laramie\Events\ItemDeleted;
+use Laramie\Hooks\FilterQuery;
+use Laramie\Hooks\ModifyFileInfoPreSave;
+use Laramie\Hooks\PostDelete;
+use Laramie\Hooks\PostFetch;
+use Laramie\Hooks\PostSave;
+use Laramie\Hooks\PreDelete;
+use Laramie\Hooks\PreSave;
 
 class LaramieDataService
 {
@@ -127,7 +130,7 @@ class LaramieDataService
 
         $options['curDepth'] = $curDepth;
         if (config('laramie.suppress_events') !== true) {
-            event(new PostFetch($model, $laramieModels, $this->getUser(), $options));
+            Hook::fire(new PostFetch($model, $laramieModels, $this->getUser(), $options));
         }
 
         return $laramieModels;
@@ -180,8 +183,8 @@ class LaramieDataService
          * the ability to dynamically change the query that retrieves items based
          * on the injected arguments.
          */
-        if (config('laramie.suppress_events') !== true && object_get($options, 'shapeListQuery', true) !== false) {
-            event(new ShapeListQuery($model, $query, $this->getUser(), $options));
+        if (config('laramie.suppress_events') !== true && object_get($options, 'filterQuery', true) !== false) {
+            Hook::fire(new FilterQuery($model, $query, $this->getUser(), $options));
         }
 
         $options = (array) $options;
@@ -253,7 +256,7 @@ class LaramieDataService
             $operation = $filter->operation;
             $value = $filter->value;
 
-            // @TODO -- document that one can specify custom sql to search a field by via adding a `sql` attribute to the filter in `ShapeListQuery`
+            // @TODO -- document that one can specify custom sql to search a field by via adding a `sql` attribute to the filter in `FilterQuery`
             $field = object_get($filter, 'sql')
                 ? $filter->sql
                 : $this->getSearchSqlFromFieldName($model, $filter->field, $value);
@@ -458,7 +461,7 @@ class LaramieDataService
                     $this->getModelByKey($modelKey),
                     [
                         'resultsPerPage' => 0,
-                        'shapeListQuery' => false,
+                        'filterQuery' => false,
                     ],
                     function ($query) use ($uuidList) {
                         $query->whereIn('id', $uuidList);
@@ -624,7 +627,8 @@ class LaramieDataService
         $comment = $this->createMeta($modelId, 'Comment', $comment);
         if ($comment && config('laramie.suppress_events') !== true) {
             // @note: the `_laramieComment` model does not exist, it is simply being used pass info on to a listener
-            event(new PostSave((object) ['model' => 'LaramieMeta', '_type' => '_laramieComment'], LaramieModel::load((object) ['metaId' => $comment['id'], 'comment' => json_decode($comment['data'])]), $this->getUser()));
+            Hook::fire(new PostSave((object) ['model' => 'LaramieMeta', '_type' => '_laramieComment'], LaramieModel::load((object) ['metaId' => $comment['id'], 'comment' => json_decode($comment['data'])]), $this->getUser()));
+            event(new ItemSaved((object) ['model' => 'LaramieMeta', '_type' => '_laramieComment'], LaramieModel::load((object) ['metaId' => $comment['id'], 'comment' => json_decode($comment['data'])]), $this->getUser()));
         }
     }
 
@@ -707,7 +711,7 @@ class LaramieDataService
 
         $itemCollection = collect([$item]); // Wrap the single item in a collection to give `PostFetch` a consistent interface -- it works on collection-like items
         if (config('laramie.suppress_events') !== true) {
-            event(new PostFetch($model, $itemCollection, $this->getUser()));
+            Hook::fire(new PostFetch($model, $itemCollection, $this->getUser()));
         }
 
         return $item;
@@ -947,7 +951,7 @@ class LaramieDataService
          * saved based on the injected arguments.
          */
         if (config('laramie.suppress_events') !== true) {
-            event(new PreSave($model, $laramieModel, $this->getUser()));
+            Hook::fire(new PreSave($model, $laramieModel, $this->getUser()));
         }
 
         $data = clone $laramieModel;
@@ -1042,7 +1046,8 @@ class LaramieDataService
         $item->_wasNew = !object_get($data, '_origId');
 
         if (config('laramie.suppress_events') !== true) {
-            event(new PostSave($model, $item, $this->getUser()));
+            Hook::fire(new PostSave($model, $item, $this->getUser()));
+            event(new ItemSaved($model, $item, $this->getUser()));
         }
 
         return $item;
@@ -1062,7 +1067,7 @@ class LaramieDataService
 
         try {
             if (config('laramie.suppress_events') !== true) {
-                event(new PreDelete($model, $item, $this->getUser()));
+                Hook::fire(new PreDelete($model, $item, $this->getUser()));
             }
 
             if ($isDeleteHistory) {
@@ -1078,7 +1083,8 @@ class LaramieDataService
                 ->delete();
 
             if (config('laramie.suppress_events') !== true) {
-                event(new PostDelete($model, $item, $this->getUser()));
+                Hook::fire(new PostDelete($model, $item, $this->getUser()));
+                event(new ItemDeleted($model, $item, $this->getUser()));
             }
 
             DB::commit();
@@ -1115,7 +1121,7 @@ class LaramieDataService
         $fileInfo = new FileInfo($file, $isPublic, $source, $destination);
 
         if (config('laramie.suppress_events') !== true) {
-            event(new ModifyFileInfoPreSave($this->getUser(), $fileInfo));
+            Hook::fire(new ModifyFileInfoPreSave($this->getUser(), $fileInfo));
         }
 
         $id = Uuid::uuid1()->toString();

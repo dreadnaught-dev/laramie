@@ -1,8 +1,11 @@
 <?php
 
-namespace Laramie\Events;
+namespace Laramie\Hooks;
 
-class BulkAction
+/*
+ * The event actually does the work of handling a bulk action request.
+ */
+class HandleBulkAction
 {
     public $model; // LaramieModel of the list page initiating the bulk action
     public $action; // typically "delete", "duplicate", "export", but can be whatever a model has defined.
@@ -12,8 +15,7 @@ class BulkAction
     public $extra; // allows bulk action to pass messages back to the caller (e.g., a custom response for exporting data, etc. Currently only `response` is checked).
 
     /**
-     * Create a new BulkAction event. Listeners must **must** be synchronous.
-     * This event actually does the work of the bulk action.
+     * Create a new HandleBulkAction hook.
      */
     public function __construct($model, $nameOfBulkAction, $query, $postData, $user, &$extra)
     {

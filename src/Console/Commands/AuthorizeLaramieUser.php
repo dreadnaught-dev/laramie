@@ -70,13 +70,13 @@ class AuthorizeLaramieUser extends Command
 
         // Determine if this is the first user. If yes, make them a super admin. Everyone else gets the `admin` role
         // unless the role option is passed as 'super'.
-        $existingLaramieUsers = $dataService->findByType($model, ['shapeListQuery' => false]);
+        $existingLaramieUsers = $dataService->findByType($model, ['filterQuery' => false]);
         if (count($existingLaramieUsers) == 0) {
             $role = Globals::SuperAdminRoleId;
         }
 
         // Find all Laramie users that correspond to the Laravel one
-        $existingUsers = $dataService->findByType($model, ['shapeListQuery' => false], function ($query) use ($user) {
+        $existingUsers = $dataService->findByType($model, ['filterQuery' => false], function ($query) use ($user) {
             $query->where(DB::raw('data->>\'user\''), 'ilike', $user);
         });
 

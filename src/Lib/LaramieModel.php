@@ -469,9 +469,9 @@ class LaramieModel implements \JsonSerializable
         return static::getLaramieQueryBuilder('depth', [$maxPrefetchDepth]);
     }
 
-    public static function shapeListQuery(bool $isShapeListQuery)
+    public static function filterQuery(bool $isFilterQuery)
     {
-        return static::setOption('shapeListQuery', $isShapeListQuery);
+        return static::setOption('filterQuery', $isFilterQuery);
     }
 
     public static function setOption(string $optionName, $optionValue)

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 
 use Laramie\Http\Middleware\RequestLogger;
 use Laramie\Lib\LaramieHelpers;
+use Laramie\Hook;
 use Laramie\Services\LaramieDataService;
 
 /*

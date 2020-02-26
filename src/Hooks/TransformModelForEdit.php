@@ -1,24 +1,23 @@
 <?php
 
-namespace Laramie\Events;
+namespace Laramie\Hooks;
 
 use Laramie\Lib\LaramieModel;
 
-class PreEdit
+/*
+ * Dynamically alter an modal/item that will be edited (based on user role, etc).
+ * Called from `Laramie\Http\Controllers\AdminController` when an item is edited.
+ */
+class TransformModelForEdit
 {
     public $model;
     public $item;
     public $user;
 
     /**
-     * Create a new PreEdit event instance. Listeners **must** be synchronous.
+     * Create a new TransformModelForEdit hook.
      *
-     * This is called from `Laramie\Http\Controllers\AdminController` when an
-     * item edited. It can be used to dynamically alter the item that will be
-     * edited (based on user role, etc), enforce rules on who gets to see what,
-     * etc.
-     *
-     * @param stdClass                 $model JSON-decoded model definition (from laramie-models.json, etc).
+     * @param stdClass $model JSON-decoded model definition (from laramie-models.json, etc).
      * @param Laramie\Lib\LaramieModel $item  the db item that will be edited
      * @param Laramie\Lib\LaramieModel $user  laramie's version of the logged in user
      */

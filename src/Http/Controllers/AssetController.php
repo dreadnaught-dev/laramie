@@ -6,8 +6,11 @@ use Illuminate\Http\File;
 use Illuminate\Http\Request;
 use Intervention\Image\ImageManager;
 use Storage;
-use Laramie\Events\PreSave;
-use Laramie\Events\PostSave;
+
+use Laramie\Hook;
+use Laramie\Hook\PreSave;
+use Laramie\Hook\PostSave;
+use Laramie\Events\ItemSaved;
 use Laramie\Globals;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Services\LaramieDataService;
@@ -105,8 +108,9 @@ class AssetController extends Controller
         $file = new File($tmp);
         Storage::disk(config('laramie.storage_disk'))->putFileAs('', $file, $item->path);
 
-        event(new PreSave($uploadModel, $item, $this->dataService->getUser()));
-        event(new PostSave($uploadModel, $item, $this->dataService->getUser()));
+        Hook::fire(new PreSave($uploadModel, $item, $this->dataService->getUser()));
+        Hook::fire(new PostSave($uploadModel, $item, $this->dataService->getUser()));
+        event(new ItemSaved($uploadModel, $item, $this->dataService->getUser()));
 
         return redirect()
             ->route('laramie::cropper', ['imageKey' => $imageKey])
