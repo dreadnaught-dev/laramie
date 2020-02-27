@@ -134,6 +134,15 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Date/Time output formatting - when displaying dates on list pages / csv,
+    | you may specify an output format you'd like carbon to use.
+    |--------------------------------------------------------------------------
+    */
+    'date_presentation_format' => null,
+    'datetime_presentation_format' => null,
+
+    /*
+    |--------------------------------------------------------------------------
     | Enable Local API -- allow logged in users to hit the API (as well as
     | users authenticated via basic auth). Will add some overhead to requests
     | as setting to true will require loading sessions.

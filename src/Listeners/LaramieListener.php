@@ -68,7 +68,9 @@ class LaramieListener
 
         $laramieRoleModel = object_get($config, 'models.laramieRole');
 
-        $nonSystemModels = collect($config->models)
+        $models = collect($config->models);
+
+        $nonSystemModels = $models
             ->filter(function ($e) {
                 return !object_get($e, 'isSystemModel');
             })

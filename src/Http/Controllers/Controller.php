@@ -36,7 +36,12 @@ class Controller extends BaseController
         $prefs = $prefs !== null ? $prefs : (object) [];
 
         return collect(object_get($model, 'fields', (object) []))
-            ->filter(function ($e) {
+            ->filter(function ($e) use($prefs) {
+                // If there are prefs set for the user for the model, but they are missing a field, interpret that as not listed.
+                if (!empty($prefs) && data_get($prefs, $e->_fieldName) === null) {
+                    return false;
+                }
+
                 return $e->isListable;
             })
             ->each(function ($e) use ($prefs) {

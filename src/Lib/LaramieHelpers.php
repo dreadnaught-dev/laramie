@@ -95,10 +95,13 @@ class LaramieHelpers
             case 'boolean':
                 return $value ? 'yes' : 'no';
             case 'date':
-                return $value ? \Carbon\Carbon::parse($value, config('laramie.timezone'))->toDateString() : '';
+            case 'dbtimestamp':
+                $dateFormat = config('laramie.date_presentation_format') ?: 'Y-m-d'; // Carbon's default if none provided
+                return $value ? \Carbon\Carbon::parse($value, config('laramie.timezone'))->format($dateFormat) : '';
             case 'datetime':
             case 'datetime-local':
-                return $value ? \Carbon\Carbon::parse($value, config('laramie.timezone'))->toDateTimeString() : '';
+                $dateFormat = config('laramie.datetime_presentation_format') ?: 'Y-m-d H:i:s'; // Carbon's default if none provided
+                return $value ? \Carbon\Carbon::parse($value, config('laramie.timezone'))->format($dateFormat) : '';
             case 'dateDiff':
                 if ($value) {
                     return \Carbon\Carbon::parse($value, config('laramie.timezone'))->diffForHumans();

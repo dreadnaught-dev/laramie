@@ -115,7 +115,7 @@
                                         <label class="checkbox">
                                             <i class="fas fa-grip-vertical"></i>&nbsp;
                                             <input type="hidden" name="{{ $fieldKey }}" value="0">
-                                            <input type="checkbox" name="{{ $fieldKey }}" value="1" {{ array_key_exists($fieldKey, $listFields) ? 'checked' : '' }}>
+                                            <input type="checkbox" name="_lf_{{ $fieldKey }}" value="1" {{ array_key_exists($fieldKey, $listFields) ? 'checked' : '' }}>
                                             {{ $field->label }}
                                         </label>
                                     </p>

@@ -257,12 +257,20 @@ class AdminController extends Controller
         $weight = 10;
 
         $listFields = [];
-        foreach ($request->all() as $key => $value) {
+
+        $fieldsFromRequest = collect($request->all())
+            ->filter(function($item, $key) {
+                return preg_match('/^_lf_/', $key);
+            });
+
+        foreach ($fieldsFromRequest as $key => $value) {
+            $key = preg_replace('/^_lf_/', '', $key);
             if (array_key_exists($key, $model->fields)) {
                 $listFields[$key] = (object) ['weight' => $weight, 'listed' => $value == 1];
                 $weight += 10;
             }
         }
+
         $userPrefs->{$model->_type} = object_get($userPrefs, $model->_type, (object) []);
         $userPrefs->{$model->_type}->listFields = $listFields;
 

@@ -268,7 +268,7 @@ class LaramieDataService
             // Check to see if we need to manipulate `$value` for searching (currently limited to date fields):
             $modelField = object_get($model->fields, $filter->field);
             if (in_array($filter->field, ['_created_at', '_updated_at'])
-                || in_array(object_get($modelField, 'type'), ['timestamp', 'date', 'datetime-local']))
+                || in_array(object_get($modelField, 'dataType', object_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local']))
             {
                 try {
                     $value = \Carbon\Carbon::parse($value, config('laramie.timezone'))->timestamp;
@@ -343,9 +343,9 @@ class LaramieDataService
 
         $modelField = object_get($model->fields, $field);
 
-        $modelFieldType = data_get($modelField, 'type');
+        $modelFieldType = data_get($modelField, 'dataType', data_get($modelField, 'type'));
 
-        if (in_array($field, ['_created_at', '_updated_at'])) {
+        if ($modelFieldType == 'dbtimestamp') {
             // If we're searching by created_at or updated_at, the sql we're searching against to unix timestamp values. We'll be doing a similar conversion to the values being searched for.
             $field = 'date_part(\'epoch\', '.preg_replace('/^_/', '', $field).'::timestamp)::int';
         } elseif ($field == '_tags') {
