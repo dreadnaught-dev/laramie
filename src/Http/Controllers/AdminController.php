@@ -457,10 +457,11 @@ class AdminController extends Controller
          */
         $user = $this->dataService->getUser();
 
-        $sidebars = [
-            'laramie::partials.edit.save-box' => ['item' => $item, 'user' => $user, 'lastUserToUpdate' => $lastUserToUpdate],
-            'laramie::partials.edit.meta-box' => ['user' => $user],
-        ];
+        $sidebars = ['laramie::partials.edit.save-box' => ['item' => $item, 'user' => $user, 'lastUserToUpdate' => $lastUserToUpdate]];
+
+        if (!(config('laramie.disable_meta') || data_get($model, 'disableMeta'))) {
+            $sidebars['laramie::partials.edit.meta-box'] = ['user' => $user];
+        }
 
         if (count($revisions) > 0) {
             $sidebars['laramie::partials.edit.revisions-box'] = ['item' => $item, 'revisions' => $revisions, 'model' => $model, 'user' => $user, 'lastEditor' => $lastEditor];
