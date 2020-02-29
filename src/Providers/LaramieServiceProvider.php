@@ -95,7 +95,11 @@ class LaramieServiceProvider extends ServiceProvider
         // Inject data into views and partials as needed
         \View::composer(['laramie::partials.left-nav', 'laramie::partials.header'], function ($view) {
             $view->with('menu', app(LaramieDataService::class)->getMenu());
-            $view->with('user', app(LaramieDataService::class)->getUser());
+
+            // If an app / plugin has already set a `user` attribute for this view, use it instead.
+            if (!data_get($view->getData(), 'user')) {
+                $view->with('user', app(LaramieDataService::class)->getUser());
+            }
         });
 
         // Add a new blade directive, which allows a fallback partial if the first isn't found

@@ -20,7 +20,9 @@ class Hook
 
     public static function fire($event)
     {
-        $key = get_class($event);
+        $key = is_string($event)
+            ? $event
+            : get_class($event);
 
         $sortedListeners = collect(data_get(self::$listeners, $key, []))
             ->sortBy(function($item) {
