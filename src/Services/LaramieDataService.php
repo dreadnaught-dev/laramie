@@ -341,10 +341,14 @@ class LaramieDataService
             return $field.'::text';
         }
 
-        $modelField = object_get($model->fields, $field);
+        $modelField = data_get($model->fields, $field);
 
         $modelFieldType = data_get($modelField, 'dataType', data_get($modelField, 'type'));
 
+        // If searching by the `data` field, don't transform -- it's a manual query
+        if ($field === 'data') {
+            return 'data';
+        }
         if ($modelFieldType == 'dbtimestamp') {
             // If we're searching by created_at or updated_at, the sql we're searching against to unix timestamp values. We'll be doing a similar conversion to the values being searched for.
             $field = 'date_part(\'epoch\', '.preg_replace('/^_/', '', $field).'::timestamp)::int';
@@ -355,7 +359,7 @@ class LaramieDataService
         } elseif ($modelFieldType == 'aggregate') {
             // Aggregate fields aren't eligible to take part in filters --
             // if a fitler is needed on an aggregate, a computed field should
-            // be created to selecte the aggregate property that can then be
+            // be created to select the aggregate property that can then be
             // listed/searched be searched.
             return null;
         } elseif ($modelFieldType == 'computed') {
