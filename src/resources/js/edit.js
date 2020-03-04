@@ -110,7 +110,8 @@ $(document).ready(function() {
         var $searchWrapper = $(e.target)
             .closest(".reference-wrapper")
             .find(".reference-search");
-        $searchWrapper.toggle();
+        $searchWrapper.toggleClass('is-active');
+        $.event.trigger("modal-change");
         if (!$searchWrapper.data("loaded")) {
             $searchWrapper.data("loaded", true);
             doSearch($searchWrapper);
@@ -264,7 +265,8 @@ $(document).ready(function() {
     });
 
     $("#edit-form").on("click.select-reference", ".js-select-reference", function(e) {
-        var isFileSelect = $(e.target).hasClass("is-file-select");
+        var $item = $(e.target);
+        var isFileSelect = $item.hasClass("is-file-select");
         var $referenceWrapper = $(e.target).closest(".reference-wrapper");
         var $searchWrapper = $referenceWrapper.find(".reference-search");
         var selectedItems = $searchWrapper.find(":input:checked").toArray();
@@ -299,12 +301,10 @@ $(document).ready(function() {
         }
         $referenceWrapper
             .toggleClass("has-file", selectedItems.length > 0)
+            .toggleClass("is-checked", selectedItems.length > 0)
             .find(".selection-info")
             .html(selectionInfoContent)
-            .end()
-            .find(".hide-when-file")
-            .hide();
-        $searchWrapper.toggle(false);
+        $searchWrapper.toggleClass('is-active', false);
     });
 
     $(".js-dismissable").click(function(e) {
@@ -445,10 +445,11 @@ function doSearch($searchWrapper) {
             field: field,
         },
         function(data) {
-            $searchWrapper.find(".js-select-reference").removeClass("is-loading");
-            $searchWrapper.find(".panel-block.option").remove();
             var template = handlebarsTemplates["reference-" + (isSingleReference ? "single" : "many") + "-option"];
-            $searchWrapper.find(".panel-block.search").after(template(data));
+            $searchWrapper.find(".js-select-reference").removeClass("is-loading");
+            $searchWrapper.find(".results")
+              .empty()
+              .append(template(data));
         },
     );
 }

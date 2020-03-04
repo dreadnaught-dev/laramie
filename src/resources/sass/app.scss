@@ -50,15 +50,9 @@
     padding-right: 0;
 }
 
-nav.panel {
-    .panel-heading {
-        margin-bottom: 0;
-    }
-    .filetype-icon {
-        float: left !important;
-    }
+.reference-search .filetype-icon {
+    float: left;
 }
-
 
 .navbar-item .media {
     width: 100%;
@@ -223,10 +217,11 @@ thead .fa-sort {
         display: block;
         margin-bottom: .5em;
     }
+
     &:not(.has-file) .hide-when-no-file {
         display: none;
     }
-    &.has-file .hide-when-file {
+    &.has-file.is-checked .hide-when-file {
         display: none;
     }
 }

@@ -7,9 +7,9 @@
 @endphp
 
 @section('input')
-    <div class="reference-wrapper file-wrapper{{ $uploadKey ? ' has-file' : '' }}">
+    <div class="reference-wrapper file-wrapper{{ $uploadKey ? ' has-file is-checked' : '' }}">
         <label class="hide-when-no-file top-level-label">
-            <input type="checkbox" class="reference-ids" name="_{{ $field->id }}" {!! $uploadKey ? 'checked="checked"' : '' !!} onchange="$(this).parent().next().toggle(!$(this).is(':checked'));" value="{{ $uploadKey }}"> Use <span class="selection-info" data-base-url="javascript:void(0);"><a class="js-file-name" onclick="dynamicFileHref(this);" href="javascript:void(0);" target="_blank"><img class="filetype-icon" src="{{ config('laramie.admin_url') }}/assets/icon/{{ object_get($fileInfo, 'uploadKey') }}_50">{{ object_get($fileInfo, 'name') }}</a></span>
+            <input type="checkbox" class="reference-ids" name="_{{ $field->id }}" {!! $uploadKey ? 'checked="checked"' : '' !!} onchange="$(this).closest('.reference-wrapper').toggleClass('is-checked', $(this).is(':checked'));" value="{{ $uploadKey }}"> Use <span class="selection-info" data-base-url="javascript:void(0);"><a class="js-file-name" onclick="dynamicFileHref(this);" href="javascript:void(0);" target="_blank"><img class="filetype-icon" src="{{ config('laramie.admin_url') }}/assets/icon/{{ object_get($fileInfo, 'uploadKey') }}_50">{{ object_get($fileInfo, 'name') }}</a></span>
         </label>
         <div class="hide-when-file">
             <div class="columns is-vcentered">
@@ -23,27 +23,37 @@
                 @endif
             </div>
         </div>
-        <div class="columns reference-search hide-when-file" data-field="{{ data_get($field, '_fieldName') }}" data-type="{{ $model->_type }}" data-lookup-type="laramieUpload" data-lookup-subtype="{{ $uploadType }}" data-is-single-reference="1" style="display:none">
-            <div class="column is-half">
-                <nav class="panel">
-                    <div class="panel-heading">
-                        {{ str_plural(title_case($uploadType)) }}
-                    </div>
-                    <div class="panel-block search">
-                        <p class="control has-icon clearfix">
+        <div class="modal reference-search" data-field="{{ data_get($field, '_fieldName') }}" data-type="{{ $model->_type }}" data-lookup-type="laramieUpload" data-lookup-subtype="{{ $uploadType }}" data-is-single-reference="1">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">{{ str_plural(title_case($uploadType)) }}</p>
+                    <span class="delete js-meta"></span>
+                </header>
+                <section class="modal-card-body meta-wrapper" data-load-meta-endpoint="{{ route('laramie::load-meta', ['modelKey' => $model->_type, 'id' => '_id_']) }}">
+                    <div class="search has-margin-bottom">
+                        <p class="control has-icons-left">
                             <input class="keywords input" type="text" placeholder="Search filename / tag">
-                            <span class="icon is-small"><i class="fas fa-search"></i></span>
+                            <span class="icon is-small is-left"><i class="fas fa-search"></i></span>
                         </p>
                     </div>
-                    <div class="panel-block option">
-                        Loading...
+                    <table class="table is-hoverable is-fullwidth">
+                        <tbody class="results">
+                            <tr><td colspan="2">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+                <footer class="modal-card-foot">
+                    <div class="level" style="width: 100%;">
+                        <div class="level-left">
+                            <a class="level-item button is-warning js-clear-reference-select">Clear selection</a>
+                        </div>
+                        <div class="level-right">
+                            <a class="level-item button is-light js-cancel js-toggle-reference-search">Cancel</a>
+                            <a class="level-item button is-primary is-loading js-select-reference is-file-select">Apply</a>
+                        </div>
                     </div>
-                    <div class="panel-block">
-                        <a class="button is-primary is-loading js-select-reference is-file-select">Select</a>
-                        &nbsp;
-                        <a class="button is-light js-cancel js-toggle-reference-search">Cancel</a>
-                    </div>
-                </nav>
+                </footer>
             </div>
         </div>
     </div>

@@ -30,29 +30,37 @@
                 &nbsp;&nbsp;<a class="tag is-dark js-toggle-reference-search">Change</a>
             </blockquote>
         </div>
-        <div class="columns reference-search" data-type="{{ $model->_type }}" data-lookup-type="{{ $referencedModelKey }}" data-is-single-reference="{{ $isSingleReference ? 1 : 0 }}" style="display:none;">
-            <div class="column is-half">
-                <nav class="panel">
-                    <p class="panel-heading">
-                        {{ $referencedModelNamePlural }}
-                    </p>
-                    <div class="panel-block search">
-                        <p class="control has-icon">
+        <div class="modal reference-search" data-type="{{ $model->_type }}" data-lookup-type="{{ $referencedModelKey }}" data-is-single-reference="{{ $isSingleReference ? 1 : 0 }}">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">{{ $referencedModelNamePlural }}</p>
+                    <span class="delete js-meta"></span>
+                </header>
+                <section class="modal-card-body meta-wrapper" data-load-meta-endpoint="{{ route('laramie::load-meta', ['modelKey' => $model->_type, 'id' => '_id_']) }}">
+                    <div class="search has-margin-bottom">
+                        <p class="control has-icons-left">
                             <input class="keywords input" type="text" placeholder="Search">
-                            <span class="icon is-small"><i class="fas fa-search"></i></span>
+                            <span class="icon is-small is-left"><i class="fas fa-search"></i></span>
                         </p>
                     </div>
-                    <div class="panel-block option">
-                        Loading...
+                    <table class="table is-hoverable is-fullwidth">
+                        <tbody class="results">
+                            <tr><td colspan="2">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+                <footer class="modal-card-foot">
+                    <div class="level" style="width: 100%;">
+                        <div class="level-left">
+                            <a class="level-item button is-warning js-clear-reference-select">Clear selection</a>
+                        </div>
+                        <div class="level-right">
+                            <a class="level-item button is-light js-cancel js-toggle-reference-search">Cancel</a>
+                            <a class="level-item button is-primary is-loading js-select-reference">Apply</a>
+                        </div>
                     </div>
-                    <div class="panel-block">
-                        <a class="button is-primary is-loading js-select-reference">Select</a>
-                        &nbsp;
-                        <a class="button is-warning js-clear-reference-select">Clear selection</a>
-                        &nbsp;
-                        <a class="button is-light js-cancel js-toggle-reference-search">Cancel</a>
-                    </div>
-                </nav>
+                </footer>
             </div>
         </div>
     </div>
