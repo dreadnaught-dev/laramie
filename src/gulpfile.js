@@ -36,12 +36,12 @@ function watchTask() {
 }
 
 /* CONCRETE TASKS */
-gulp.task('prettier', prettier);
-function prettier() {
+gulp.task('prettier', runPrettier);
+function runPrettier() {
   return gulp.src('resources/js/**/*.js')
     .pipe(plumber())
-    .pipe(prettier({printWidth: 120, tabWidth: 2, trailingComma: 'es5'}))
-    .pipe(gulp.dest('./resources/js'))
+    .pipe(prettier({printWidth: 120, tabWidth: 4, trailingComma: 'all'}))
+    .pipe(gulp.dest('./resources/js'));
 };
 
 gulp.task('copy-vendor', copyVendor);
