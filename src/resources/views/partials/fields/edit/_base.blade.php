@@ -5,7 +5,7 @@
 
 <div class="field {{ $hasError ? 'is-danger' : '' }}" data-field-key="{{ $fieldKey }}" data-field-type="{{ $field->type }}" {!! data_get($field, 'showWhen') ? 'data-show-when="'.preg_replace('/[^_]+$/', $field->showWhen, $field->id).'"' : '' !!}>
     <label class="label" for="{{ $fieldKey }}">{!! $field->label !!}</label>
-    <div class="control {{ $hasError ? 'has-icon has-icon-right' : '' }} {{ $isFullwidthSelect ? 'is-expanded' : '' }}">
+    <div class="control {{ $hasError ? 'has-icons-right' : '' }} {{ $isFullwidthSelect ? 'is-expanded' : '' }}">
         @yield('input')
         @if ($hasError)
         <span class="icon is-small is-right">

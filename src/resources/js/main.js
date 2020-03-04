@@ -88,7 +88,7 @@ function loadMeta(itemId, callback) {
         return;
     }
 
-    $.getJSON(action.replace("_id", itemId), function(data) {
+    $.getJSON(action.replace("_id_", itemId), function(data) {
         var template = handlebarsTemplates["tag-list-template"];
         $(".tags-wrapper").html(template(data));
         var template = handlebarsTemplates["comment-list-template"];

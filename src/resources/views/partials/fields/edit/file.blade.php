@@ -28,9 +28,9 @@
             <div class="modal-card">
                 <header class="modal-card-head">
                     <p class="modal-card-title">{{ str_plural(title_case($uploadType)) }}</p>
-                    <span class="delete js-meta"></span>
+                    <span class="delete js-close-modal"></span>
                 </header>
-                <section class="modal-card-body meta-wrapper" data-load-meta-endpoint="{{ route('laramie::load-meta', ['modelKey' => $model->_type, 'id' => '_id_']) }}">
+                <section class="modal-card-body">
                     <div class="search has-margin-bottom">
                         <p class="control has-icons-left">
                             <input class="keywords input" type="text" placeholder="Search filename / tag">
