@@ -332,6 +332,7 @@ class ModelLoader
         if (!$validationString) {
             switch ($field->type) {
                 case 'boolean':
+                case 'checkbox':
                     $validationRules[] = 'boolean';
                     break;
                 case 'computed':
@@ -564,6 +565,7 @@ class ModelLoader
     {
         switch ($field->type) {
             case 'boolean':
+            case 'checkbox':
                 $validationType = (object) ['type' => 'boolean'];
                 break;
             case 'email':

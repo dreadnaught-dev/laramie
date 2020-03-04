@@ -2,8 +2,8 @@
   $.fn.conditionallyHide = function(options) {
     var settings = $.extend({ wrapperSelector: null }, options);
 
-    return this.each(function(){
-      var $e = $(this);
+    return this.each(function(i, item){
+      var $e = $(item);
       var rule = $e.data("showWhen");
       var elementToHide = $e;
 
@@ -54,8 +54,8 @@
         // console.log({'hiding': elementToHideIdentifier})
       }
 
-      target.bind('updated', function(){
-        var target = $(this);
+      target.on('updated', function(e){
+        var target = $(e.target);
         if ((target.is('[type="checkbox"]') && comparisonOp(target.filter(":checked").val(), value)) // checkboxes
           || (!target.is('[type="checkbox"]') && comparisonOp(target.val(), value)) // everything else
         ) {
@@ -71,8 +71,8 @@
 
       if (!target.data('conditionallyHidden')) {
         var eventToListenFor = target.is(':radio') ? 'click' : 'change';
-        target.on(eventToListenFor, function() {
-          $(this).trigger('updated');
+        target.on(eventToListenFor, function(e) {
+          $(e.target).trigger('updated');
         });
         target.data('conditionallyHidden', 1);
       }
@@ -100,8 +100,8 @@
 (function($){
   $.fn.unsetInputs = function() {
 
-    return this.each(function(){
-      $(this).find(':input')
+    return this.each(function(i, item){
+      $(item).find(':input')
         .filter(':not(:checkbox):not(:radio)').val('').end()
         .filter(':checkbox,:radio').attr('checked', false).end()
         .trigger('change');

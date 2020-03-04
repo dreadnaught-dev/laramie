@@ -23,11 +23,11 @@ $(document).ready(function() {
 
   $(".edit-container")
     .find(".aggregate-holder")
-    .each(function() {
-      var itemId = $(this)
+    .each(function(i, item) {
+      var itemId = $(item)
         .closest(".edit-container")
         .data("itemId");
-      var $holder = $(this);
+      var $holder = $(item);
       var itemData = objectGet(window, "globals.aggregates." + itemId, {});
       loadAggregateFields($holder, itemData);
       $.event.trigger("aggregates-loaded");
@@ -53,13 +53,13 @@ $(document).ready(function() {
     this.editor.loadHTML(this.editor.element.value);
   });
 
-  $("#edit-tabs a").on("click", function() {
+  $("#edit-tabs a").on("click", function(e) {
     $("#edit-tabs li").removeClass("is-active");
-    $(this)
+    $(e.target)
       .closest("li")
       .addClass("is-active");
 
-    var selectedTab = $(this).data("tab");
+    var selectedTab = $(e.target).data("tab");
     var hasTabSelected = selectedTab !== "_main";
     $("#edit-form").toggleClass("has-tab-selected", hasTabSelected);
     $('[name="_selectedTab"]').val(selectedTab);
@@ -85,8 +85,8 @@ $(document).ready(function() {
   });
 
   if ($("#edit-tabs").length > 0) {
-    $(".field.is-danger").each(function() {
-      var $tab = $(this).closest(".is-tab");
+    $(".field.is-danger").each(function(i, item) {
+      var $tab = $(item).closest(".is-tab");
       if ($tab.length) {
         var classes = $tab.attr("class").split(/\s+/);
         for (var i = 0; i < classes.length; i++) {
@@ -101,8 +101,8 @@ $(document).ready(function() {
   }
 
   // Get all reference fields and populate their selects:
-  $("#edit-form").on("click.toggle-reference-search", ".js-toggle-reference-search", function() {
-    $searchWrapper = $(this)
+  $("#edit-form").on("click.toggle-reference-search", ".js-toggle-reference-search", function(e) {
+    var $searchWrapper = $(e.target)
       .closest(".reference-wrapper")
       .find(".reference-search");
     $searchWrapper.toggle();
@@ -120,8 +120,8 @@ $(document).ready(function() {
   });
 
   // toggle tags / revisions viewing prefs
-  $(".js-toggle-prefs").on("click", function() {
-    var $e = $(this)
+  $(".js-toggle-prefs").on("click", function(e) {
+    var $e = $(e.target)
       .toggleClass("open")
       .closest(".card")
       .children(".card-content")
@@ -131,12 +131,12 @@ $(document).ready(function() {
     $.post(globals.adminUrl + "/ajax/edit-prefs", { hideTags: hideTags, hideRevisions: hideRevisions });
   });
 
-  $("#edit-form").on("click.clear-reference-selection", ".js-clear-reference-select", function() {
-    $(this)
+  $("#edit-form").on("click.clear-reference-selection", ".js-clear-reference-select", function(e) {
+    $(e.target)
       .closest(".reference-wrapper")
       .find(":input:checked")
       .prop("checked", false);
-    $(this)
+    $(e.target)
       .parent()
       .find(".js-select-reference")
       .trigger("click");
@@ -145,8 +145,8 @@ $(document).ready(function() {
   $("#edit-form").on(
     "keyup.update-markdown",
     ".markdown",
-    debounce(function() {
-      var $textarea = $(this);
+    debounce(function(e) {
+      var $textarea = $(e.target);
       // determine if the markdown preview is visible; if not, don't do anything
       if (
         !$textarea
@@ -181,11 +181,11 @@ $(document).ready(function() {
     });
   });
 
-  $(".js-compare-revisions").on("click", function() {
+  $(".js-compare-revisions").on("click", function(e) {
     $("#revision-diff").html("Loading...");
     $("#revisions-modal").toggleClass("is-active");
     $.event.trigger("modal-change");
-    $("#revision-diff").load($(this).attr("href"));
+    $("#revision-diff").load($(e.target).attr("href"));
     return false;
   });
 
@@ -208,14 +208,14 @@ $(document).ready(function() {
     var date = [year, month, day].join("-");
     var time = [hours, minutes, seconds].join(":");
 
-    $field = $(this).closest(".field");
+    var $field = $(e.target).closest(".field");
     $field.find('[name$="-date"]').val(date);
     $field.find('[name$="-time"]').val(time);
     $field.find('[name$="-timestamp"]').val(Intl.DateTimeFormat().resolvedOptions().timeZone);
   });
 
   $("#edit-form").on("click.now-timestamp", ".js-clear-timestamp", function(e) {
-    $field = $(this).closest(".field");
+    var $field = $(e.target).closest(".field");
     $field.find('[name$="-date"]').val("");
     $field.find('[name$="-time"]').val("");
   });
@@ -255,9 +255,9 @@ $(document).ready(function() {
     }
   });
 
-  $("#edit-form").on("click.select-reference", ".js-select-reference", function() {
-    var isFileSelect = $(this).hasClass("is-file-select");
-    var $referenceWrapper = $(this).closest(".reference-wrapper");
+  $("#edit-form").on("click.select-reference", ".js-select-reference", function(e) {
+    var isFileSelect = $(e.target).hasClass("is-file-select");
+    var $referenceWrapper = $(e.target).closest(".reference-wrapper");
     var $searchWrapper = $referenceWrapper.find(".reference-search");
     var selectedItems = $searchWrapper.find(":input:checked").toArray();
     var $refIds = $referenceWrapper.find("input.reference-ids").val(
@@ -299,8 +299,8 @@ $(document).ready(function() {
     $searchWrapper.toggle(false);
   });
 
-  $(".js-dismissable").click(function() {
-    $(this)
+  $(".js-dismissable").click(function(e) {
+    $(e.target)
       .closest(".dismissable-wrapper")
       .hide();
   });
@@ -319,32 +319,32 @@ $(document).ready(function() {
     }
   });
 
-  $(".js-delete-revision").click(function() {
+  $(".js-delete-revision").click(function(e) {
     if (confirm("Delete this revision?")) {
-      $link = $(this);
+      var $link = $(e.target);
       $.post($link.attr("href"), function(data) {
         $link.closest(".revision-item").hide();
       });
     }
   });
 
-  $(".js-restore-revision").click(function() {
+  $(".js-restore-revision").click(function(e) {
     // Are you sure you want to restore to this revision? The revision from December 28 at 3:07 PM will become your current revision.
     if (confirm("Restore this revision? Any unsaved changes will be lost.")) {
-      $(this)
+      $(e.target)
         .closest(".revision-item")
         .find(".restore-revision-form")
         .submit();
     }
   });
 
-  $("a.show-more-link").click(function() {
-    $(this)
+  $("a.show-more-link").click(function(e) {
+    $(e.target)
       .closest(".revision-history")
       .toggleClass("show-more", true);
   });
-  $("a.show-less-link").click(function() {
-    $(this)
+  $("a.show-less-link").click(function(e) {
+    $(e.target)
       .closest(".revision-history")
       .toggleClass("show-more", false);
   });
@@ -362,7 +362,7 @@ $(document).ready(function() {
   loadReferences();
 
   $(document).on('change.change-inverted-ref', 'select.inverted-ref', function(e) {
-    $panel = $(e.target).closest('.reference-panel');
+    var $panel = $(e.target).closest('.reference-panel');
     $.post(
       globals.adminUrl + "/ajax/modify-ref/" + $panel.data("lookupType"),
       {
@@ -415,8 +415,8 @@ function doSearch($searchWrapper) {
       .find(".reference-ids")
       .val() || ""
   ).split(/[|,]/g);
-  var tmp = $searchWrapper.find(":input:checked").each(function() {
-    selectedItems.push($(this).val());
+  var tmp = $searchWrapper.find(":input:checked").each(function(i, item) {
+    selectedItems.push($(item).val());
   });
   var keywords = $searchWrapper.find(".keywords").val();
   var lookupSubtype = $searchWrapper.data("lookupSubtype");
@@ -441,8 +441,8 @@ function doSearch($searchWrapper) {
 }
 
 function loadHandlebarsTemplates(itemData) {
-  $('script[type="text/x-handlebars-template"]').each(function() {
-    var $template = $(this);
+  $('script[type="text/x-handlebars-template"]').each(function(i, item) {
+    var $template = $(item);
     handlebarsTemplates[$template.attr("id")] = Handlebars.compile($template.html());
   });
 }
@@ -477,15 +477,15 @@ function loadAggregateFields($holder, itemData, keys, isAddNew) {
     for (var i = 0; i < minItems; i++) {
       var subData = i < data.length ? data[i] : {};
       keys[type + "Key"] = subData["_key"] || getKey();
-      $newItem = $(template(keys));
+      var $newItem = $(template(keys));
       $holder.append($newItem);
 
       // Load data
       loadAggregateFieldsHelper(subData, $newItem);
 
       // Dive into children
-      $holder.find(".aggregate-holder").each(function() {
-        loadAggregateFields($(this), subData, keys);
+      $holder.find(".aggregate-holder").each(function(i, item) {
+        loadAggregateFields($(item), subData, keys);
       });
     }
     if (minItems == 0) {
@@ -508,14 +508,14 @@ function loadAggregateFields($holder, itemData, keys, isAddNew) {
     }
   } else if (data) {
     keys[type + "Key"] = data["_key"] || getKey();
-    $newItem = $(template(keys));
+    var $newItem = $(template(keys));
     $holder.append($newItem);
 
     loadAggregateFieldsHelper(data, $newItem);
 
     // Dive into children
-    $holder.find(".aggregate-holder").each(function() {
-      loadAggregateFields($(this), data, keys);
+    $holder.find(".aggregate-holder").each(function(i, item) {
+      loadAggregateFields($(item), data, keys);
     });
   }
 
@@ -654,8 +654,8 @@ function loadAggregateFieldsHelper(data, $newItem) {
 
 // Default unselected timestamp timezones to use the browser's timezone.
 function defaultEmptyTimezonesToBrowserValue() {
-  $(".timezone-timestamp").each(function() {
-    $timezone = $(this);
+  $(".timezone-timestamp").each(function(i, item) {
+    var $timezone = $(item);
     if (!$timezone.val()) {
       $timezone.val(Intl.DateTimeFormat().resolvedOptions().timeZone);
     }
@@ -672,8 +672,8 @@ function transformSelectsToSelect2() {
 }
 
 function loadReferences() {
-  $(".reference-panel").each(function() {
-    var $panel = $(this);
+  $(".reference-panel").each(function(i, item) {
+    var $panel = $(item);
 
     doInvertedSearch($panel);
 

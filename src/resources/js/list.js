@@ -20,18 +20,19 @@ $(document).ready(function() {
     $.event.trigger("modal-change");
   });
 
-  $(".js-clear-search").on("click", function() {
+  $(".js-clear-search").on("click", function(e) {
     $("#quick-search").val("");
-    $(this)
+    $(e.target)
       .closest("form")
       .submit();
   });
 
   // We're posting this via the main list form as that's where all the
   // filters are -- and we need those filters for bulk actions as well.
-  $("#save-report-form").submit(function() {
+  $("#save-report-form").submit(function(e) {
+    var $item = $(e.target);
     var reportName = (
-      $(this)
+      $item
         .find("#modal-report-name")
         .val() || ""
     ).trim();
@@ -48,7 +49,7 @@ $(document).ready(function() {
       .attr("action", $listForm.data("saveReportAction"))
       .append(
         $('<div style="display:none"></div>').append(
-          $(this)
+          $item
             .find(":input")
             .clone()
         )
@@ -59,7 +60,7 @@ $(document).ready(function() {
 
   // We're posting this via the main list form as that's where all the
   // filters are -- and we need those filters for bulk actions as well.
-  $("#save-list-prefs-form").submit(function() {
+  $("#save-list-prefs-form").submit(function(e) {
     $("#is-filtering").val("");
     var $listForm = $("#list-form");
     $listForm
@@ -67,7 +68,7 @@ $(document).ready(function() {
       .attr("action", $listForm.data("saveListPrefsAction"))
       .append(
         $('<div style="display:none"></div>').append(
-          $(this)
+          $(e.target)
             .find(":input")
             .clone()
         )
@@ -78,15 +79,16 @@ $(document).ready(function() {
 
   $(document).on('keyup keydown', function(e){ globals.isShiftDetected = e.shiftKey; } );
 
-  $(".js-select-all, .js-item-id").click(function() {
-    var isChecked = $(this).is(":checked");
+  $(".js-select-all, .js-item-id").click(function(e) {
+    var $item = $(e.target);
+    var isChecked = $item.is(":checked");
 
-    if ($(this).is(".js-select-all")) {
+    if ($item.is(".js-select-all")) {
       $("#main-list-table .js-item-id").prop("checked", isChecked);
     } else if (!isChecked) {
       $(".js-select-all").prop("checked", false);
     } else if (isChecked) {
-      var $tr = $(this).closest('tr');
+      var $tr = $item.closest('tr');
       if (globals.lastRowSelected && globals.isShiftDetected) {
         $trs = $("#main-list-table tbody tr");
         var start = $trs.index($tr);
@@ -116,18 +118,19 @@ $(document).ready(function() {
     updateBulkActionState();
   });
 
-  $("#list-form").submit(function() {
+  $("#list-form").submit(function(e) {
     if ($("#is-filtering").val() == "1") {
-      $(this)
+      $(e.target)
         .find(".post-only")
         .remove();
     }
   });
 
-  $(".js-delete").click(function() {
+  $(".js-delete").click(function(e) {
     if (confirm("Delete this item?")) {
-      $row = $(this).closest("tr");
-      $.post($(this).data("action"), { _method: "DELETE" }, function(data) {
+      var $item = $(e.target);
+      var $row = $item.closest("tr");
+      $.post($item.data("action"), { _method: "DELETE" }, function(data) {
         if (data.success) {
           $row.remove();
           ["viewing-end", "viewing-total"].forEach(function(item) {
@@ -150,8 +153,9 @@ $(document).ready(function() {
     $(".js-select-all").trigger("click");
   });
 
-  $("#bulk-action-operation").change(function() {
-    var operation = $(this)
+  $("#bulk-action-operation").change(function(e) {
+    var $item = $(e.target);
+    var operation = $item
       .val()
       .toLowerCase()
       .replace(/\([^\)]+\)/, "")
@@ -165,7 +169,7 @@ $(document).ready(function() {
           .attr("method", "post")
           .attr("action", $listForm.data("bulkAction"))
           .submit();
-        $(this)
+        $item
           .closest("form")
           .submit();
       } else {
@@ -184,8 +188,8 @@ $(document).ready(function() {
 
   $("#filter-holder").on("click.add-filter", ".js-add-filter", addFilter);
 
-  $("#filters").on("click.remove-filter", ".js-remove-filter", function() {
-    $(this)
+  $("#filters").on("click.remove-filter", ".js-remove-filter", function(e) {
+    $(e.target)
       .closest(".filter-set")
       .remove();
     $("#main-list-table").trigger("reflow");
@@ -200,18 +204,19 @@ $(document).ready(function() {
     }
   });
 
-  $(".js-set-default-report").click(function() {
+  $(".js-set-default-report").click(function(e) {
     if (confirm("Use this report as default view for this page?")) {
-      $.post($(this).data("action"));
+      $.post($(e.target).data("action"));
       $("#page-settings").removeClass("is-active");
       $.event.trigger("modal-change");
     }
   });
 
-  $(".js-delete-report").click(function() {
+  $(".js-delete-report").click(function(e) {
+    var $item = $(e.target);
     if (confirm("Delete this saved report?")) {
-      $.post($(this).data("action"));
-      $(this)
+      $.post($item.data("action"));
+      $item
         .closest(".field")
         .remove();
       $("#page-settings").removeClass("is-active");
@@ -219,8 +224,9 @@ $(document).ready(function() {
     }
   });
 
-  $("#filters").on("click.remove-filter", ".js-remove-filter", function() {
-    $(this)
+  $("#filters").on("click.remove-filter", ".js-remove-filter", function(e) {
+    var $item = $(e.target);
+    $item
       .closest(".filter-set")
       .remove();
     $("#main-list-table").trigger("reflow");
@@ -231,13 +237,14 @@ $(document).ready(function() {
     }
   });
 
-  $(".js-meta").on("click", function() {
+  $(".js-meta").on("click", function(e) {
+    var $item = $(e.target);
     $("#meta-modal-wrapper").toggleClass("is-active");
     $.event.trigger("modal-change");
     if (!$("#meta-modal-wrapper").hasClass("is-active")) {
       return;
     }
-    var itemId = $(this)
+    var itemId = $item
       .closest(".has-invisibles")
       .find(".js-item-id:checkbox")
       .val();
@@ -267,8 +274,8 @@ function updateBulkActionState() {
 }
 
 function loadHandlebarsTemplates(itemData) {
-  $('script[type="text/x-handlebars-template"]').each(function() {
-    var $template = $(this);
+  $('script[type="text/x-handlebars-template"]').each(function(i, item) {
+    var $template = $(item);
     handlebarsTemplates[$template.attr("id")] = Handlebars.compile($template.html());
   });
 }
