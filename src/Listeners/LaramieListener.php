@@ -78,6 +78,10 @@ class LaramieListener
                 return $e->namePlural;
             });
 
+        // Tweak laramie upload preview to reference appropriate admin url:
+        $laramieUpload = data_get($models, 'laramieUpload');
+        $laramieUpload->fields->preview->sql = str_replace('_admin_url_', config('laramie.admin_url'), $laramieUpload->fields->preview->sql);
+
         foreach ($nonSystemModels as $nonSystemModel) {
             $showName = object_get($nonSystemModel, 'isSingular', false) ? $nonSystemModel->name : $nonSystemModel->namePlural;
             $laramieRoleModel->fields->{$nonSystemModel->_type} = ModelLoader::processField($nonSystemModel->_type, (object) ['type' => 'boolean', 'label' => 'Can manage '.$showName]);

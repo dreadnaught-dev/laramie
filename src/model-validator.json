@@ -27,6 +27,7 @@
             "isSingular": { "type": "boolean" },
             "isSystemModel": { "type": "boolean" },
             "disableMeta": { "type": "boolean" },
+            "disableRevisions": { "type": "boolean" },
             "editView": { "type": "string" },
             "listView": { "type": "string" },
             "editJs": { "type": "string" },

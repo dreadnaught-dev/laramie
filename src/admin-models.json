@@ -19,7 +19,7 @@
             "defaultSortDirection": "desc",
             "editJs": "<script>if ($('#uploadKey').val() && /^(png|gif|jpg)$/i.test($('#extension').val())) { $('h1 .tag').after('&nbsp;<em class=\"is-size-6 has-text-grey\">To crop or resize the image, <a href=\"javascript:void(0);\" onclick=\"location.href=(globals.cropperBase + $(\\'#uploadKey\\').val())\">click here</a></em>') }</script>",
             "fields": {
-                "preview": { "type": "computed", "sql": "(concat('<img class=\"filetype-icon\" src=\"/admin/assets/icon/', data->>'uploadKey', '_50\">', data->>'name'))", "sortBy": "name" },
+                "preview": { "type": "computed", "sql": "(concat('<img class=\"filetype-icon\" src=\"_admin_url_/assets/icon/', data->>'uploadKey', '_50\">', data->>'name'))", "sortBy": "name" },
                 "uploadKey": { "type": "text", "required": true, "listByDefault": true },
                 "name": { "type": "text", "required": true, "listByDefault": false },
                 "alt": { "type": "text", "required": false, "helpText": "Useful for specifying alt text for images / videos", "listByDefault": true },

@@ -436,7 +436,11 @@ class AdminController extends Controller
         $metaId = session('metaId') ?: ($item->_isUpdate ? $item->id : Uuid::uuid1()->toString());
         $selectedTab = session('selectedTab') ?: '_main';
         $errorMessages = session('errorMessages') ?: null;
-        $revisions = $this->dataService->findItemRevisions($id);
+
+        $revisions = [];
+        if (!(config('laramie.disable_revisions') || data_get($model, 'disableRevisions'))) {
+            $revisions = $this->dataService->findItemRevisions($id);
+        }
 
         // Ensure that the user can't create a new 'singular' item
         if ($item->_isNew && object_get($model, 'isSingular')) {
@@ -804,6 +808,12 @@ class AdminController extends Controller
      */
     public function deleteRevision($modelKey, $revisionId)
     {
+        $model = $this->dataService->getModelByKey($item->type);
+
+        if (config('laramie.disable_revisions') || data_get($model, 'disableRevisions')) {
+            abort(403, 'Forbidden');
+        }
+
         $this->dataService->deleteRevision($revisionId);
 
         return response()->json(['success' => true]);
@@ -816,8 +826,13 @@ class AdminController extends Controller
      */
     public function restoreRevision($modelKey, $revisionId)
     {
-        $item = $this->dataService->restoreRevision($revisionId);
         $model = $this->dataService->getModelByKey($item->type);
+
+        if (config('laramie.disable_revisions') || data_get($model, 'disableRevisions')) {
+            abort(403, 'Forbidden');
+        }
+
+        $item = $this->dataService->restoreRevision($revisionId);
         $alert = (object) ['class' => 'is-warning', 'title' => 'Revision loaded', 'alert' => sprintf('The revision from %s has been loaded successfully.', \Carbon\Carbon::parse($item->updated_at, config('laramie.timezone'))->toDayDateTimeString())];
 
         return redirect()->route('laramie::edit', ['modelKey' => $model->_type, 'id' => $item->laramie_data_id])
@@ -836,6 +851,10 @@ class AdminController extends Controller
 
         $item = $this->dataService->getItemRevision($revisionId);
         $model = $this->dataService->getModelByKey($modelKey);
+
+        if (config('laramie.disable_revisions') || data_get($model, 'disableRevisions')) {
+            abort(403, 'Forbidden');
+        }
 
         $itemId = object_get($item, 'laramie_data_id');
 

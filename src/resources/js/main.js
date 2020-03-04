@@ -77,13 +77,19 @@ $(document).ready(function() {
 
 function loadMeta(itemId, callback) {
   callback = callback || null;
+
   $(".tags-wrapper").html("Loading...");
   $(".comments-wrapper").html("Loading...");
   $(".meta-wrapper").data("itemId", itemId);
+
   var action = $(".meta-wrapper")
-    .data("loadMetaEndpoint")
-    .replace("_id_", itemId);
-  $.getJSON(action, function(data) {
+    .data("loadMetaEndpoint");
+
+  if (!action) {
+    return;
+  }
+
+  $.getJSON(action.replace("_id", itemId), function(data) {
     var template = handlebarsTemplates["tag-list-template"];
     $(".tags-wrapper").html(template(data));
     template = handlebarsTemplates["comment-list-template"];

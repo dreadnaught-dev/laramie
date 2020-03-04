@@ -69,6 +69,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Disable Revisions
+    |--------------------------------------------------------------------------
+    |
+    | By default, revision information is enabled. Set this to true to disable
+    | revisions admin-wide (may also disable by setting `disableRevisions` to
+    | true on a model.
+    |
+    */
+    'disable_revisions' => false,
+
+    /*
+    |--------------------------------------------------------------------------
     | Admin URL
     |--------------------------------------------------------------------------
     |
