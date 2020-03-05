@@ -29,6 +29,8 @@ class Hook
                 return $item->priority;
             });
 
+        $returnValue = null;
+
         foreach ($sortedListeners as $listener) {
             $callback = $listener->callback;
 
@@ -47,5 +49,7 @@ class Hook
                 break;
             }
         }
+
+        return $returnValue;
     }
 }

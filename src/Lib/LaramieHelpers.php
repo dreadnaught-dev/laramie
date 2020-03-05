@@ -57,6 +57,15 @@ class LaramieHelpers
     public static function formatListValue($field, $value, $isShowUnsupporteMessage = true)
     {
         $dataType = object_get($field, 'dataType', $field->type);
+
+        // Add the ability for a listener to override _how_ a type of data is
+        // formatted for display. Also allows for user-defined field types to
+        // be formatted on list pages and csv exports.
+        $formattedValueFromHook = \Laramie\Hook::fire(new \Laramie\Hooks\FormatDisplayValue($dataType, $value));
+        if ($formattedValueFromHook) {
+            return $formattedValueFromHook;
+        }
+
         switch ($dataType) {
             case 'text':
             case 'hidden':

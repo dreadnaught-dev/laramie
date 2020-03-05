@@ -124,7 +124,7 @@
                 .val("")
                 .end()
                 .filter(":checkbox,:radio")
-                .attr("checked", false)
+                .prop("checked", false)
                 .end()
                 .trigger("change");
         });

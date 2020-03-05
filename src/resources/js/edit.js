@@ -146,7 +146,7 @@ $(document).ready(function() {
             .find(":input:checked")
             .prop("checked", false);
         $(e.target)
-            .parent()
+            .closest('.modal')
             .find(".js-select-reference")
             .trigger("click");
     });
