@@ -163,7 +163,6 @@ $(document).ready(function() {
                     .attr("method", "post")
                     .attr("action", $listForm.data("bulkAction"))
                     .submit();
-                $item.closest("form").submit();
             } else {
                 $("#bulk-action-operation").val("");
             }

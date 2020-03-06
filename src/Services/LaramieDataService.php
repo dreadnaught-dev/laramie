@@ -41,12 +41,12 @@ class LaramieDataService
     public function getModelByKey($model)
     {
         if (is_string($model)) {
-            $modelToReturn = object_get($this->jsonConfig->models, $model, null);
+            $modelToReturn = data_get($this->jsonConfig->models, $model, null);
             if ($modelToReturn == null) {
                 throw new Exception(sprintf('Model type does not exist: `%s`.', $model));
             }
 
-            return $modelToReturn;
+            return json_decode(json_encode($modelToReturn));
         } elseif (object_get($model, '_type')) {
             return $model;
         }
@@ -945,6 +945,7 @@ class LaramieDataService
     public function save($model, LaramieModel $laramieModel, $validate = true, $maxPrefetchDepth = 5)
     {
         $model = $this->getModelByKey($model);
+
         // Save a record of the original id. After saving, we'll reset the item's id back to the original so we have
         // context as to if the item is new in the PostSave event.
         $origId = object_get($laramieModel, '_origId');
