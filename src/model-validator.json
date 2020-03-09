@@ -177,7 +177,8 @@
         "select": {
             "properties": {
                 "options": { "type": "array" },
-                "isMultiple": { "type": "boolean" }
+                "isMultiple": { "type": "boolean" },
+                "asRadio": { "type": "boolean" }
             }
         },
         "textarea": {},
