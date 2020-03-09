@@ -126,6 +126,10 @@ class AdminController extends Controller
 
         $model = $this->dataService->getModelByKey($modelKey);
 
+        if (!$model->isListable) {
+            throw new Exception('Items of this type may not be listed');
+        }
+
         // Check to see if this is a 'singular' model -- meaning there should only ever be one of them (like settings, etc).
         if (object_get($model, 'isSingular')) {
             return $this->redirectToSingularEdit($model);
