@@ -24,6 +24,7 @@
             "namePlural": { "type": "string" },
             "isListable": { "type": "boolean" },
             "isEditable": { "type": "boolean" },
+            "isDeletable": { "type": "boolean" },
             "isSingular": { "type": "boolean" },
             "isSystemModel": { "type": "boolean" },
             "disableMeta": { "type": "boolean" },

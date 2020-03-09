@@ -429,10 +429,15 @@ class LaramieListener
      */
     public function preDelete($event)
     {
+        $model = $event->model;
         $item = $event->item;
 
         if (in_array(object_get($item, 'id'), [Globals::SuperAdminRoleId, Globals::AdminRoleId])) {
             throw new Exception('You may not delete one of the core roles.');
+        }
+
+        if (data_get($model, 'isDeletable') === false) {
+            throw new Exception('Items of this type may not be deleted');
         }
     }
 
