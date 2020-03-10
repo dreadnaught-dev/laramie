@@ -251,68 +251,77 @@ class LaramieDataService
             }
         }
 
-        $filters = array_get($options, 'filters', []);
-        foreach ($filters as $filter) {
-            $operation = $filter->operation;
-            $value = $filter->value;
+        $filterGroups = collect(array_get($options, 'filters', []))
+            ->groupBy(function($item) { return data_get($item, 'field'); });
 
-            // @TODO -- document that one can specify custom sql to search a field by via adding a `sql` attribute to the filter in `FilterQuery`
-            $field = object_get($filter, 'sql')
-                ? $filter->sql
-                : $this->getSearchSqlFromFieldName($model, $filter->field, $value);
+        // @TODO -- add laramie config param to dictate how to handle group filter logic (AND or OR). For now, default to ORing within a group (as defined by which field is being searched).
+        // For example, if multiple user filters are added, we will return records that match any user supplied.
 
-            if (!$field) {
-                continue; // aggregate fields will return null and may not be searched against currently
-            }
+        foreach ($filterGroups as $filters) {
+            $query->where(function($query) use($filters, $model) {
+                foreach ($filters as $filter) {
+                    $operation = $filter->operation;
+                    $value = $filter->value;
 
-            // Check to see if we need to manipulate `$value` for searching (currently limited to date fields):
-            $modelField = object_get($model->fields, $filter->field);
-            if (in_array($filter->field, ['_created_at', '_updated_at'])
-                || in_array(object_get($modelField, 'dataType', object_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local']))
-            {
-                try {
-                    $value = \Carbon\Carbon::parse($value, config('laramie.timezone'))->timestamp;
-                } catch (Exception $e) { $value = 0; }
-            }
+                    // @TODO -- document that one can specify custom sql to search a field by via adding a `sql` attribute to the filter in `FilterQuery`
+                    $field = object_get($filter, 'sql')
+                        ? $filter->sql
+                        : $this->getSearchSqlFromFieldName($model, $filter->field, $value);
 
-            switch ($operation) {
-                case 'contains':
-                    $query->where(DB::raw($field), 'ilike', '%'.$value.'%');
-                    break;
-                case 'does not contain':
-                    $query->where(DB::raw($field), 'not ilike', '%'.$value.'%');
-                    break;
-                case 'is equal to':
-                    $query->where(DB::raw($field), '=', $value);
-                    break;
-                case 'is not equal to':
-                    $query->where(DB::raw($field), '!=', $value);
-                    break;
-                case 'starts with':
-                    $query->where(DB::raw($field), 'ilike', $value.'%');
-                    break;
-                case 'does not start with':
-                    $query->where(DB::raw($field), 'not ilike', $value.'%');
-                    break;
-                case 'is less than':
-                    $query->where(DB::raw($field), '<', $value);
-                    break;
-                case 'is less than or equal':
-                    $query->where(DB::raw($field), '<=', $value);
-                    break;
-                case 'is greater than':
-                    $query->where(DB::raw($field), '>', $value);
-                    break;
-                case 'is greater than or equal':
-                    $query->where(DB::raw($field), '>=', $value);
-                    break;
-                case 'is null':
-                    $query->whereNull(DB::raw($field));
-                    break;
-                case 'is not null':
-                    $query->whereNotNull(DB::raw($field));
-                    break;
-            }
+                    if (!$field) {
+                        continue; // aggregate fields will return null and may not be searched against currently
+                    }
+
+                    // Check to see if we need to manipulate `$value` for searching (currently limited to date fields):
+                    $modelField = object_get($model->fields, $filter->field);
+                    if (in_array($filter->field, ['_created_at', '_updated_at'])
+                        || in_array(object_get($modelField, 'dataType', object_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local']))
+                    {
+                        try {
+                            $value = \Carbon\Carbon::parse($value, config('laramie.timezone'))->timestamp;
+                        } catch (Exception $e) { $value = 0; }
+                    }
+
+                    switch ($operation) {
+                        case 'contains':
+                            $query->orWhere(DB::raw($field), 'ilike', '%'.$value.'%');
+                            break;
+                        case 'does not contain':
+                            $query->orWhere(DB::raw($field), 'not ilike', '%'.$value.'%');
+                            break;
+                        case 'is equal to':
+                            $query->orWhere(DB::raw($field), '=', $value);
+                            break;
+                        case 'is not equal to':
+                            $query->orWhere(DB::raw($field), '!=', $value);
+                            break;
+                        case 'starts with':
+                            $query->orWhere(DB::raw($field), 'ilike', $value.'%');
+                            break;
+                        case 'does not start with':
+                            $query->orWhere(DB::raw($field), 'not ilike', $value.'%');
+                            break;
+                        case 'is less than':
+                            $query->orWhere(DB::raw($field), '<', $value);
+                            break;
+                        case 'is less than or equal':
+                            $query->orWhere(DB::raw($field), '<=', $value);
+                            break;
+                        case 'is greater than':
+                            $query->orWhere(DB::raw($field), '>', $value);
+                            break;
+                        case 'is greater than or equal':
+                            $query->orWhere(DB::raw($field), '>=', $value);
+                            break;
+                        case 'is null':
+                            $query->orWhereNull(DB::raw($field));
+                            break;
+                        case 'is not null':
+                            $query->orWhereNotNull(DB::raw($field));
+                            break;
+                    }
+                }
+            });
         }
 
         $quickSearch = array_get($options, 'quickSearch');

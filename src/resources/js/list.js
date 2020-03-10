@@ -268,6 +268,10 @@ function loadHandlebarsTemplates(itemData) {
 }
 
 function loadFilters() {
+    if ($("#filter-holder").length == 0) {
+      return;
+    }
+
     if (globals.filters.length > 0) {
         $("#filter-holder").show();
     }

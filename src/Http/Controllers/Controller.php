@@ -70,6 +70,7 @@ class Controller extends BaseController
                 preg_match($filterRegex, $key, $matches);
 
                 return (object) [
+                    'key' => $matches['filterIndex'],
                     'field' => array_get($data, sprintf('filter_%s_field', $matches['filterIndex'])),
                     'operation' => array_get($data, sprintf('filter_%s_operation', $matches['filterIndex'])),
                     'value' => array_get($data, sprintf('filter_%s_value', $matches['filterIndex'])),

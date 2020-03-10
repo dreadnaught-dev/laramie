@@ -162,7 +162,7 @@ class AdminController extends Controller
 
         $listFields = $this->getListedFields($listableFields);
 
-        $extra = (object) ['listFields' => array_get($options, 'listFields', $listFields)]; // passing this so we have context in the post list event;
+        $extra = (object) ['listFields' => array_get($options, 'listFields', $listFields), 'filters' => $filters]; // passing this so we have context in the post list event;
 
         // Fire the `PostList` event -- This allows for augmenting the items about to be shown on the list page (strictly for the list page). There's a PostFetch event that one should use if one needs to augment data fetched from the dataService _everywhere_.
         Hook::fire(new PostList($model, $models, $this->dataService->getUser(), $extra));
@@ -174,7 +174,7 @@ class AdminController extends Controller
             ->with('listableFields', $listableFields)
             ->with('listFields', $listFields)
             ->with('models', $models)
-            ->with('filters', $filters)
+            ->with('filters', data_get($extra, 'filters'))
             ->with('reports', $reports)
             ->with('viewHelper', $viewHelper);
     }

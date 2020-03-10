@@ -62,7 +62,7 @@ class LaramieHelpers
         // formatted for display. Also allows for user-defined field types to
         // be formatted on list pages and csv exports.
         $formattedValueFromHook = \Laramie\Hook::fire(new \Laramie\Hooks\FormatDisplayValue($dataType, $value));
-        if ($formattedValueFromHook) {
+        if (isset($formattedValueFromHook)) {
             return $formattedValueFromHook;
         }
 
