@@ -274,8 +274,8 @@ class LaramieDataService
 
                     // Check to see if we need to manipulate `$value` for searching (currently limited to date fields):
                     $modelField = object_get($model->fields, $filter->field);
-                    if (in_array($filter->field, ['_created_at', '_updated_at'])
-                        || in_array(object_get($modelField, 'dataType', object_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local']))
+                    if ($operation !== 'between-dates' && (in_array($filter->field, ['_created_at', '_updated_at'])
+                        || in_array(object_get($modelField, 'dataType', object_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local'])))
                     {
                         try {
                             $value = \Carbon\Carbon::parse($value, config('laramie.timezone'))->timestamp;
@@ -319,6 +319,23 @@ class LaramieDataService
                         case 'is not null':
                             $query->orWhereNotNull(DB::raw($field));
                             break;
+                        case 'between-dates':
+                            $dates = collect(preg_split('/[|]/', $value))
+                                ->map(function($item) {
+                                    try {
+                                        return \Carbon\Carbon::parse($item, config('laramie.timezone'));
+                                    } catch (\Exception $e) { /* error parsing date. don't add filter */ }
+                                })
+                                ->filter()
+                                ->toArray();
+
+                            if (count($dates) === 2) {
+                                $query->orWhere(function($query) use($field, $dates) {
+                                    $query->where(DB::raw($field), '>=', $dates[0]->startOfDay()->timestamp);
+                                    $query->where(DB::raw($field), '<=', $dates[1]->endOfDay()->timestamp);
+                                });
+                            }
+                            break;
                     }
                 }
             });
@@ -352,6 +369,7 @@ class LaramieDataService
 
         $modelField = data_get($model->fields, $field);
 
+        $isComputedField = data_get($modelField, 'type') === 'computed';
         $modelFieldType = data_get($modelField, 'dataType', data_get($modelField, 'type'));
 
         // If searching by the `data` field, don't transform -- it's a manual query
@@ -360,7 +378,11 @@ class LaramieDataService
         }
         if ($modelFieldType == 'dbtimestamp') {
             // If we're searching by created_at or updated_at, the sql we're searching against to unix timestamp values. We'll be doing a similar conversion to the values being searched for.
-            $field = 'date_part(\'epoch\', '.preg_replace('/^_/', '', $field).'::timestamp)::int';
+            if ($isComputedField) {
+                $field = 'date_part(\'epoch\', '.preg_replace('/^_/', '', $modelField->sql).'::timestamp)::int';
+            } else {
+                $field = 'date_part(\'epoch\', '.preg_replace('/^_/', '', $field).'::timestamp)::int';
+            }
         } elseif ($field == '_tags') {
             $field = '(select string_agg(ldm.data->>\'text\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
         } elseif ($field == '_comments') {
