@@ -71,9 +71,9 @@ class Controller extends BaseController
 
                 return (object) [
                     'key' => $matches['filterIndex'],
-                    'field' => array_get($data, sprintf('filter_%s_field', $matches['filterIndex'])),
-                    'operation' => array_get($data, sprintf('filter_%s_operation', $matches['filterIndex'])),
-                    'value' => array_get($data, sprintf('filter_%s_value', $matches['filterIndex'])),
+                    'field' => data_get($data, sprintf('filter_%s_field', $matches['filterIndex'])),
+                    'operation' => data_get($data, sprintf('filter_%s_operation', $matches['filterIndex']), 'is equal to'), // short-hand filter; default to equality check if not specified
+                    'value' => data_get($data, sprintf('filter_%s_value', $matches['filterIndex'])),
                 ];
             })
             ->values()
