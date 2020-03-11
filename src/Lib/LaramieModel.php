@@ -314,8 +314,12 @@ class LaramieModel implements \JsonSerializable
         return static::getLaramieQueryBuilder('get');
     }
 
-    final public static function paginate(int $resultsPerPage = 15)
+    final public static function paginate(int $resultsPerPage = null)
     {
+        $resultsPerPage = $resultsPerPage === null
+            ? config('laramie.results_per_page')
+            : $resultsPerPage;
+
         return static::getLaramieQueryBuilder('paginate', func_get_args());
     }
 

@@ -250,8 +250,12 @@ class LaramieQueryBuilder
         return $results;
     }
 
-    public function paginate(int $resultsPerPage = 15)
+    public function paginate(int $resultsPerPage = null)
     {
+        $resultsPerPage = $resultsPerPage === null
+            ? config('laramie.results_per_page')
+            : $resultsPerPage;
+
         $this->searchOptions['resultsPerPage'] = max(0, $resultsPerPage);
 
         return $this->get();

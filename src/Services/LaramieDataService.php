@@ -104,7 +104,7 @@ class LaramieDataService
 
         $query = $this->getBaseQuery($model);
         $query = $this->augmentListQuery($query, $model, $options, $queryCallback);
-        $resultsPerPage = array_get($options, 'resultsPerPage', 15);
+        $resultsPerPage = array_get($options, 'resultsPerPage', config('laramie.results_per_page', 20));
 
         $factory = array_get($options, 'factory', data_get($model, 'factory', LaramieModel::class));
 
