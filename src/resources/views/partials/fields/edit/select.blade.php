@@ -2,6 +2,7 @@
 
 @php
     $asRadio = object_get($field, 'asRadio', false);
+    $isSelect2 = object_get($field, 'isSelect2', false);
     $isMultiple = object_get($field, 'isMultiple', false);
     $tmp = object_get($item, $fieldKey, null);
     $selectedValues = array_filter(is_array($tmp) ? $tmp : [$tmp]);
@@ -18,7 +19,7 @@
         @endforeach
     @else
         <div class="select {{$isMultiple ? 'is-multiple is-fullwidth' : ''}}">
-            <select id="{{ $field->id }}" name="{{ $field->id . ($isMultiple ? '[]' : '') }}" {!! $field->extra !!} {{ $field->required ? 'required' : '' }} {{ $isMultiple ? 'multiple' : '' }}>
+            <select id="{{ $field->id }}" name="{{ $field->id . ($isMultiple ? '[]' : '') }}" {!! $isSelect2 ? 'class="select2"' : '' !!} {!! $field->extra !!} {{ $field->required ? 'required' : '' }} {{ $isMultiple ? 'multiple' : '' }}>
                 @if (!$isMultiple && !$field->required)
                     <option value="">Select {{ strtolower($field->label) }}...</option>
                 @endif

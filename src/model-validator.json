@@ -178,6 +178,7 @@
         "select": {
             "properties": {
                 "options": { "type": "array" },
+                "isSelect2": { "type": "boolean" },
                 "isMultiple": { "type": "boolean" },
                 "asRadio": { "type": "boolean" }
             }

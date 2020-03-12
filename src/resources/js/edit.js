@@ -683,9 +683,9 @@ function resetFormSerialization() {
     globals.serializedEditForm = $("#edit-form").serialize();
 }
 
-// Transform multiple selects (or selects with class `select2`) into select2 elements:
+// Transform selects (with class `select2`) into select2 elements:
 function transformSelectsToSelect2() {
-    $("select[multiple]:not(.select2-hidden-accessible), select.select2:not(.select2-hidden-accessible)").select2();
+    $("select.select2:not(.select2-hidden-accessible)").select2();
 }
 
 function loadReferences() {
