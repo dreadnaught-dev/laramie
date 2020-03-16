@@ -20,24 +20,14 @@ class LaramieHelpers
         $qs = request()->all();
         $curSort = array_get($qs, 'sort', array_get($qsParts, 'sort'));
         $curSortDirection = array_get($qs, 'sort-direction', array_get($qsParts, 'sort-direction'));
-        unset($qs['sort-direction']);
-        unset($qsParts['sort-direction']);
         foreach ($qsParts as $key => $value) {
             $qs[$key] = $value;
         }
+
         $qs = collect($qs)
             ->filter(function ($item) { return $item && gettype($item) != 'array'; }) // exclude `bulk-action-ids`
             ->map(function ($value, $key) use ($curSort, $curSortDirection) {
-                $kvp = "$key=$value";
-                if ($key == 'sort') {
-                    $sortDirection = 'asc';
-                    if ($curSort == $value && $curSortDirection == 'asc') {
-                        $sortDirection = 'desc';
-                    }
-                    $kvp = $kvp.'&sort-direction='.$sortDirection;
-                }
-
-                return $kvp;
+                return "$key=$value";
             })
             ->values()
             ->all();

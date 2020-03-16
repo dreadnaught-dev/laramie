@@ -3,6 +3,7 @@
 @php
     $activeSort = request()->get('sort', $model->defaultSort);
     $activeSortDirection = request()->get('sort-direction', $model->defaultSortDirection);
+    $invertActiveSortDirection = $activeSortDirection === 'desc' ? 'asc' : 'desc';
     $quickSearch = request()->get('quick-search');
 
     $filterableFields = collect($model->fields)
@@ -287,11 +288,11 @@
                                 <th>
                                     @if ($field->isSortable)
                                         <div class="is-pulled-left" title="Click to sort by {{ strtolower($field->label) }}">
-                                            <a href="{{ $viewHelper->getCurrentUrlWithModifiedQS(['sort' => $field->sortBy, 'sort-direction' => ($field->sortBy == $activeSort ? $activeSortDirection : ''), 'page' => 1]) }}">{{ $field->label }}</a>
+                                            <a href="{{ $viewHelper->getCurrentUrlWithModifiedQS(['sort' => $field->sortBy, 'sort-direction' => ($field->sortBy == $activeSort ? $invertActiveSortDirection : 'asc'), 'page' => 1]) }}">{{ $field->label }}</a>
                                         </div>
                                         <div class="is-pulled-right">
                                             @if ($field->sortBy == $activeSort)
-                                                <a href="{{ $viewHelper->getCurrentUrlWithModifiedQS(['sort' => $field->sortBy, 'sort-direction' => ($field->sortBy == $activeSort ? $activeSortDirection : ''), 'page' => 1]) }}">
+                                                <a href="{{ $viewHelper->getCurrentUrlWithModifiedQS(['sort' => $field->sortBy, 'sort-direction' => ($field->sortBy == $activeSort ? $invertActiveSortDirection : 'asc'), 'page' => 1]) }}">
                                                     <span class="icon">
                                                         <i class="fas fa-sort-{{ $activeSortDirection == 'desc' ? 'down' : 'up' }}" title="Sorting {{ $activeSortDirection == 'desc' ? 'descending' : 'ascending' }}. Click to toggle"></i>
                                                     </span>
