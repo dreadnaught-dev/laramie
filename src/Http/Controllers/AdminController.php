@@ -612,7 +612,7 @@ class AdminController extends Controller
             ->with('alert', (object) [
                 'class' => 'is-success',
                 'title' => 'Success!',
-                'alert' => sprintf('The %s was successfully %s. Continue editing or <a href="%s">go back to the %s</a>.',
+                'alert' => sprintf('The %s was successfully %s. Continue editing or&nbsp;<a class="has-underline" href="%s">go back to the %s</a>.',
                     $model->name,
                     $id == 'new' ? 'created' : 'updated',
                     object_get($model, 'isSingular') ? route('laramie::dashboard') : route('laramie::go-back', ['modelKey' => $modelKey]),
