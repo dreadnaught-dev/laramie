@@ -119,7 +119,7 @@
     $.fn.unsetInputs = function() {
         return this.each(function(i, item) {
             $(item)
-                .find(":input")
+                .find(":input:not(:hidden)")
                 .filter(":not(:checkbox):not(:radio)")
                 .val("")
                 .end()

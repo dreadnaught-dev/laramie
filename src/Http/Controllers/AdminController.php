@@ -137,6 +137,8 @@ class AdminController extends Controller
 
         $extra = (object) $request->all();
 
+        $extra->alert = session()->get('alert');
+
         // Fire the `PreList` event. This allows for a user to specify a redirect response if necessary
         Hook::fire(new PreList($model, $this->dataService->getUser(), $extra));
 
@@ -485,6 +487,7 @@ class AdminController extends Controller
         $extraInfoToPassToEvents = (object) $extraInfoToPassToEvents;
 
         $extraInfoToPassToEvents->sidebars = $sidebars;
+        $extraInfoToPassToEvents->alert = session()->get('alert');
 
         // Generally speaking, if you need to dynamically alter your model for edit, do so in this event:
         Hook::fire(new TransformModelForEdit($model,  $item, $user));
@@ -607,6 +610,7 @@ class AdminController extends Controller
             ->to($previousUrl)
             ->with('selectedTab', $selectedTab)
             ->with('alert', (object) [
+                'class' => 'is-success',
                 'title' => 'Success!',
                 'alert' => sprintf('The %s was successfully %s. Continue editing or <a href="%s">go back to the %s</a>.',
                     $model->name,
@@ -810,7 +814,9 @@ class AdminController extends Controller
             return redirect()->back()->with(['alert' => (object) ['class' => 'is-danger', 'title' => 'Error', 'alert' => $error]]);
         }
 
-        return redirect()->to(route('laramie::list', ['modelKey' => $modelKey]));
+        return redirect()
+            ->to(route('laramie::list', ['modelKey' => $modelKey]))
+            ->with(['alert' => (object) ['class' => 'is-success', 'title' => 'Success', 'alert' => 'Item deleted']]);
     }
 
     /**
