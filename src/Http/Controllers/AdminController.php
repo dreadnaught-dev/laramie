@@ -704,6 +704,12 @@ class AdminController extends Controller
                         sprintf('%s.%s', $this->modelKey, $fieldName)
                     );
                 } elseif ($request->get('_'.$fieldName)) {
+                    // Remove the "required" validation if we're keeping something that already exists.
+                    $this->validationRules[$fieldName] = collect(explode('|', $fieldValidation))
+                        ->filter(function($item) {
+                            return $item !== 'required';
+                        })
+                        ->join('|');
                     // The 'keep' checkbox was checked.
                     return $this->dataService->getFileInfo($request->get('_'.$fieldName));
                 } else {
