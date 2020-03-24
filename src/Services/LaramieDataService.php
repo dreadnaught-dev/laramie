@@ -136,6 +136,16 @@ class LaramieDataService
         return $laramieModels;
     }
 
+    public function getNumResultsMatchingFilters($model, $options = null, $queryCallback = null)
+    {
+        $model = $this->getModelByKey($model);
+
+        $query = $this->getBaseQuery($model);
+        $query = $this->augmentListQuery($query, $model, $options, $queryCallback);
+
+        return $query->count();
+    }
+
     public function getSingularItemId($model)
     {
         $model = $this->getModelByKey($model);
