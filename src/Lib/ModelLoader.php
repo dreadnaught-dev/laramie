@@ -443,7 +443,7 @@ class ModelLoader
                             throw new Exception('Select / radio `options` must be a valid array.');
                         }
 
-                        return (object) ['text' => $text, 'value' => $value];
+                        return (object) array_merge((array) $tmp, ['text' => $text, 'value' => $value]);
                     } elseif ($type == 'array') {
                         return (object) ['text' => array_first($item), 'value' => array_last($item)];
                     } else {
