@@ -2,6 +2,7 @@
 
 namespace Laramie\Lib;
 
+use Carbon\Carbon;
 use Intervention\Image\ImageManager;
 use Illuminate\Http\File;
 use Storage;
@@ -96,14 +97,14 @@ class LaramieHelpers
             case 'date':
             case 'dbtimestamp':
                 $dateFormat = config('laramie.date_presentation_format') ?: 'Y-m-d'; // Carbon's default if none provided
-                return $value ? \Carbon\Carbon::parse($value, config('laramie.timezone'))->format($dateFormat) : '';
+                return $value ? Carbon::parse($value, config('laramie.timezone'))->format($dateFormat) : '';
             case 'datetime':
             case 'datetime-local':
                 $dateFormat = config('laramie.datetime_presentation_format') ?: 'Y-m-d H:i:s'; // Carbon's default if none provided
-                return $value ? \Carbon\Carbon::parse($value, config('laramie.timezone'))->format($dateFormat) : '';
+                return $value ? Carbon::parse($value, config('laramie.timezone'))->format($dateFormat) : '';
             case 'dateDiff':
                 if ($value) {
-                    return \Carbon\Carbon::parse($value, config('laramie.timezone'))->diffForHumans();
+                    return Carbon::parse($value, config('laramie.timezone'))->diffForHumans();
                 }
                 // no break
             case 'file':
@@ -127,7 +128,7 @@ class LaramieHelpers
                 $timestamp = object_get($value, 'timestamp');
                 $timezone = object_get($value, 'timezone');
                 if ($timestamp) {
-                    return \Carbon\Carbon::createFromTimestamp($timestamp, $timezone)->toDateTimeString();
+                    return Carbon::createFromTimestamp($timestamp, $timezone)->toDateTimeString();
                 }
 
                 return '';
@@ -147,7 +148,7 @@ class LaramieHelpers
         $comment->_userFirstInitial = strtoupper(substr(object_get($comment, '_user', '?'), 0, 1));
         $comment->_user = $comment->_user ?: 'Unknown';
         $comment->_color = self::getOrdinalColor(ord(strtolower($comment->_userFirstInitial)));
-        $comment->lastModified = \Carbon\Carbon::parse($comment->updated_at, config('laramie.timezone'))->diffForHumans();
+        $comment->lastModified = Carbon::parse($comment->updated_at, config('laramie.timezone'))->diffForHumans();
 
         return $comment;
     }
@@ -254,7 +255,7 @@ class LaramieHelpers
         return $name;
     }
 
-    public static function getLaramieTimestampObjectFromCarbonDate(\Carbon\Carbon $c)
+    public static function getLaramieTimestampObjectFromCarbonDate(Carbon $c)
     {
         $cDate = $c->format('Y-m-d');
         $cTime = $c->format('H:i:s');

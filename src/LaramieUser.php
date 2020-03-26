@@ -13,7 +13,7 @@ use PragmaRX\Google2FA\Google2FA;
 
 class LaramieUser extends LaramieModel
 {
-    public static function createWithAuth($username, $password, $enableApi = false, $enableMfa = false)
+    public static function makeWithAuth($username, $password, $enableApi = false, $enableMfa = false)
     {
         $tmp = new static();
 
@@ -39,7 +39,11 @@ class LaramieUser extends LaramieModel
 
         $tmp->roles = [];
 
-        return $tmp->save();
+        return $tmp;
+    }
+    public static function createWithAuth($username, $password, $enableApi = false, $enableMfa = false)
+    {
+        return static::makeWithAuth($username, $password, $enableApi = false, $enableMfa = false)->save();
     }
 }
 
