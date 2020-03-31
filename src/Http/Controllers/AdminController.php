@@ -151,6 +151,7 @@ class AdminController extends Controller
         $options['filters'] = $filters;
         $options['quickSearch'] = $request->get('quick-search');
         $options['sortDirection'] = $request->get('sort-direction');
+        $options['source'] = 'admin';
 
         // A user may have saved preferences for hiding / showing fields. Load those and ensure that if they exist they're a subset of the fields on the model.
         // The user's model prefs may include things like which columns to show, etc

@@ -91,7 +91,7 @@ class LaramieDataService
 
     public function findTypeByTag($model, $tag)
     {
-        return $this->findByType($model, ['resultsPerPage' => 0], function ($query) use ($tag) {
+        return $this->findByType($model, ['resultsPerPage' => 0, 'source' => 'admin'], function ($query) use ($tag) {
             $query->whereRaw(DB::raw('(select 1 from laramie_data_meta ldm where ldm.laramie_data_id = laramie_data.id and ldm.type ilike ? and data->>\'text\' ilike ? limit 1) = 1'), ['tag', $tag]);
         });
     }
@@ -449,7 +449,7 @@ class LaramieDataService
         $modelKey = $model->_type;
         $userUuid = $this->getUserUuid();
 
-        return $this->findByType($this->getModelByKey('laramieSavedReport'), ['resultsPerPage' => 0], function ($query) use ($modelKey, $userUuid) {
+        return $this->findByType($this->getModelByKey('laramieSavedReport'), ['source' => 'admin', 'resultsPerPage' => 0], function ($query) use ($modelKey, $userUuid) {
             $query->where(DB::raw('data->>\'relatedModel\''), $modelKey)
                 ->where(function ($query) use ($userUuid) {
                     $query->where(DB::raw('data->>\'user\''), $userUuid)
@@ -983,7 +983,7 @@ class LaramieDataService
         return $data;
     }
 
-    public function save($model, LaramieModel $laramieModel, $validate = true, $maxPrefetchDepth = 5)
+    public function save($model, LaramieModel $laramieModel, $validateJson = true, $maxPrefetchDepth = 5)
     {
         $model = $this->getModelByKey($model);
 
@@ -1035,7 +1035,7 @@ class LaramieDataService
             }
         }
 
-        if ($validate) {
+        if ($validateJson) {
             // Perform JSON schema validation on the model. The real benefit of
             // this is when users are creating data outside of the admin (and saving
             // through this method). Validation is still happening to ensure that

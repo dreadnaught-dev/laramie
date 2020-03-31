@@ -65,6 +65,7 @@ class AjaxController extends Controller
         $paginator = $this->dataService->findByType(
             $model,
             [
+                'source' => 'admin-ajax',
                 'outerModelType' => $modelKey,
                 'innerModelType' => $listModelKey,
                 'outerItemId' => $outerItemId,
