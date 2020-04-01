@@ -61,7 +61,7 @@ class LaramieDataService
     public function getUser()
     {
         if (!app()->runningInConsole()) {
-            return object_get(auth()->user(), '_laramie', (request()->hasSession() ? request()->session()->get('_laramie') : null));
+            return data_get(auth()->user(), '_laramie', (request()->hasSession() ? request()->session()->get('_laramie') : null));
         }
 
         return null;
@@ -983,7 +983,7 @@ class LaramieDataService
         return $data;
     }
 
-    public function save($model, LaramieModel $laramieModel, $validateJson = true, $maxPrefetchDepth = 5)
+    public function save($model, LaramieModel $laramieModel, $validateJson = true, $maxPrefetchDepth = 5, $runSaveHooks = true)
     {
         $model = $this->getModelByKey($model);
 
@@ -996,7 +996,7 @@ class LaramieDataService
          * enables the ability to dynamically alter the model that will be
          * saved based on the injected arguments.
          */
-        if (config('laramie.suppress_events') !== true) {
+        if ($runSaveHooks && config('laramie.suppress_events') !== true) {
             Hook::fire(new PreSave($model, $laramieModel, $this->getUser()));
         }
 
@@ -1091,7 +1091,7 @@ class LaramieDataService
 
         $item->_wasNew = !object_get($data, '_origId');
 
-        if (config('laramie.suppress_events') !== true) {
+        if ($runSaveHooks && config('laramie.suppress_events') !== true) {
             Hook::fire(new PostSave($model, $item, $this->getUser()));
             event(new ItemSaved($model, $item, $this->getUser()));
         }

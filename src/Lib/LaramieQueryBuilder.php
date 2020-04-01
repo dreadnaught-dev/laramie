@@ -325,10 +325,10 @@ class LaramieQueryBuilder
             ->deleteById($this->callingClass::getJsonClass(), $id, $isDeleteHistory);
     }
 
-    public function save(LaramieModel $item, $validate = true)
+    public function save(LaramieModel $item, $validate = true, $runSaveHooks = true)
     {
         return $this->callingClass::hydrateWithModel($this->dataService
-            ->save($this->callingClass::getJsonClass(), $item, $validate));
+            ->save($this->callingClass::getJsonClass(), $item, $validate, $this->maxPrefetchDepth, $runSaveHooks));
     }
 
     // Allow updating of json data via query (may touch deeply-nested data as long as it's not computed, a reference field, or a repeatable aggregate (jsonb_set doesn't have decent facility for mass updating array data)

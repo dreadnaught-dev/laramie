@@ -384,14 +384,14 @@ class LaramieModel implements \JsonSerializable
     }
 
     // Save new item and return instance
-    final public static function create(array $attributes, $validate = true)
+    final public static function create(array $attributes, $validate = true, $runSaveHooks = true)
     {
         $item = self::load((object) $attributes);
 
-        return static::getLaramieQueryBuilder('save', [$item, $validate]);
+        return static::getLaramieQueryBuilder('save', [$item, $validate, $runSaveHooks]);
     }
 
-    final public static function updateOrCreate(array $conditions, array $attributes = [])
+    final public static function updateOrCreate(array $conditions, array $attributes = [], $validate = true, $runSaveHooks = true)
     {
         $instance = self::where($conditions)->first();
         if ($instance) {
@@ -403,12 +403,12 @@ class LaramieModel implements \JsonSerializable
             data_set($tmp, $key, $value);
         }
 
-        return $tmp->save();
+        return $tmp->save($validate, $runSaveHooks);
     }
 
-    public function save($validate = true)
+    public function save($validate = true, $runSaveHooks = true)
     {
-        $updatedItem = static::getLaramieQueryBuilder('save', [$this, $validate]);
+        $updatedItem = static::getLaramieQueryBuilder('save', [$this, $validate, $runSaveHooks]);
 
         foreach ($updatedItem as $key => $value) {
             $this->{$key} = $value;
@@ -417,13 +417,13 @@ class LaramieModel implements \JsonSerializable
         return $this;
     }
 
-    public function update(array $attributes = [], $validate = true)
+    public function update(array $attributes = [], $validate = true, $runSaveHooks = true)
     {
         foreach ($attributes as $key => $value) {
             data_set($this, $key, $value);
         }
 
-        return $this->save($validate);
+        return $this->save($validate, $runSaveHooks);
     }
 
     public function delete($isDeleteHistory = false)

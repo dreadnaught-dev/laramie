@@ -571,7 +571,6 @@ class AdminController extends Controller
                 DB::rollBack();
                 $success = false;
                 $errors = ['schemaError' => true, 'message' => $e->getMessage()];
-                throw($e);
             }
         }
 

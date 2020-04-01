@@ -6,13 +6,13 @@ class Hook
 {
     private static $listeners = [];
 
-    public static function listen($key, $callback, $priority = 0)
+    public static function listen($key, $callback, $sort = 0)
     {
         $container = data_get(self::$listeners, $key, []);
 
         $container[] = (object) [
             'callback' => $callback,
-            'priority' => $priority,
+            'sort' => $sort,
         ];
 
         self::$listeners[$key] = $container;
@@ -26,7 +26,7 @@ class Hook
 
         $sortedListeners = collect(data_get(self::$listeners, $key, []))
             ->sortBy(function($item) {
-                return $item->priority;
+                return $item->sort;
             });
 
         $returnValue = null;

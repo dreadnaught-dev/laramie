@@ -41,6 +41,7 @@ class LaramieUser extends LaramieModel
 
         return $tmp;
     }
+
     public static function createWithAuth($username, $password, $enableApi = false, $enableMfa = false)
     {
         return static::makeWithAuth($username, $password, $enableApi = false, $enableMfa = false)->save();

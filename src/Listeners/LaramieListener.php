@@ -23,38 +23,16 @@ class LaramieListener
      */
     public function subscribe($events)
     {
-        Hook::listen(
-            'Laramie\Hooks\ConfigLoaded',
-            'Laramie\Listeners\LaramieListener@configLoaded'
-        );
-        Hook::listen(
-            'Laramie\Hooks\PreFetch',
-            'Laramie\Listeners\LaramieListener@preFetch'
-        );
-        Hook::listen(
-            'Laramie\Hooks\PostList',
-            'Laramie\Listeners\LaramieListener@postList'
-        );
-        Hook::listen(
-            'Laramie\Hooks\PreEdit',
-            'Laramie\Listeners\LaramieListener@preEdit'
-        );
-        Hook::listen(
-            'Laramie\Hooks\PreSave',
-            'Laramie\Listeners\LaramieListener@preSave'
-        );
-        Hook::listen(
-            'Laramie\Hooks\PostSave',
-            'Laramie\Listeners\LaramieListener@postSave'
-        );
-        Hook::listen(
-            'Laramie\Hooks\HandleBulkAction',
-            'Laramie\Listeners\LaramieListener@handleBulkAction'
-        );
-        Hook::listen(
-            'Laramie\Hooks\PreDelete',
-            'Laramie\Listeners\LaramieListener@preDelete'
-        );
+        // By default, laramie's listeners will be fired after others (by default,
+        // listeners are added with a sort of zero, which will run _before_ Laramie's).
+        Hook::listen('Laramie\Hooks\ConfigLoaded', 'Laramie\Listeners\LaramieListener@configLoaded', 1);
+        Hook::listen('Laramie\Hooks\PreFetch', 'Laramie\Listeners\LaramieListener@preFetch', 1);
+        Hook::listen('Laramie\Hooks\PostList', 'Laramie\Listeners\LaramieListener@postList', 1);
+        Hook::listen('Laramie\Hooks\PreEdit', 'Laramie\Listeners\LaramieListener@preEdit', 1);
+        Hook::listen('Laramie\Hooks\PreSave', 'Laramie\Listeners\LaramieListener@preSave', 1);
+        Hook::listen('Laramie\Hooks\PostSave', 'Laramie\Listeners\LaramieListener@postSave', 1);
+        Hook::listen('Laramie\Hooks\HandleBulkAction', 'Laramie\Listeners\LaramieListener@handleBulkAction', 1);
+        Hook::listen('Laramie\Hooks\PreDelete', 'Laramie\Listeners\LaramieListener@preDelete', 1);
     }
 
     /**
