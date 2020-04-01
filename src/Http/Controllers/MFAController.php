@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use PragmaRX\Google2FA\Google2FA;
 use Laramie\Services\LaramieDataService;
 
+use Laramie\LaramieUser;
+
 /**
  * Handle MFA.
  */
@@ -70,7 +72,7 @@ class MFAController extends Controller
 
         if ($isValid) {
             $user->mfa->registrationCompleted = true;
-            $this->dataService->save('laramieUser', $user);
+            $user->save(false, false);
             $request->session()->put('_mfa', 'allow');
 
             return redirect()->intended(route('laramie::dashboard'));
@@ -93,6 +95,6 @@ class MFAController extends Controller
             abort(401);
         }
 
-        return $this->dataService->findById('laramieUser', $userRecord->id);
+        return LaramieUser::find($userRecord->id);
     }
 }
