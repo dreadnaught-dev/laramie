@@ -39,7 +39,7 @@
             "defaultSortDirection": "asc",
             "fields": {
                 "user": { "type": "text", "required": true },
-                "password": { "type": "password", "label": "password" },
+                "password": { "type": "password", "label": "password", "required": true },
                 "roles": {
                     "type": "reference-many",
                     "relatedModel": "laramieRole"

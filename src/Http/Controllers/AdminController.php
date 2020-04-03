@@ -663,7 +663,13 @@ class AdminController extends Controller
 
             case 'password':
                 if ($request->get('_'.$fieldName)) {
-                    // The 'keep' checkbox was checked
+                    // The 'keep' checkbox was checked. Remove the "required" validation if we're keeping something that already exists.
+                    $this->validationRules[$fieldName] = collect(explode('|', $fieldValidation))
+                        ->filter(function($item) {
+                            return $item !== 'required';
+                        })
+                        ->join('|');
+
                     return (object) ['encryptedValue' => $request->get('_'.$fieldName)];
                 }
 
