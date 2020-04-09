@@ -299,7 +299,7 @@ class AdminController extends Controller
     {
         $filterString = collect($request->all())
             ->filter(function ($value, $key) {
-                return preg_match('/^(filter|sort|quick)/', $key);
+                return !preg_match('/^([_]|bulk)/', $key);
             })
             ->map(function ($e, $key) {
                 return sprintf('%s=%s', rawurlencode($key), rawurlencode($e));

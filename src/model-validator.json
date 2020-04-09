@@ -114,6 +114,7 @@
             ],
             "properties": {
                 "dataType": { "type": "string" },
+                "isDeferred": { "type": "boolean" },
                 "sql": { "type": "string" }
             }
         },

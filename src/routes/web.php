@@ -80,7 +80,7 @@ Route::group(
 
                 Route::get('/alert/{id}', 'AdminController@alertRedirect')->name('alert-redirector');
 
-                Route::get('/go-back/{modelKey}', 'AdminController@goBack')->name('go-back')->middleware(LaramieAuthorize::class);
+                Route::get('/go-back/{modelKey}', 'AdminController@goBack')->name('go-back');
 
                 Route::get('/{modelKey}/{id}', 'AdminController@getEdit')->name('edit')->middleware([LaramieAuthorize::class, ShareAlertFromSession::class]);
                 Route::post('/{modelKey}/{id}', 'AdminController@postEdit')->name('post-edit')->middleware(LaramieAuthorize::class);

@@ -235,10 +235,15 @@ class LaramieDataService
         $sortDirection = array_get($options, 'sortDirection') ?: $model->defaultSortDirection;
 
         if ($sort) {
+            $field = data_get($fieldCollection, $sort);
             if (in_array($sort, array_keys($computedFields))
                 || in_array($sort, ['id', 'created_at', 'updated_at'])
             ) {
                 // If it's a computed field or one of the table's non-json fields, sort by the field name provided
+                $sort = data_get($field, 'isDeferred')
+                    ? DB::raw($field->sql)
+                    : $sort;
+
                 $query->orderBy($sort, $sortDirection);
             } elseif (in_array($sort, array_keys($timestampFields))) {
                 $timestampSort = $sortDirection.' nulls '.($sortDirection == 'asc' ? 'first' : 'last');
@@ -936,7 +941,7 @@ class LaramieDataService
                 return $field->type == 'computed';
             })
             ->each(function ($field, $key) use ($query) {
-                $query->addSelect(DB::raw($field->sql.' as "'.$key.'"'));
+                $query->addSelect(DB::raw((data_get($field, 'isDeferred', false) ? 'null' : $field->sql).' as "'.$key.'"'));
             });
 
         return $query;

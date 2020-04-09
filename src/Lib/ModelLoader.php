@@ -650,7 +650,9 @@ class ModelLoader
                 }
                 break;
             case 'aggregate':
-                $validationType = (object) []; // @todo -- dive into aggregate fields and correctly set `types` and `patterns` for the fields where applicable. Note that this is most important for non-admin saving; normal Laravel validation still happens via the admin.
+                $validationType = data_get($field, 'isRepeatable') // @todo -- dive into aggregate fields and correctly set `types` and `patterns` for the fields where applicable. Note that this is most important for non-admin saving; normal Laravel validation still happens via the admin.
+                    ? (object) ['type' => 'array']
+                    : (object) ['type' => 'object'];
                 break;
             case 'select':
                 $validationType = (object) ['type' => ['string', 'array']];
