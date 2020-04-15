@@ -711,6 +711,24 @@ class ModelLoader
         $tmp[count($tmp) - 1] = str_plural($tmp[count($tmp) - 1]);
         $pluralName = title_case(implode(' ', $tmp));
 
+        // Do a superficial adjustment of titles for consistency see `MLA Style Capitalization Rules`, etc
+        $overrides = [
+            'A' => 'a',
+            'An' => 'an',
+            'At' => 'at',
+            'By' => 'by',
+            'For' => 'for',
+            'Of' => 'of',
+            'To' => 'to',
+            'Url' => 'URL',
+            'Linked\ In' => 'LinkedIn',
+        ];
+
+        foreach ($overrides as $token => $replacement) {
+            $singularName = preg_replace('/\b'.$token.'\b/', $replacement, $singularName);
+            $pluralName = preg_replace('/\b'.$token.'\b/', $replacement, $pluralName);
+        }
+
         return [$singularName, $pluralName];
     }
 
