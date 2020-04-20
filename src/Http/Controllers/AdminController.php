@@ -583,7 +583,7 @@ class AdminController extends Controller
         $previousUrl = url()->previous();
 
         if (!$success) {
-            $alert = (object) ['class' => 'is-danger', 'title' => 'Awww snap! That didn\'t work', 'alert' => sprintf('There was an error saving the %s. Please review the form, address all errors, and try again.', $model->name)];
+            $alert = (object) ['class' => 'is-danger', 'title' => 'Awww snap! That didn\'t work', 'alert' => sprintf('There was an error while saving your information. Please review the form, address all errors, and try again.', $model->name)];
             if (is_array($errors) && array_key_exists('schemaError', $errors)) {
                 $alert->alert = $alert->alert.'<br>'.$errors['message'];
             }
