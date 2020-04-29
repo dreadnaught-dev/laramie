@@ -713,7 +713,7 @@ class AdminController extends Controller
                     // Remove the "required" validation if we're keeping something that already exists.
                     $this->validationRules[$fieldName] = collect(explode('|', $fieldValidation))
                         ->filter(function($item) {
-                            return $item !== 'required';
+                            return !preg_match('/^required/', $item);
                         })
                         ->join('|');
                     // The 'keep' checkbox was checked.
