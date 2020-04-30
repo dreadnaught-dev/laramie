@@ -1237,6 +1237,12 @@ class LaramieDataService
         $postData['sort'] = null;
         $postData['sort-direction'] = null;
 
+        // For "delete" bulk actions, ensure sure isn't computed field / dynamic / etc.
+        if (data_get($postData, 'bulk-action-operation') === 'delete') {
+            $postData['sort'] = 'created_at';
+            $postData['sort-direction'] = 'asc';
+        }
+
         return DB::table('laramie_data')
             ->whereIn('id', function ($query) use ($model, $postData) {
                 $query->select(['id'])
