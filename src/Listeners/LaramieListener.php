@@ -318,7 +318,14 @@ class LaramieListener
             case 'laramieUser':
                 // If we're saving a new user, we need to create a corresponding Laravel user
                 if (object_get($item, '_isNew')) {
-                    \DB::table('users')->insert([
+                    if (DB::table('users')
+                        ->where('email', 'ilike', data_get($item, 'user'))
+                        ->count() > 0
+                    ) {
+                        throw new Exception('That email address is taken');
+                    }
+
+                    DB::table('users')->insert([
                         'name' => $item->user,
                         'email' => $item->user,
                         'password' => $item->password->encryptedValue,
@@ -326,12 +333,11 @@ class LaramieListener
                         'updated_at' => 'now()',
                     ]);
                 } else {
-
                     // Ensure the email is unique
-                    if (\DB::table('laramie_data')
+                    if (DB::table('laramie_data')
                         ->where('type', 'laramieUser')
                         ->where('id', '!=', data_get($item, 'id', Uuid::uuid4()->toString()))
-                        ->where(DB::raw('data'), '@>', '{"user":"' . data_get($item, 'user') . '"}')
+                        ->where(DB::raw('data->>\'user\''), 'ilike', data_get($item, 'user'))
                         ->count() > 0
                     ) {
                         throw new Exception('That email address is taken');
@@ -339,7 +345,7 @@ class LaramieListener
 
                     // If we're _updating_ a user, we need to grab its state _before_ the update (so that we can map it to its Laravel user).
                     $oldUserInfo = $dataService->findByIdSuperficial($dataService->getModelByKey('laramieUser'), $item->id);
-                    \DB::table('users')
+                    DB::table('users')
                         ->where(config('laramie.username'), $oldUserInfo->user)
                         ->update([
                             'name' => $item->user,
