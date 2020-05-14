@@ -1,5 +1,9 @@
 <?php
 
+use Laramie\Http\Middleware\ApiAuthenticate as LaramieApiAuthenticate;
+use Laramie\Http\Middleware\Authenticate as LaramieAuthenticate;
+use Laramie\Http\Middleware\RequestLogger;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -189,4 +193,14 @@ return [
     |--------------------------------------------------------------------------
     */
     'file_prefix' => '{*user.id*}/',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Modify list of middleware that is executed for admin pages
+    | Useful when you want to inject your own middleware into the mix.
+    |--------------------------------------------------------------------------
+    */
+    'web_middleware' => ['web', 'auth', LaramieAuthenticate::class, RequestLogger::class],
+
+    'api_middleware' => ['web', 'auth', LaramieApiAuthenticate::class, RequestLogger::class],
 ];

@@ -2,8 +2,6 @@
 
 use Laramie\Hook;
 
-use Laramie\Http\Middleware\ApiAuthenticate as LaramieApiAuthenticate;
-use Laramie\Http\Middleware\Authenticate as LaramieAuthenticate;
 use Laramie\Http\Middleware\Authorize as LaramieAuthorize;
 use Laramie\Http\Middleware\RequestLogger;
 use Laramie\Http\Middleware\ShareAlertFromSession;
@@ -17,8 +15,8 @@ use Laramie\Http\Middleware\ShareAlertFromSession;
 Route::group(
     [
         'middleware' => config('laramie.enable_local_api')
-            ? ['web', 'auth', LaramieApiAuthenticate::class, RequestLogger::class]
-            : [LaramieApiAuthenticate::class, RequestLogger::class],
+            ? config('laramie.api_middleware')
+            : [RequestLogger::class],
         'namespace' => '\Laramie\Http\Controllers',
         'prefix' => config('laramie.admin_url').'/api',
         'as' => 'laramie::api',
@@ -34,7 +32,7 @@ Route::group(
  */
 Route::group(
     [
-        'middleware' => ['web', 'auth', LaramieAuthenticate::class, RequestLogger::class],
+        'middleware' => config('laramie.web_middleware'),
         'prefix' => config('laramie.admin_url'),
     ],
     function ($router) {
