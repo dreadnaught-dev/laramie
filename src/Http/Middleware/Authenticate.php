@@ -78,6 +78,7 @@ class Authenticate
                     }
                 }
 
+                // @TODO -- move the following to be methods on laramieuser model
                 $userRoles = object_get($user, 'roles', []);
                 $abilities = [];
                 $isSuperAdmin = false;

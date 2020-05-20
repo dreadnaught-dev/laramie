@@ -110,8 +110,7 @@ $(document).ready(function() {
         var $searchWrapper = $(e.target)
             .closest(".reference-wrapper")
             .find(".reference-search");
-        $searchWrapper.toggleClass('is-active');
-        $.event.trigger("modal-change");
+        $.event.trigger("toggle-laramie-modal", {modal: $searchWrapper});
         if (!$searchWrapper.data("loaded")) {
             $searchWrapper.data("loaded", true);
             doSearch($searchWrapper);
@@ -304,7 +303,7 @@ $(document).ready(function() {
             .toggleClass("is-checked", selectedItems.length > 0)
             .find(".selection-info")
             .html(selectionInfoContent)
-        $searchWrapper.toggleClass('is-active', false);
+        $.event.trigger("toggle-laramie-modal", {modal: $searchWrapper});
     });
 
     $(".js-dismissable").click(function(e) {

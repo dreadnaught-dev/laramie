@@ -25,6 +25,11 @@ $(document).ready(function() {
         $.event.trigger("modal-change");
     });
 
+    $(document).on("toggle-laramie-modal", function(event, data) {
+        data.modal.toggleClass('is-active')
+        $.event.trigger("modal-change");
+    });
+
     $(document).on("modal-change", function() {
         var isPreventBodyScroll = $(".modal.is-active").length > 0;
         $("html").toggleClass("prevent-scroll", isPreventBodyScroll);

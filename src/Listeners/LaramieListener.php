@@ -345,14 +345,17 @@ class LaramieListener
 
                     // If we're _updating_ a user, we need to grab its state _before_ the update (so that we can map it to its Laravel user).
                     $oldUserInfo = $dataService->findByIdSuperficial($dataService->getModelByKey('laramieUser'), $item->id);
+                    $userInfoToUpdate = [
+                        'name' => $item->user,
+                        'email' => $item->user,
+                        'updated_at' => 'now()',
+                    ];
+                    if (data_get($item, 'password.encryptedValue')) {
+                        $userInfoToUpdate['password'] = $item->password->encryptedValue;
+                    }
                     DB::table('users')
                         ->where(config('laramie.username'), $oldUserInfo->user)
-                        ->update([
-                            'name' => $item->user,
-                            'email' => $item->user,
-                            'password' => $item->password->encryptedValue,
-                            'updated_at' => 'now()',
-                        ]);
+                        ->update($userInfoToUpdate);
                 }
                 break;
             // Create thumbnails for images
