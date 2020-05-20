@@ -6,7 +6,7 @@
     $aggregateDepth = isset($aggregateDepth) ? $aggregateDepth + 1 : 1;
 @endphp
 
-<div class="aggregate-outer-wrapper has-margin-bottom {{ object_get($aggregateField, 'asTab') ? 'is-tab tab-'.str_slug($aggregateField->label) . ($selectedTab == str_slug($aggregateField->label) ? ' is-active' : '') : '' }}" {!! data_get($aggregateField, 'showWhen') ? 'data-show-when="'.preg_replace('/_[^_]+_\b/', '_'.data_get($aggregateField, 'showWhen'), $field->id).'"' : '' !!}>
+<div class="aggregate-outer-wrapper has-margin-bottom {{ object_get($aggregateField, 'asTab') ? 'is-tab tab-'.\Str::slug($aggregateField->label) . ($selectedTab == \Str::slug($aggregateField->label) ? ' is-active' : '') : '' }}" {!! data_get($aggregateField, 'showWhen') ? 'data-show-when="'.preg_replace('/_[^_]+_\b/', '_'.data_get($aggregateField, 'showWhen'), $field->id).'"' : '' !!}>
     @if (object_get($aggregateField, 'hideLabel') !== true)
         <h4 class="title is-4" style="margin: 1.5rem 0 .75rem">
             {{ $aggregateField->isRepeatable ? $aggregateField->labelPlural : $aggregateField->label }}

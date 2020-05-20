@@ -225,7 +225,7 @@ class LaramieListener
         $postData['quickSearch'] = data_get($postData, 'quick-search');
 
         // @note -- switching on the slugified version of the bulk action
-        switch (str_slug($nameOfBulkAction)) {
+        switch (Str::slug($nameOfBulkAction)) {
             case 'delete':
                 // First create a backup of the items in the archive table
                 $q1 = clone $query;
