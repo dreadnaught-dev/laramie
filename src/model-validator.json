@@ -89,7 +89,8 @@
                 },
                 "isSortable": { "type": "boolean" },
                 "isMetaField": { "type": "boolean" },
-                "showWhen": { "type": "string" }
+                "showWhen": { "type": "string" },
+                "default": { "type": "string" }
             },
             "patternProperties": {
                 "^_" : [ ],

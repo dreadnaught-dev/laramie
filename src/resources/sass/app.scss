@@ -162,6 +162,18 @@ input[type="range"] {
     padding-top: 0;
 }
 
+.aggregate-holder {
+    counter-reset: nestedCounter;
+}
+
+.aggregate-holder .media-left::after {
+    font-style: italic;
+    font-size: smaller;
+    color: #ccc;
+    counter-increment: nestedCounter;
+    content: counter(nestedCounter);
+}
+
 .media.shrink-for-move {
     max-height: 5.5em;
     overflow: hidden;
