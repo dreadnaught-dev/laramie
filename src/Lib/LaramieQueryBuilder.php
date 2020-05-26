@@ -88,7 +88,7 @@ class LaramieQueryBuilder
             });
         }
         else {
-            $column = $this->translateColumn($column, $operator == null ? $value : $operator);
+            $column = $this->translateColumn($column, $value ?: $operator);
             $this->qb->where($column, $operator, $value, $boolean);
         }
 
