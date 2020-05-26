@@ -431,6 +431,26 @@ class LaramieModel implements \JsonSerializable
         return static::getLaramieQueryBuilder('deleteById', [$this->id, $isDeleteHistory]);
     }
 
+    public function replicate(array $except = null)
+    {
+        $except = array_merge(['data'], ($except ?: []));
+
+        $tmp = new static();
+        $tmp->fill($this);
+        $tmp->id = null;
+        $tmp->_origId = null;
+        $tmp->_isNew = true;
+        $tmp->_isUpdate = false;
+        $tmp->created_at = null;
+        $tmp->updated_at = null;
+
+        foreach ($except as $attributeToUnset) {
+            unset($tmp->{$attributeToUnset});
+        }
+
+        return $tmp;
+    }
+
     final public static function newModelInstance(array $attributes = [])
     {
         return new static();
