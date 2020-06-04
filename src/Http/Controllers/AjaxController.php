@@ -15,6 +15,7 @@ use Laramie\Services\LaramieDataService;
 class AjaxController extends Controller
 {
     protected $dataService;
+    protected const MAX_RESULTS = 9e9;
 
     /**
      * Create a new AjaxController.
@@ -35,14 +36,37 @@ class AjaxController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function getList($modelKey, $listModelKey, Request $request)
+    public function getList($modelKey, $listModelKey, Request $request, $transformItems = true)
     {
         $outerModel = $this->dataService->getModelByKey($modelKey);
         $model = $this->dataService->getModelByKey($listModelKey);
-        $fieldInvokingRequest = $request->get('field');
 
-        $isTypeSpecific = data_get($outerModel, sprintf('fields.%s.isTypeSpecific', $fieldInvokingRequest)) === true;
+        $paginator = $this->doSearch($outerModel, $model, $request);
 
+        if ($transformItems) {
+            // The name only needs to be unique per reference in case it's a radio select (this value isn't being submitted).
+            $name = str_random(10);
+            $alias = object_get($model, 'fields.'.$model->alias);
+
+            $paginator->setCollection($paginator->getCollection()
+                ->map(function ($e) use ($alias, $name) {
+                    return (object) [
+                        'id' => $e->id,
+                        'name' => $name,
+                        'label' => $alias
+                            ? LaramieHelpers::formatListValue($alias, object_get($e, $alias->id), true)
+                            : null,
+                        'selected' => object_get($e, 'selected') == 1,
+                        'created_at' => \Carbon\Carbon::parse(data_get($e, 'created_at'), config('laramie.timezone'))->diffForHumans(),
+                    ];
+                }));
+        }
+
+        return $paginator;
+    }
+
+    protected function doSearch($outerModel, $model, Request $request)
+    {
         // Ensure that if items are selected, they're valid uuids
         $uuidCollection = collect(preg_split('/\s*[,|]\s*/', $request->get('selectedItems')))
             ->filter(function ($item) {
@@ -59,20 +83,35 @@ class AjaxController extends Controller
         // `$keywords` is the search string.
         $keywords = $request->get('keywords');
 
+        // `$tag` is optional. If passed. Force tag match
+        $tag = $request->get('tag');
+
         // `$lookupSubtype` refers to what kind of reference field is being searched (image, file, etc).
         $lookupSubtype = $request->get('lookupSubtype');
 
-        $paginator = $this->dataService->findByType(
+        $resultsPerPage = $request->get('resultsPerPage');
+
+        $resultsPerPage = is_numeric($resultsPerPage) && $resultsPerPage > -1
+            ? (int) $resultsPerPage
+            : 10;
+
+        $resultsPerPage = $resultsPerPage === 0 || $resultsPerPage > self::MAX_RESULTS
+            ? self::MAX_RESULTS
+            : $resultsPerPage;
+
+        $fieldInvokingRequest = $request->get('field');
+        $isTypeSpecific = data_get($outerModel, sprintf('fields.%s.isTypeSpecific', $fieldInvokingRequest)) === true;
+        return $this->dataService->findByType(
             $model,
             [
                 'source' => 'admin-ajax',
-                'outerModelType' => $modelKey,
-                'innerModelType' => $listModelKey,
+                'outerModelType' => $outerModel->_type,
+                'innerModelType' => $model->_type,
                 'outerItemId' => $outerItemId,
-                'resultsPerPage' => 10,
+                'resultsPerPage' => $resultsPerPage,
                 'isFromAjaxController' => true,
             ],
-            function ($query) use ($uuidCollection, $keywords, $model, $lookupSubtype, $outerItemId, $modelKey, $fieldInvokingRequest, $isTypeSpecific, $invertSearch) {
+            function ($query) use ($uuidCollection, $keywords, $model, $lookupSubtype, $outerItemId, $outerModel, $fieldInvokingRequest, $isTypeSpecific, $invertSearch, $tag) {
                 // Never show the item being edited.
                 $query->where('id', '!=', $outerItemId);
 
@@ -94,6 +133,15 @@ class AjaxController extends Controller
                 // If searching laramieUploads, limit returned extensions if the subtype is `image`.
                 if ($model->_type == 'laramieUpload' && $lookupSubtype == 'image') {
                     $query->whereRaw(\DB::raw('data->>\'extension\' in (\''.implode("','", config('laramie.allowed_image_types')).'\')'));
+                }
+                // If a tag was passed, only show items that were tagged accordingly
+                if ($tag){
+                    $query->whereIn('id', function ($query) use ($tag) {
+                        $query->select('laramie_data_id')
+                            ->from('laramie_data_meta')
+                            ->where('type', '=', 'Tag')
+                            ->where(\DB::raw('data->>\'text\''), 'ilike', $tag);
+                    });
                 }
                 // Limit by keyword
                 $query->where(function ($query) use ($uuidCollection, $keywords, $model) {
@@ -139,30 +187,11 @@ class AjaxController extends Controller
                 });
                 // Limit by model type / field.
                 if ($isTypeSpecific) {
-                    $query->where(\DB::raw('data->>\'source\''), 'ilike', sprintf('%s.%s', $modelKey, $fieldInvokingRequest));
+                    $query->where(\DB::raw('data->>\'source\''), 'ilike', sprintf('%s.%s', $outerModel->_type, $fieldInvokingRequest));
                 }
             }
         );
 
-        // The name only needs to be unique per reference in case it's a radio select (this value isn't being submitted).
-        $name = str_random(10);
-
-        $alias = object_get($model, 'fields.'.$model->alias);
-
-        $paginator->setCollection($paginator->getCollection()
-            ->map(function ($e) use ($alias, $name) {
-                return (object) [
-                    'id' => $e->id,
-                    'name' => $name,
-                    'label' => $alias
-                        ? LaramieHelpers::formatListValue($alias, object_get($e, $alias->id), true)
-                        : null,
-                    'selected' => object_get($e, 'selected') == 1,
-                    'created_at' => \Carbon\Carbon::parse(data_get($e, 'created_at'), config('laramie.timezone'))->diffForHumans(),
-                ];
-            }));
-
-        return $paginator;
     }
 
     /**
