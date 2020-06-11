@@ -1,20 +1,19 @@
 @extends('laramie::partials.fields.edit._base')
 
 @php
-    $asRadio = object_get($field, 'asRadio', false);
-    $isSelect2 = object_get($field, 'isSelect2', false);
-    $isMultiple = object_get($field, 'isMultiple', false);
-    $tmp = object_get($item, $fieldKey, null);
-    $selectedValues = array_filter(is_array($tmp) ? $tmp : [$tmp]);
+    $asRadio = data_get($field, 'asRadio', false);
+    $isSelect2 = data_get($field, 'isSelect2', false);
+    $isMultiple = data_get($field, 'isMultiple', false);
+    $selectedValues = array_filter(is_array($valueOrDefault) ? $valueOrDefault : [$valueOrDefault]);
 @endphp
 
 @section('input')
     @if ($asRadio)
-        @foreach (object_get($field, 'options') as $option)
+        @foreach (data_get($field, 'options') as $option)
             @if ($isMultiple)
-                <label class="checkbox-label label has-text-weight-normal"><input type="checkbox" name="{{ $field->id . '[]' }}" value="{{ object_get($option, 'value') }}" {!! in_array(object_get($option, 'value'), $selectedValues) ? 'checked="checked"' : '' !!}>&nbsp;{{ object_get($option, 'text') }}</label>
+                <label class="checkbox-label label has-text-weight-normal"><input type="checkbox" name="{{ $field->id . '[]' }}" value="{{ data_get($option, 'value') }}" {!! in_array(object_get($option, 'value'), $selectedValues) ? 'checked="checked"' : '' !!}>&nbsp;{{ object_get($option, 'text') }}</label>
             @else
-                <label class="radio-label label has-text-weight-normal"><input type="radio" name="{{ $field->id }}" value="{{ object_get($option, 'value') }}" {!! in_array(object_get($option, 'value'), $selectedValues) ? 'checked="checked"' : '' !!}>&nbsp;{{ object_get($option, 'text') }}</label>
+                <label class="radio-label label has-text-weight-normal"><input type="radio" name="{{ $field->id }}" value="{{ data_get($option, 'value') }}" {!! in_array(object_get($option, 'value'), $selectedValues) ? 'checked="checked"' : '' !!}>&nbsp;{{ object_get($option, 'text') }}</label>
             @endif
         @endforeach
     @else
@@ -23,8 +22,8 @@
                 @if (!$isMultiple && !$field->required)
                     <option value="">Select {{ strtolower($field->label) }}...</option>
                 @endif
-                @foreach (object_get($field, 'options') as $option)
-                    <option value="{{ object_get($option, 'value') }}" {!! in_array(object_get($option, 'value'), $selectedValues) ? 'selected="selected"' : '' !!}>{{ object_get($option, 'text') }}</option>
+                @foreach (data_get($field, 'options') as $option)
+                    <option value="{{ data_get($option, 'value') }}" {!! in_array(object_get($option, 'value'), $selectedValues) ? 'selected="selected"' : '' !!}>{{ object_get($option, 'text') }}</option>
                 @endforeach
             </select>
         </div>

@@ -30,6 +30,9 @@
 
     @foreach (object_get($model, 'fields') as $fieldKey => $field)
         @if ($field->isEditable)
+            $valueOrDefault = isset($item->{$field->id})
+                ? object_get($item, $field->id)
+                : data_get($field, 'default');
             @includeIfFallback('laramie::partials.fields.edit.'.$field->type, 'laramie::partials.fields.edit.generic')
         @endif
     @endforeach

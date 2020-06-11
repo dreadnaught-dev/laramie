@@ -1,6 +1,6 @@
 @php
     $hasError = $errors->has($field->id);
-    $isFullwidthSelect = object_get($field, 'isMultiple', false) === true;
+    $isFullwidthSelect = data_get($field, 'isMultiple', false) === true;
 @endphp
 
 <div class="field {{ $hasError ? 'is-danger' : '' }}" data-field-key="{{ $fieldKey }}" data-field-type="{{ $field->type }}" {!! data_get($field, 'showWhen') ? 'data-show-when="'.preg_replace('/[^_]+$/', $field->showWhen, $field->id).'"' : '' !!}>

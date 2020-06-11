@@ -1,8 +1,8 @@
 @extends('laramie::partials.fields.edit._base')
 
 @php
-    $isTrue = object_get($item, $fieldKey) === true;
-    $isFalse = object_get($item, $fieldKey) === false;
+    $isTrue = data_get($item, $fieldKey) === true;
+    $isFalse = data_get($item, $fieldKey) === false;
 @endphp
 
 @section('input')

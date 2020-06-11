@@ -1,7 +1,7 @@
 @extends('laramie::partials.fields.edit._base')
 
 @php
-    $oldPassword = object_get($item, $field->id . '.encryptedValue');
+    $oldPassword = data_get($item, $field->id . '.encryptedValue');
     if ($errors->has($fieldKey)) {
         $oldPassword = null;
     }

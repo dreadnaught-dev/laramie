@@ -5,7 +5,7 @@
     $referencedModelNamePlural = $field->labelPlural;
     $isSingleReference = $field->subtype == 'single';
 
-    $references = object_get($item, $field->id, []);
+    $references = data_get($item, $field->id, []);
     if ($isSingleReference) {
         $references = [$references];
     }
@@ -22,7 +22,7 @@
             <blockquote>
                 <div class="selection-info is-pulled-left" data-base-url="{{ route('laramie::edit', ['modelKey' => $referencedModelKey, 'id' => 'new'])  }}">
                     @forelse ($references as $reference)
-                        <em><a href="{{ route('laramie::edit', ['modelKey' => $referencedModelKey, 'id' => $reference->id, 'is-child' => 1]) }}" target="_blank">{{ object_get($reference, '_alias') }}</a></em>{{ $loop->last ? '' : ', ' }}
+                        <em><a href="{{ route('laramie::edit', ['modelKey' => $referencedModelKey, 'id' => $reference->id, 'is-child' => 1]) }}" target="_blank">{{ data_get($reference, '_alias') }}</a></em>{{ $loop->last ? '' : ', ' }}
                     @empty
                         Nothing selected
                     @endforelse

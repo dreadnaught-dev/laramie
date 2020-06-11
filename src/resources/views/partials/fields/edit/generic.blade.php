@@ -37,7 +37,15 @@
 
 @section('input')
     @if (in_array($field->type, $allowedInputTypes))
-        <input type="{{ $field->type }}" class="input is-{{ $field->type }}" id="{{ $field->id }}" name="{{ $field->id }}" value="{{ object_get($item, $field->id) }}" {!! $field->extra !!} {{ $field->required ? 'required' : '' }}>
+        <input
+            type="{{ $field->type }}"
+            class="input is-{{ $field->type }}"
+            id="{{ $field->id }}"
+            name="{{ $field->id }}"
+            value="{{ $valueOrDefault }}"
+            {!! $field->extra !!}
+            {{ $field->required ? 'required' : '' }}
+        >
     @else
         Input type is is not yet implemented ({{ $field->type }})
     @endif

@@ -6,8 +6,8 @@
     $aggregateDepth = isset($aggregateDepth) ? $aggregateDepth + 1 : 1;
 @endphp
 
-<div class="aggregate-outer-wrapper has-margin-bottom {{ object_get($aggregateField, 'asTab') ? 'is-tab tab-'.str_slug($aggregateField->label) . ($selectedTab == str_slug($aggregateField->label) ? ' is-active' : '') : '' }}" {!! data_get($aggregateField, 'showWhen') ? 'data-show-when="'.preg_replace('/_[^_]+_\b/', '_'.data_get($aggregateField, 'showWhen'), $field->id).'"' : '' !!}>
-    @if (object_get($aggregateField, 'hideLabel') !== true)
+<div class="aggregate-outer-wrapper has-margin-bottom {{ data_get($aggregateField, 'asTab') ? 'is-tab tab-'.str_slug($aggregateField->label) . ($selectedTab == str_slug($aggregateField->label) ? ' is-active' : '') : '' }}" {!! data_get($aggregateField, 'showWhen') ? 'data-show-when="'.preg_replace('/_[^_]+_\b/', '_'.data_get($aggregateField, 'showWhen'), $field->id).'"' : '' !!}>
+    @if (data_get($aggregateField, 'hideLabel') !== true)
         <h4 class="title is-4" style="margin: 1.5rem 0 .75rem">
             {{ $aggregateField->isRepeatable ? $aggregateField->labelPlural : $aggregateField->label }}
             @if ($isRepeatable)
@@ -16,7 +16,7 @@
         </h4>
     @endif
 
-    <div class="aggregate-holder padded content {{ object_get($aggregateField, 'unwrap') === true ? 'unwrapped' : 'wrapped' }}" data-type="{{ $field->_fieldName }}" data-template="{{ $metaId . $field->_template }}" data-is-repeatable="{{ $field->isRepeatable ? '1' : '0' }}" data-min-items="{{ object_get($field, 'minItems') }}" data-max-items="{{ object_get($field, 'maxItems') }}" data-empty-message="No {{ $aggregateField->labelPlural }} added yet">
+    <div class="aggregate-holder padded content {{ data_get($aggregateField, 'unwrap') === true ? 'unwrapped' : 'wrapped' }}" data-type="{{ $field->_fieldName }}" data-template="{{ $metaId . $field->_template }}" data-is-repeatable="{{ $field->isRepeatable ? '1' : '0' }}" data-min-items="{{ object_get($field, 'minItems') }}" data-max-items="{{ object_get($field, 'maxItems') }}" data-empty-message="No {{ $aggregateField->labelPlural }} added yet">
         @if ($isRepeatable)
             <?php /*<p>No {{ $aggregateField->labelPlural }} added yet</p>*/ ?>
         @endif
@@ -25,7 +25,7 @@
             <script>
                 window.globals.aggregates = window.globals.aggregates || {};
                 window.globals.aggregates['{{ $item->id ?: 'new' }}'] = window.globals.aggregates['{{ $item->id ?: 'new' }}'] || {};
-                window.globals.aggregates['{{ $item->id ?: 'new' }}']['{{ $aggregateField->_fieldName }}'] = {!! json_encode(object_get($item, $fieldKey, $isRepeatable ? [] : (object) [])) !!};
+                window.globals.aggregates['{{ $item->id ?: 'new' }}']['{{ $aggregateField->_fieldName }}'] = {!! json_encode(data_get($item, $fieldKey, $isRepeatable ? [] : (object) [])) !!};
             </script>
         @endif
 
@@ -40,7 +40,10 @@
                         </figure>
                     @endif
                     <div class="media-content">
-                        @foreach (object_get($aggregateField, 'fields') as $fieldKey => $field)
+                        @foreach (data_get($aggregateField, 'fields') as $fieldKey => $field)
+                            $valueOrDefault = isset($item->{$field->id})
+                                ? data_get($item, $field->id)
+                                : data_get($field, 'default');
                             @if ($field->isEditable)
                                 @includeIfFallback('laramie::partials.fields.edit.'.$field->type, 'laramie::partials.fields.edit.generic')
                             @endif
