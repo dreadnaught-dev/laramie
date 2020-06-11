@@ -3,7 +3,7 @@
 @section('input')
     @foreach (data_get($field, 'options') as $option)
         <label class="radio">
-            <input type="radio" id="{{ $field->id }}-{{ $loop->index }}" name="{{ $field->id }}" value="{{ data_get($option, 'value') }}" {!! object_get($option, 'value') == object_get($item, $fieldKey) ? 'checked' : '' !!}>
+            <input type="radio" id="{{ $field->id }}-{{ $loop->index }}" name="{{ $field->id }}" value="{{ data_get($option, 'value') }}" {!! data_get($option, 'value') == data_get($item, $fieldKey) ? 'checked' : '' !!}>
             {{ data_get($option, 'text') }}
         </label>
     @endforeach

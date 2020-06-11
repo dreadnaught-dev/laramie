@@ -16,7 +16,7 @@
         </h4>
     @endif
 
-    <div class="aggregate-holder padded content {{ data_get($aggregateField, 'unwrap') === true ? 'unwrapped' : 'wrapped' }}" data-type="{{ $field->_fieldName }}" data-template="{{ $metaId . $field->_template }}" data-is-repeatable="{{ $field->isRepeatable ? '1' : '0' }}" data-min-items="{{ object_get($field, 'minItems') }}" data-max-items="{{ object_get($field, 'maxItems') }}" data-empty-message="No {{ $aggregateField->labelPlural }} added yet">
+    <div class="aggregate-holder padded content {{ data_get($aggregateField, 'unwrap') === true ? 'unwrapped' : 'wrapped' }}" data-type="{{ $field->_fieldName }}" data-template="{{ $metaId . $field->_template }}" data-is-repeatable="{{ $field->isRepeatable ? '1' : '0' }}" data-min-items="{{ data_get($field, 'minItems') }}" data-max-items="{{ data_get($field, 'maxItems') }}" data-empty-message="No {{ $aggregateField->labelPlural }} added yet">
         @if ($isRepeatable)
             <?php /*<p>No {{ $aggregateField->labelPlural }} added yet</p>*/ ?>
         @endif
@@ -41,9 +41,11 @@
                     @endif
                     <div class="media-content">
                         @foreach (data_get($aggregateField, 'fields') as $fieldKey => $field)
-                            $valueOrDefault = isset($item->{$field->id})
-                                ? data_get($item, $field->id)
-                                : data_get($field, 'default');
+                            @php
+                                $valueOrDefault = isset($item->{$field->id})
+                                    ? data_get($item, $field->id)
+                                    : data_get($field, 'default');
+                            @endphp
                             @if ($field->isEditable)
                                 @includeIfFallback('laramie::partials.fields.edit.'.$field->type, 'laramie::partials.fields.edit.generic')
                             @endif

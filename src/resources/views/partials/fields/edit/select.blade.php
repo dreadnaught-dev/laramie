@@ -11,9 +11,9 @@
     @if ($asRadio)
         @foreach (data_get($field, 'options') as $option)
             @if ($isMultiple)
-                <label class="checkbox-label label has-text-weight-normal"><input type="checkbox" name="{{ $field->id . '[]' }}" value="{{ data_get($option, 'value') }}" {!! in_array(object_get($option, 'value'), $selectedValues) ? 'checked="checked"' : '' !!}>&nbsp;{{ object_get($option, 'text') }}</label>
+                <label class="checkbox-label label has-text-weight-normal"><input type="checkbox" name="{{ $field->id . '[]' }}" value="{{ data_get($option, 'value') }}" {!! in_array(data_get($option, 'value'), $selectedValues) ? 'checked="checked"' : '' !!}>&nbsp;{{ data_get($option, 'text') }}</label>
             @else
-                <label class="radio-label label has-text-weight-normal"><input type="radio" name="{{ $field->id }}" value="{{ data_get($option, 'value') }}" {!! in_array(object_get($option, 'value'), $selectedValues) ? 'checked="checked"' : '' !!}>&nbsp;{{ object_get($option, 'text') }}</label>
+                <label class="radio-label label has-text-weight-normal"><input type="radio" name="{{ $field->id }}" value="{{ data_get($option, 'value') }}" {!! in_array(data_get($option, 'value'), $selectedValues) ? 'checked="checked"' : '' !!}>&nbsp;{{ data_get($option, 'text') }}</label>
             @endif
         @endforeach
     @else
@@ -23,7 +23,7 @@
                     <option value="">Select {{ strtolower($field->label) }}...</option>
                 @endif
                 @foreach (data_get($field, 'options') as $option)
-                    <option value="{{ data_get($option, 'value') }}" {!! in_array(object_get($option, 'value'), $selectedValues) ? 'selected="selected"' : '' !!}>{{ object_get($option, 'text') }}</option>
+                    <option value="{{ data_get($option, 'value') }}" {!! in_array(data_get($option, 'value'), $selectedValues) ? 'selected="selected"' : '' !!}>{{ data_get($option, 'text') }}</option>
                 @endforeach
             </select>
         </div>

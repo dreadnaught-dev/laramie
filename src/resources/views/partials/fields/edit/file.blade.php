@@ -3,13 +3,13 @@
 @php
     $fileInfo = data_get($item, $field->id, (object) []);
     $uploadKey = data_get($fileInfo, 'uploadKey');
-    $uploadType = data_get($field, 'subtype', object_get($field, 'type'));
+    $uploadType = data_get($field, 'subtype', data_get($field, 'type'));
 @endphp
 
 @section('input')
     <div class="reference-wrapper file-wrapper{{ $uploadKey ? ' has-file is-checked' : '' }}">
         <label class="hide-when-no-file top-level-label">
-            <input type="checkbox" class="reference-ids" name="_{{ $field->id }}" {!! $uploadKey ? 'checked="checked"' : '' !!} onchange="$(this).closest('.reference-wrapper').toggleClass('is-checked', $(this).is(':checked'));" value="{{ $uploadKey }}"> Use <span class="selection-info" data-base-url="javascript:void(0);"><a class="js-file-name" onclick="dynamicFileHref(this);" href="javascript:void(0);" target="_blank"><img class="filetype-icon" src="{{ config('laramie.admin_url') }}/assets/icon/{{ data_get($fileInfo, 'uploadKey') }}_50">{{ object_get($fileInfo, 'name') }}</a></span>
+            <input type="checkbox" class="reference-ids" name="_{{ $field->id }}" {!! $uploadKey ? 'checked="checked"' : '' !!} onchange="$(this).closest('.reference-wrapper').toggleClass('is-checked', $(this).is(':checked'));" value="{{ $uploadKey }}"> Use <span class="selection-info" data-base-url="javascript:void(0);"><a class="js-file-name" onclick="dynamicFileHref(this);" href="javascript:void(0);" target="_blank"><img class="filetype-icon" src="{{ config('laramie.admin_url') }}/assets/icon/{{ data_get($fileInfo, 'uploadKey') }}_50">{{ data_get($fileInfo, 'name') }}</a></span>
         </label>
         <div class="hide-when-file">
             <div class="columns is-vcentered">

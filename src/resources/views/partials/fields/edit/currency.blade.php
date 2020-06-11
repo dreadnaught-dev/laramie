@@ -12,7 +12,7 @@
 <div class="field {{ $hasError ? 'is-danger' : '' }}" data-field-key="{{ $fieldKey }}" data-field-type="{{ $field->type }}">
     <label class="label" for="{{ $fieldKey }}">{!! $field->label !!}</label>
     <div class="control has-icons-left {{ $hasError ? 'has-icons-right' : '' }}">
-        <input type="number" class="input is-{{ $field->type }}" id="{{ $field->id }}" name="{{ $field->id }}" value="{{ data_get($item, $field->id) }}" {!! $field->extra !!} {!! $min !== null ? 'min="'.$min.'"' : '' !!} {!! $max !== null ? 'max="'.$max.'"' : '' !!} {!! $step ? 'step="'.$step.'"' : '' !!} {!! $field->required ? 'required' : '' !!}>
+        <input type="number" class="input is-{{ $field->type }}" id="{{ $field->id }}" name="{{ $field->id }}" value="{{ $valueOrDefault }}" {!! $field->extra !!} {!! $min !== null ? 'min="'.$min.'"' : '' !!} {!! $max !== null ? 'max="'.$max.'"' : '' !!} {!! $step ? 'step="'.$step.'"' : '' !!} {!! $field->required ? 'required' : '' !!}>
         <span class="icon is-small is-left">
             <i class="fas fa-{{ $sign }}-sign"></i>
         </span>

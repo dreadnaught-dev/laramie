@@ -12,10 +12,10 @@
 @section('input')
     <div class="columns">
         <div class="column is-4">
-            <input type="date" class="is-fullwidth input is-date is-timestamp" id="{{ $field->id }}-date" name="{{ $field->id }}-date" value="{{ data_get($item, $fieldKey.'.date') }}" {{ object_get($field, 'extraDate') }} {{ $field->required ? 'required' : '' }}>
+            <input type="date" class="is-fullwidth input is-date is-timestamp" id="{{ $field->id }}-date" name="{{ $field->id }}-date" value="{{ data_get($item, $fieldKey.'.date') }}" {{ data_get($field, 'extraDate') }} {{ $field->required ? 'required' : '' }}>
         </div>
         <div class="column is-4">
-            <input type="time" class="is-fullwidth input is-time is-timestamp" id="{{ $field->id }}-time" name="{{ $field->id }}-time" value="{{ data_get($item, $fieldKey.'.time') }}" step="1" {{ object_get($field, 'extraTime') }} {{ $field->required ? 'required' : '' }}>
+            <input type="time" class="is-fullwidth input is-time is-timestamp" id="{{ $field->id }}-time" name="{{ $field->id }}-time" value="{{ data_get($item, $fieldKey.'.time') }}" step="1" {{ data_get($field, 'extraTime') }} {{ $field->required ? 'required' : '' }}>
         </div>
         <div class="column is-4">
             <span class="select">
