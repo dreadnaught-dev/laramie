@@ -10,7 +10,7 @@
 @section('input')
     <div class="password-wrapper{{ $oldPassword ? ' has-password' : '' }}">
         <label>
-            <input type="checkbox" name="_{{ $field->id }}" {{ $oldPassword ? 'checked="checked"' : '' }} onchange="$(this).parent().next().toggle()" value="{{ $oldPassword }}"> keep existing password
+            <input type="checkbox" name="_{{ $field->id }}" {{ $oldPassword ? 'checked="checked"' : '' }} onchange="$(this).parent().next().toggle()" value="keep"> keep existing password
         </label>
         <div class="password-input">
             <div class="columns">

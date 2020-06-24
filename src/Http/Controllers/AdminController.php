@@ -670,7 +670,7 @@ class AdminController extends Controller
                         })
                         ->join('|');
 
-                    return (object) ['encryptedValue' => $request->get('_'.$fieldName)];
+                    return (object) ['encryptedValue' => 'keep'];
                 }
 
                 return LaramieHelpers::getLaramiePasswordObjectFromPasswordText($value);

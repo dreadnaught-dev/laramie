@@ -350,9 +350,12 @@ class LaramieListener
                         'email' => $item->user,
                         'updated_at' => 'now()',
                     ];
-                    if (data_get($item, 'password.encryptedValue')) {
+
+                    $hashedPassword = data_get($item, 'password.encryptedValue');
+                    if ($hashedPassword && $hashedPassword !== 'keep') {
                         $userInfoToUpdate['password'] = $item->password->encryptedValue;
                     }
+
                     DB::table('users')
                         ->where(config('laramie.username'), $oldUserInfo->user)
                         ->update($userInfoToUpdate);
