@@ -1062,21 +1062,29 @@ class LaramieDataService
         $modelData = $data->toArray();
         $modelData['user_id'] = $this->getUserUuid();
 
-        if (object_get($data, '_origId')) {
-            // Update
-            $archiveId = Uuid::uuid1()->toString();
-            DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [$archiveId, $data->id]);
-            DB::table('laramie_data')->where('id', $data->id)->update($modelData);
-            // Delete the newly inserted archived version if it exactly matches
-            // the updated version. We can potentially mitigate this step by
-            // leveraging the _origData attribute on $data before inserting
-            // the archive version in the first place, but whitespace doesn't
-            // match up between $data->_origData and $modelData['data']...
-            DB::statement('delete from laramie_data_archive where id = ? and data = (select data from laramie_data where id = ?)', [$archiveId, $data->id]);
-        } else {
-            // Insert
-            $modelData['type'] = $model->_type;
-            DB::table('laramie_data')->insert($modelData);
+        try {
+            if (object_get($data, '_origId')) {
+                // Update
+                $archiveId = Uuid::uuid1()->toString();
+                DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [$archiveId, $data->id]);
+                DB::table('laramie_data')->where('id', $data->id)->update($modelData);
+                // Delete the newly inserted archived version if it exactly matches
+                // the updated version. We can potentially mitigate this step by
+                // leveraging the _origData attribute on $data before inserting
+                // the archive version in the first place, but whitespace doesn't
+                // match up between $data->_origData and $modelData['data']...
+                DB::statement('delete from laramie_data_archive where id = ? and data = (select data from laramie_data where id = ?)', [$archiveId, $data->id]);
+            } else {
+                // Insert
+                $modelData['type'] = $model->_type;
+                DB::table('laramie_data')->insert($modelData);
+            }
+        } catch (\Exception $e) {
+            if (config('app.debug', false)) {
+                throw $e; // If we're in debug mode, rethrow the exception for extra context.
+            }
+
+            throw new \Exception();
         }
 
         // Refresh the data from the db (because computed fields may have changed, etc):
