@@ -284,15 +284,20 @@ class LaramieHelpers
             $manager = new ImageManager(['driver' => static::getInterventionImageDriver()]);
             $thumbWidths = [50]; // Currently only make one small thumbnail
             foreach ($thumbWidths as $width) {
+                $tmpThumbnailPath = tempnam(sys_get_temp_dir(), 'LAR');
                 try {
                     $image = $manager->make($filePath);
-                    $tmpThumbnailPath = tempnam(sys_get_temp_dir(), 'LAR');
                     $image->fit($width);
                     $image->save($tmpThumbnailPath);
                     // Save to Laramie's configured storage disk:
                     $thumbnail = new File($tmpThumbnailPath);
                     Storage::disk($storageDisk)->putFileAs('', $thumbnail, static::applyPathPostfix($upload->path, '_'.$width), (object_get($upload, 'isPublic') ? 'public' : 'private'));
-                } catch (\Exception $e) { if (!$swallowErrors) { throw $e; }  }
+                } catch (\Exception $e) {
+                    if (!$swallowErrors) { throw $e; }
+                } finally {
+                    unlink($tmpThumbnailPath);
+                }
+
             }
         }
         // @optimize -- can we add a temp attribute that lets us know if we need to do this

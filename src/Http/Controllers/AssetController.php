@@ -131,7 +131,11 @@ class AssetController extends Controller
         $filePath = LaramieHelpers::getLocalFilePath($fileInfo, $imageKeyParts->postfix); //$imageKeyParts->postfix);
         $manager = new ImageManager(['driver' => LaramieHelpers::getInterventionImageDriver()]);
 
-        return $manager->make($filePath);
+        $image = $manager->make($filePath);
+
+        unlink($filePath);
+
+        return $image;
     }
 
     private function getImageKeyAndPostfix($compositeKey)

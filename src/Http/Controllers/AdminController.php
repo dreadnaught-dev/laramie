@@ -489,6 +489,7 @@ class AdminController extends Controller
 
         $extraInfoToPassToEvents->sidebars = $sidebars;
         $extraInfoToPassToEvents->alert = session()->get('alert');
+        $extraInfoToPassToEvents->formStatus = session()->get('formStatus');
 
         // Generally speaking, if you need to dynamically alter your model for edit, do so in this event:
         Hook::fire(new TransformModelForEdit($model,  $item, $user));
@@ -596,6 +597,7 @@ class AdminController extends Controller
                 ->with('metaId', $metaId)
                 ->with('selectedTab', $selectedTab)
                 ->with('errorMessages', $errorMessages)
+                ->with('formStatus', 'error')
                 ->withErrors($errors);
         }
 
@@ -618,6 +620,7 @@ class AdminController extends Controller
                     object_get($model, 'isSingular') ? route('laramie::dashboard') : route('laramie::go-back', ['modelKey' => $modelKey]),
                     object_get($model, 'isSingular') ? 'dashboard' : 'list page'),
                 ])
+            ->with('formStatus', 'success')
             ->with('status', 'saved');
     }
 

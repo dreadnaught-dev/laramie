@@ -24,10 +24,6 @@ class LaramieUpload extends LaramieModel
     {
         // @NOTE: We _may_ want to use php to copy the file locally if it's a URL...
 
-        //$tmpPath = tempnam(sys_get_temp_dir(), 'LAR');
-        //copy($path, $tmpPath);
-        //$file = new File($tmpPath);
-
         $file = new File($path);
 
         return static::createFromFile($file, $isPublic, $source, $destination);
