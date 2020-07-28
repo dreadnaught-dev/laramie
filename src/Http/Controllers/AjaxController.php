@@ -83,7 +83,7 @@ class AjaxController extends Controller
         // `$keywords` is the search string.
         $keywords = $request->get('keywords');
 
-        // `$tag` is optional. If passed. Force tag match
+        // `$tag` is optional. If passed, force match. Can pass multiple by separating with a pipe character.
         $tag = $request->get('tag');
 
         // `$lookupSubtype` refers to what kind of reference field is being searched (image, file, etc).
@@ -140,7 +140,7 @@ class AjaxController extends Controller
                         $query->select('laramie_data_id')
                             ->from('laramie_data_meta')
                             ->where('type', '=', 'Tag')
-                            ->where(\DB::raw('data->>\'text\''), 'ilike', $tag);
+                            ->whereIn(\DB::raw('data->>\'text\''), array_filter(preg_split('/\s*[|]\s*/', $tag)));
                     });
                 }
                 // Limit by keyword

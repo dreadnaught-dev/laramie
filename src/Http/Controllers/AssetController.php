@@ -6,6 +6,7 @@ use Illuminate\Http\File;
 use Illuminate\Http\Request;
 use Intervention\Image\ImageManager;
 use Storage;
+use Exception;
 
 use Laramie\Hook;
 use Laramie\Hook\PreSave;
@@ -128,7 +129,13 @@ class AssetController extends Controller
     {
         $imageKeyParts = $this->getImageKeyAndPostfix($imageKey);
         $fileInfo = $this->dataService->getFileInfo($imageKeyParts->key);
-        $filePath = LaramieHelpers::getLocalFilePath($fileInfo, $imageKeyParts->postfix); //$imageKeyParts->postfix);
+
+        // Don't try to get an image for a non-image type file
+        if (!in_array(data_get($fileInfo, 'extension'), Globals::SUPPORTED_RASTER_IMAGE_TYPES)) {
+            throw new Exception('File type not supported');
+        }
+
+        $filePath = LaramieHelpers::getLocalFilePath($fileInfo, $imageKeyParts->postfix);
         $manager = new ImageManager(['driver' => LaramieHelpers::getInterventionImageDriver()]);
 
         $image = $manager->make($filePath);

@@ -7,6 +7,8 @@ use Intervention\Image\ImageManager;
 use Illuminate\Http\File;
 use Storage;
 
+use Laramie\Globals;
+
 class LaramieHelpers
 {
     /**
@@ -279,7 +281,7 @@ class LaramieHelpers
         // @optimize -- move thumb gen to postsave
         // If the upload is an image, create thumbnails (for use by the admin)
         $storageDisk = config('laramie.storage_disk');
-        if ($upload->extension && in_array($upload->extension, ['jpeg', 'jpg', 'png', 'gif'])) { // only try to take thumbnails of a subset of allowed image types:
+        if ($upload->extension && in_array($upload->extension, Globals::SUPPORTED_RASTER_IMAGE_TYPES)) { // only try to take thumbnails of a subset of allowed image types:
             $filePath = static::getLocalFilePath($upload);
             $manager = new ImageManager(['driver' => static::getInterventionImageDriver()]);
             $thumbWidths = [50]; // Currently only make one small thumbnail

@@ -19,4 +19,6 @@ class Globals
     const VALID_ICON_TYPES = ['ai', 'avi', 'css', 'csv', 'dbf', 'doc', 'dwg', 'exe', 'file', 'fla', 'html',
         'iso', 'jpg', 'json', 'js', 'mp3', 'mp4', 'pdf', 'png', 'ppt', 'psd', 'rtf',
         'svg', 'txt', 'xls', 'xml', 'zip', ];
+
+    const SUPPORTED_RASTER_IMAGE_TYPES = ['jpeg', 'jgp', 'png', 'gif'];
 }
