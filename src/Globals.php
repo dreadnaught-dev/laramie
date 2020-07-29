@@ -21,4 +21,6 @@ class Globals
         'svg', 'txt', 'xls', 'xml', 'zip', ];
 
     const SUPPORTED_RASTER_IMAGE_TYPES = ['jpeg', 'jpg', 'png', 'gif'];
+
+    const MAX_IMAGE_DIMENSION = 5000;
 }

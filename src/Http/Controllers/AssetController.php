@@ -136,11 +136,27 @@ class AssetController extends Controller
         }
 
         $filePath = LaramieHelpers::getLocalFilePath($fileInfo, $imageKeyParts->postfix);
-        $manager = new ImageManager(['driver' => LaramieHelpers::getInterventionImageDriver()]);
 
-        $image = $manager->make($filePath);
+        try {
+            $dims = getimagesize($filePath);
 
-        unlink($filePath);
+            $width = data_get($dims, 0, 0);
+            $height = data_get($dims, 1, 0);
+            if (!($width && $height)
+                || ($width > Globals::MAX_IMAGE_DIMENSION || $height > Globals::MAX_IMAGE_DIMENSION)
+            ) {
+                throw new Exception('Image size error');
+            }
+
+            $manager = new ImageManager(['driver' => LaramieHelpers::getInterventionImageDriver()]);
+
+            $image = $manager->make($filePath);
+        } catch (Exception $e) {
+            throw $e;
+        }
+        finally {
+            unlink($filePath);
+        }
 
         return $image;
     }

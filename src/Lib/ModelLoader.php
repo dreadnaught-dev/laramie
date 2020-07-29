@@ -4,6 +4,7 @@ namespace Laramie\Lib;
 
 use Exception;
 
+use Laramie\Globals;
 use Laramie\Hook;
 use Laramie\Hooks\ConfigLoaded;
 use Laramie\Hooks\AugmentModelValidator;
@@ -371,6 +372,7 @@ class ModelLoader
                     break;
                 case 'image':
                     $validationRules[] = 'laramie_image:'.implode(',', config('laramie.allowed_image_types'));
+                    $validationRules[] = 'dimensions:max_width='.Globals::MAX_IMAGE_DIMENSION.',max_height='.Globals::MAX_IMAGE_DIMENSION;
                     break;
             }
         }
