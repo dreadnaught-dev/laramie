@@ -242,6 +242,10 @@ class AdminController extends Controller
             Hook::fire(new HandleBulkAction($model, $nameOfBulkAction, $query, $postData, $user, $extra));
 
             DB::commit();
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            $extra->response = $this->redirectToFilteredListPage($modelKey, $request);
+            $alert = (object) ['class' => 'is-danger', 'title' => 'Awww snap! That didn\'t work', 'alert' => config('app.debug') ? $e->getMessage() : 'Sorry, there was an error performing that action.'];
         } catch (Exception $e) {
             DB::rollBack();
             $extra->response = $this->redirectToFilteredListPage($modelKey, $request);
@@ -568,6 +572,10 @@ class AdminController extends Controller
                 $item->_metaId = $metaId;
                 $item = $this->dataService->save($model, $item);
                 DB::commit();
+            } catch (\Illuminate\Database\QueryException $e) {
+                DB::rollBack();
+                $success = false;
+                $errors = ['schemaError' => true, 'message' => config('app.debug') ? $e->getMessage() : ''];
             } catch (\Exception $e) {
                 DB::rollBack();
                 $success = false;
