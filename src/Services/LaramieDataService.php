@@ -1241,15 +1241,9 @@ class LaramieDataService
     {
         $model = $this->getModelByKey($model);
 
-        // $postData is not passed by reference, so making changes here won't affect its value in the caller
-        $postData['sort'] = null;
-        $postData['sort-direction'] = null;
-
-        // For "delete" bulk actions, ensure sure isn't computed field / dynamic / etc.
-        if (data_get($postData, 'bulk-action-operation') === 'delete') {
-            $postData['sort'] = 'created_at';
-            $postData['sort-direction'] = 'asc';
-        }
+        // Override the sort for the bulk action to values we are confident won't cause issues (computed fields, etc, will).
+        $postData['sort'] = 'created_at';
+        $postData['sort-direction'] = 'asc';
 
         return DB::table('laramie_data')
             ->whereIn('id', function ($query) use ($model, $postData) {
