@@ -576,7 +576,7 @@ class AdminController extends Controller
                 DB::rollBack();
                 $success = false;
                 $errors = ['schemaError' => true, 'message' => config('app.debug') ? $e->getMessage() : ''];
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 DB::rollBack();
                 $success = false;
                 $errors = ['schemaError' => true, 'message' => $e->getMessage()];
@@ -825,7 +825,7 @@ class AdminController extends Controller
 
         try {
             $this->dataService->deleteById($modelKey, $id);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $error = $e->getMessage();
         }
 
