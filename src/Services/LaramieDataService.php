@@ -990,79 +990,82 @@ class LaramieDataService
 
     public function save($model, LaramieModel $laramieModel, $validateJson = true, $maxPrefetchDepth = 5, $runSaveHooks = true)
     {
-        $model = $this->getModelByKey($model);
+        $item = null;
 
-        // Save a record of the original id. After saving, we'll reset the item's id back to the original so we have
-        // context as to if the item is new in the PostSave event.
-        $origId = object_get($laramieModel, '_origId');
+        DB::beginTransaction();
+        try {
+            $model = $this->getModelByKey($model);
 
-        /*
-         * Fire pre-save event: listeners MUST be synchronous. This event
-         * enables the ability to dynamically alter the model that will be
-         * saved based on the injected arguments.
-         */
-        if ($runSaveHooks && config('laramie.suppress_events') !== true) {
-            Hook::fire(new PreSave($model, $laramieModel, $this->getUser()));
-        }
+            // Save a record of the original id. After saving, we'll reset the item's id back to the original so we have
+            // context as to if the item is new in the PostSave event.
+            $origId = object_get($laramieModel, '_origId');
 
-        $data = clone $laramieModel;
-        $data->id = $data->id ?: data_get($data, '_metaId', Uuid::uuid1()->toString());
-        $data->updated_at = \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString();
-        if (!object_get($data, '_origId')) {
-            // Insert
-            $data->type = $model->_type;
-            $data->created_at = object_get($data, 'created_at', \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString());
-        } else if (array_key_exists($data->id, $this->cachedItems)) {
-            unset($this->cachedItems[$data->id]);
-        }
-
-        // Relation fields are transformed into the id(s) of the items they
-        // represent before being persisted in the db.
-        $data = $this->flattenRelationships($model, $data);
-
-        // Remove fields that aren't part of the the schema (old attributes
-        // that may have been removed will still exist in archived versions of the
-        // data). Basically what this means is that what gets saved in the db must
-        // comply with the schema.
-        $allowedFields = ['id', 'type', 'created_at', 'updated_at'];
-        foreach ($model->fields as $key => $field) {
-            if (!in_array($field->type, ['computed', 'html'])) {
-                // Don't save computed/html fields (these will be calculated every time the item is accessed).
-                $allowedFields[] = $key;
+            /*
+             * Fire pre-save event: listeners MUST be synchronous. This event
+             * enables the ability to dynamically alter the model that will be
+             * saved based on the injected arguments.
+             */
+            if ($runSaveHooks && config('laramie.suppress_events') !== true) {
+                Hook::fire(new PreSave($model, $laramieModel, $this->getUser()));
             }
-        }
 
-        // Flip the array so we can do O(1) lookups rather than O(N) ones
-        $allowedFields = array_flip($allowedFields);
-        foreach ($data as $key => $field) {
-            if (!preg_match('/^_/', $key) && !array_key_exists($key, $allowedFields)) {
-                unset($data->{$key});
+            $data = clone $laramieModel;
+            $data->id = $data->id ?: data_get($data, '_metaId', Uuid::uuid1()->toString());
+            $data->updated_at = \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString();
+            if (!object_get($data, '_origId')) {
+                // Insert
+                $data->type = $model->_type;
+                $data->created_at = object_get($data, 'created_at', \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString());
+            } else if (array_key_exists($data->id, $this->cachedItems)) {
+                unset($this->cachedItems[$data->id]);
             }
-        }
 
-        if ($validateJson) {
-            // Perform JSON schema validation on the model. The real benefit of
-            // this is when users are creating data outside of the admin (and saving
-            // through this method). Validation is still happening to ensure that
-            // what's getting saved adheres to a particular schema.
-            $errors = [];
-            $validator = new Validator();
-            $validator->check($data, object_get($model, '_jsonValidator', ModelLoader::getValidationSchema($model)));
-            if (!$validator->isValid()) {
-                foreach ($validator->getErrors() as $error) {
-                    $errors[] = sprintf('%s: %s', $error['property'], $error['message']);
+            // Relation fields are transformed into the id(s) of the items they
+            // represent before being persisted in the db.
+            $data = $this->flattenRelationships($model, $data);
+
+            // Remove fields that aren't part of the the schema (old attributes
+            // that may have been removed will still exist in archived versions of the
+            // data). Basically what this means is that what gets saved in the db must
+            // comply with the schema.
+            $allowedFields = ['id', 'type', 'created_at', 'updated_at'];
+            foreach ($model->fields as $key => $field) {
+                if (!in_array($field->type, ['computed', 'html'])) {
+                    // Don't save computed/html fields (these will be calculated every time the item is accessed).
+                    $allowedFields[] = $key;
                 }
             }
 
-            if ($errors) {
-                throw new Exception(implode('<br>', $errors));
+            // Flip the array so we can do O(1) lookups rather than O(N) ones
+            $allowedFields = array_flip($allowedFields);
+            foreach ($data as $key => $field) {
+                if (!preg_match('/^_/', $key) && !array_key_exists($key, $allowedFields)) {
+                    unset($data->{$key});
+                }
             }
-        }
 
-        $modelData = $data->toArray();
-        $modelData['user_id'] = $this->getUserUuid();
+            if ($validateJson) {
+                // Perform JSON schema validation on the model. The real benefit of
+                // this is when users are creating data outside of the admin (and saving
+                // through this method). Validation is still happening to ensure that
+                // what's getting saved adheres to a particular schema.
+                $errors = [];
+                $validator = new Validator();
+                $validator->check($data, object_get($model, '_jsonValidator', ModelLoader::getValidationSchema($model)));
+                if (!$validator->isValid()) {
+                    foreach ($validator->getErrors() as $error) {
+                        $errors[] = sprintf('%s: %s', $error['property'], $error['message']);
+                    }
+                }
 
-        try {
+                if ($errors) {
+                    throw new Exception(implode('<br>', $errors));
+                }
+            }
+
+            $modelData = $data->toArray();
+            $modelData['user_id'] = $this->getUserUuid();
+
             if (object_get($data, '_origId')) {
                 // Update
                 $archiveId = Uuid::uuid1()->toString();
@@ -1079,34 +1082,38 @@ class LaramieDataService
                 $modelData['type'] = $model->_type;
                 DB::table('laramie_data')->insert($modelData);
             }
-        } catch (\Exception $e) {
-            if (config('app.debug', false)) {
-                throw $e; // If we're in debug mode, rethrow the exception for extra context.
+
+            // Refresh the data from the db (because computed fields may have changed, etc):
+            $item = $this->findById($model, $data->id, $maxPrefetchDepth);
+
+            /*
+             * Fire post-save event: listeners MAY be asynchronous. This event
+             * enables the ability to perform actions _after_ an item is saved,
+             * such as deliver email or implement a custom workflow for a model. To
+             * aid serialization, we're only injecting the string of the model type
+             * and the id of the item saved.
+             *
+             * Note that because we're selecting the item from the db, we need to
+             * pass additional context with the item to help listeners determine if
+             * it was a new item or not:
+             */
+
+            $item->_wasNew = !object_get($data, '_origId');
+
+            if ($runSaveHooks && config('laramie.suppress_events') !== true) {
+                Hook::fire(new PostSave($model, $item, $this->getUser()));
+                event(new ItemSaved($model, $item, $this->getUser()));
             }
 
-            throw new \Exception();
-        }
-
-        // Refresh the data from the db (because computed fields may have changed, etc):
-        $item = $this->findById($model, $data->id, $maxPrefetchDepth);
-
-        /*
-         * Fire post-save event: listeners MAY be asynchronous. This event
-         * enables the ability to perform actions _after_ an item is saved,
-         * such as deliver email or implement a custom workflow for a model. To
-         * aid serialization, we're only injecting the string of the model type
-         * and the id of the item saved.
-         *
-         * Note that because we're selecting the item from the db, we need to
-         * pass additional context with the item to help listeners determine if
-         * it was a new item or not:
-         */
-
-        $item->_wasNew = !object_get($data, '_origId');
-
-        if ($runSaveHooks && config('laramie.suppress_events') !== true) {
-            Hook::fire(new PostSave($model, $item, $this->getUser()));
-            event(new ItemSaved($model, $item, $this->getUser()));
+            DB::commit();
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            throw config('app.debug')
+                ? $e
+                : new Exception('Error saving item');
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw $e;
         }
 
         return $item;
@@ -1147,7 +1154,12 @@ class LaramieDataService
             }
 
             DB::commit();
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            throw config('app.debug')
+                ? $e
+                : new Exception('Error deleting item');
+        } catch (Exception $e) {
             DB::rollBack();
             throw $e;
         }

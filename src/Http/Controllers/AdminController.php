@@ -567,17 +567,10 @@ class AdminController extends Controller
         // within the save method there is an additional stage of validation that
         // utilizes the model's json schema.
         if ($success) {
-            DB::beginTransaction();
             try {
                 $item->_metaId = $metaId;
                 $item = $this->dataService->save($model, $item);
-                DB::commit();
-            } catch (\Illuminate\Database\QueryException $e) {
-                DB::rollBack();
-                $success = false;
-                $errors = ['schemaError' => true, 'message' => config('app.debug') ? $e->getMessage() : ''];
             } catch (Exception $e) {
-                DB::rollBack();
                 $success = false;
                 $errors = ['schemaError' => true, 'message' => $e->getMessage()];
             }
