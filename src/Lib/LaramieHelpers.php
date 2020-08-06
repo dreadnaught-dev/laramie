@@ -69,19 +69,21 @@ class LaramieHelpers
             case 'currency':
             case 'month':
             case 'tel':
-            case 'radio':
             case 'url':
             case 'week':
             case 'time':
             case 'checkbox':
             case 'computed':
                 return $value;
+            case 'radio':
             case 'select':
-                if (is_array($value)) {
-                    return implode(', ', $value);
-                }
+                $options = collect(data_get($field, 'options', []));
+                $value = is_array($value) ? $value : [ $value ];
+                $returnValue = collect($value)->map(function ($item, $key) use ($options) {
+                    return data_get($options->firstWhere('value', $item), 'text', $item);
+                });
 
-                return $value;
+                return implode(', ', $returnValue->toArray());
             case 'color':
                 return sprintf('<span style="color:%s">%s</span>', $value, $value);
             case 'range':
@@ -95,7 +97,7 @@ class LaramieHelpers
                     return object_get($e, '_alias');
                 })->implode(', ');
             case 'boolean':
-                return $value ? 'yes' : 'no';
+                return $value ? 'Yes' : 'No';
             case 'date':
             case 'dbtimestamp':
                 $dateFormat = config('laramie.date_presentation_format') ?: 'Y-m-d'; // Carbon's default if none provided
