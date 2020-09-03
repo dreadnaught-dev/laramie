@@ -4,9 +4,19 @@
 
     $isRepeatable = $field->isRepeatable;
     $aggregateDepth = isset($aggregateDepth) ? $aggregateDepth + 1 : 1;
+
+    $showWhen = null;
+
+    if (data_get($field, 'showWhen')) {
+        $parts = array_filter(array_slice(explode('}}_', $aggregateField->id), 0, -1));
+        $parts[] = data_get($aggregateField, 'showWhen');
+        $showWhen = implode('}}_', $parts);
+    }
 @endphp
 
-<div class="aggregate-outer-wrapper has-margin-bottom {{ data_get($aggregateField, 'asTab') ? 'is-tab tab-'.str_slug($aggregateField->label) . ($selectedTab == str_slug($aggregateField->label) ? ' is-active' : '') : '' }}" {!! data_get($aggregateField, 'showWhen') ? 'data-show-when="'.preg_replace('/_[^_]+_\b/', '_'.data_get($aggregateField, 'showWhen'), $field->id).'"' : '' !!}>
+<div class="aggregate-outer-wrapper has-margin-bottom {{ data_get($aggregateField, 'asTab') ? 'is-tab tab-'.str_slug($aggregateField->label) . ($selectedTab == str_slug($aggregateField->label) ? ' is-active' : '') : '' }}"
+    {!! $showWhen ? 'data-show-when="'.$showWhen.'"' : '' !!}
+>
     @if (data_get($aggregateField, 'hideLabel') !== true)
         <h4 class="title is-4" style="margin: 1.5rem 0 .75rem">
             {{ $aggregateField->isRepeatable ? $aggregateField->labelPlural : $aggregateField->label }}
