@@ -382,6 +382,10 @@ class LaramieDataService
             return $field.'::text';
         }
 
+        if (in_array($field, ['created_at', 'updated_at'])) {
+            return $field;
+        }
+
         $modelField = data_get($model->fields, $field);
 
         $isComputedField = data_get($modelField, 'type') === 'computed';
@@ -392,7 +396,6 @@ class LaramieDataService
             return 'data';
         }
         if ($modelFieldType == 'dbtimestamp') {
-            // If we're searching by created_at or updated_at, the sql we're searching against to unix timestamp values. We'll be doing a similar conversion to the values being searched for.
             if ($isComputedField) {
                 $field = 'date_part(\'epoch\', '.preg_replace('/^_/', '', $modelField->sql).'::timestamp)::int';
             } else {
