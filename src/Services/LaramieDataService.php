@@ -1011,11 +1011,20 @@ class LaramieDataService
 
             $data = clone $laramieModel;
             $data->id = $data->id ?: data_get($data, '_metaId', Uuid::uuid1()->toString());
-            $data->updated_at = \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString();
+
+            $isUpdateTimestamps = (bool) data_get($data, 'timestamps', true);
+            unset($data->{'timestamps'});
+
+            $dbNow = \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString();
+
+            if ($isUpdateTimestamps || !object_get($data, '_origId')) {
+                $data->updated_at = $dbNow;
+            }
+
             if (!object_get($data, '_origId')) {
                 // Insert
                 $data->type = $model->_type;
-                $data->created_at = object_get($data, 'created_at', \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString());
+                $data->created_at = object_get($data, 'created_at', $dbNow);
             } else if (array_key_exists($data->id, $this->cachedItems)) {
                 unset($this->cachedItems[$data->id]);
             }
