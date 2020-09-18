@@ -76,7 +76,7 @@ $(document).ready(function() {
         var isChecked = $item.is(":checked");
 
         if ($item.is(".js-select-all")) {
-            $("#main-list-table .js-item-id").prop("checked", isChecked).trigger('change');
+            $("#main-list-table .js-item-id:not([disabled])").prop("checked", isChecked).trigger('change');
         } else if (!isChecked) {
             $(".js-select-all").prop("checked", false);
         } else if (isChecked) {
