@@ -142,6 +142,8 @@ class AdminController extends Controller
         // Fire the `PreList` event. This allows for a user to specify a redirect response if necessary
         Hook::fire(new PreList($model, $this->dataService->getUser(), $extra));
 
+        $modelPrefsKey = data_get($extra, 'modelPrefsKey', $modelKey);
+
         if (data_get($extra, 'response')) {
             return data_get($extra, 'response');
         }
@@ -161,7 +163,7 @@ class AdminController extends Controller
 
         $models = $this->dataService->findByType($model, $options);
 
-        $listableFields = $this->getListableFields($model, (object) object_get($userPrefs, $modelKey.'.listFields', []));
+        $listableFields = $this->getListableFields($model, (object) object_get($userPrefs, $modelPrefsKey.'.listFields', []));
 
         $listFields = $this->getListedFields($listableFields);
 
@@ -268,6 +270,7 @@ class AdminController extends Controller
     {
         $userPrefs = $this->dataService->getUserPrefs();
         $model = $this->dataService->getModelByKey($modelKey);
+        $modelPrefsKey = $request->get('model-prefs-key', $model->_type);
         $weight = 10;
 
         $listFields = [];
@@ -285,12 +288,12 @@ class AdminController extends Controller
             }
         }
 
-        $userPrefs->{$model->_type} = object_get($userPrefs, $model->_type, (object) []);
-        $userPrefs->{$model->_type}->listFields = $listFields;
+        $userPrefs->{$modelPrefsKey} = object_get($userPrefs, $modelPrefsKey, (object) []);
+        $userPrefs->{$modelPrefsKey}->listFields = $listFields;
 
         $this->dataService->saveUserPrefs($userPrefs);
 
-        return $this->redirectToFilteredListPage($modelKey, $request);
+        return redirect()->to(url()->previous());
     }
 
     /**
