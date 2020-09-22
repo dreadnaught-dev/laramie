@@ -46,6 +46,47 @@ class LaramieUser extends LaramieModel
     {
         return static::makeWithAuth($username, $password, $enableApi = false, $enableMfa = false)->save();
     }
+
+    public function getRoles()
+    {
+        return object_get($this, 'roles', []);
+    }
+
+    public function isSuperAdmin()
+    {
+        foreach ($this->getRoles() as $role) {
+            if ($role->id == Globals::SuperAdminRoleId) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function isAdmin()
+    {
+        foreach ($this->getRoles() as $role) {
+            if ($role->id == Globals::AdminRoleId) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function getAbilities()
+    {
+        $abilities = [];
+
+        foreach ($this->getRoles() as $role) {
+            // The `data` attribute contains the abilities the particular role has been granted
+            collect(json_decode(data_get($role->toArray(), 'data')))
+                ->filter(function($item) { return $item === true; })
+                ->each(function($item, $key) use(&$abilities) { $abilities[$key] = true; });
+        }
+
+        return $abilities;
+    }
 }
 
 
