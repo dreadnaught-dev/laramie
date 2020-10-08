@@ -974,7 +974,9 @@ class LaramieDataService
                         ->all();
                 }
             } elseif ($field->type == 'file') {
-                $data->{$key} = data_get($data, $key.'.uploadKey');
+                $data->{$key} = is_string(data_get($data, $key)) && Uuid::isValid($data->{$key})
+                    ? $data->{$key}
+                    : data_get($data, $key.'.uploadKey');
             } elseif ($field->type == 'aggregate') {
                 $aggregateData = data_get($data, $key, null);
                 if (is_array($aggregateData)) {
