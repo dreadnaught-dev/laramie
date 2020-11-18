@@ -100,14 +100,7 @@ class LaramieDataService
 
     public function saveUserPrefs($prefs)
     {
-        $user = $this->getUser();
-        $user->prefs = $prefs;
-        if (request()->hasSession()) {
-            request()->session()->put('_laramie', $user);
-        }
-        DB::statement('update laramie_data set data = jsonb_set(data, \'{prefs}\', \''.json_encode($prefs).'\', true) where id = ?', [$user->id]);
-
-        return $user;
+        DB::statement('update laramie_data set data = jsonb_set(data, \'{prefs}\', \''.json_encode($prefs).'\', true) where id = ?', [$this->getUser()->id]);
     }
 
     public function findTypeByTag($model, $tag)
