@@ -6,9 +6,9 @@
                 echo '<a class="navbar-item is-hidden-desktop navbar-link">'.$friendlyName.'</a>';
                 headerMenu($modelKeyOrChild, $currentRoute, $user);
             } else {
-                $hasAccess = $user->isSuperAdmin
-                   || $user->isAdmin
-                   || in_array($modelKeyOrChild, $user->abilities);
+                $hasAccess = $user->isSuperAdmin()
+                   || $user->isAdmin()
+                   || in_array($modelKeyOrChild, $user->getAbilities());
                 if (!$hasAccess) {
                     continue;
                 }

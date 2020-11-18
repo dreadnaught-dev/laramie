@@ -8,6 +8,7 @@ use Storage;
 use Ramsey\Uuid\Uuid;
 use JsonSchema\Validator;
 
+use Laramie\LaramieUser;
 use Laramie\Hook;
 use Laramie\Lib\FileInfo;
 use Laramie\Lib\LaramieHelpers;
@@ -27,6 +28,7 @@ class LaramieDataService
 {
     protected $jsonConfig;
     protected $cachedItems = [];
+    protected static $cachedUser = null;
 
     public function __construct()
     {
@@ -60,11 +62,25 @@ class LaramieDataService
 
     public function getUser()
     {
-        if (!app()->runningInConsole()) {
-            return data_get(auth()->user(), '_laramie', (request()->hasSession() ? request()->session()->get('_laramie') : null));
+        if (!self::$cachedUser) {
+            if (!app()->runningInConsole()) {
+                // If set here, it's because this is an API request (set in ApiAuthenticate directly on the auth()->user() object as there's no session).
+                $laramieUserId = data_get(auth()->user(), '_laramie');
+
+                if (!$laramieUserId) {
+                    $laramieUserId = session()->get('_laramie', Uuid::uuid4()->toString());
+                    if (gettype($laramieUserId) === 'object') {
+                        $laramieUserId = data_get($laramieUserId, 'id');
+                    }
+                }
+
+                self::$cachedUser = LaramieUser::depth(1)
+                    ->filterQuery(false)
+                    ->find($laramieUserId);
+            }
         }
 
-        return null;
+        return self::$cachedUser;
     }
 
     public function getUserPrefs()
@@ -129,7 +145,7 @@ class LaramieDataService
         }
 
         $options['curDepth'] = $curDepth;
-        if (config('laramie.suppress_events') !== true) {
+        if (config('laramie.suppress_events') !== true && data_get($options, 'filterQuery', true) !== false) {
             Hook::fire(new PostFetch($model, $laramieModels, $this->getUser(), $options));
         }
 

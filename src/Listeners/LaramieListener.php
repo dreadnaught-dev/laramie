@@ -86,7 +86,7 @@ class LaramieListener
                 // authentication -- we don't need to worry about limiting the
                 // query by the user in this case -- it's just to get the list of
                 // their roles.
-                if ($user !== null && !($user->isSuperAdmin || $user->isAdmin)) {
+                if ($user !== null && !($user->isSuperAdmin() || $user->isAdmin())) {
                     $query->whereNotIn('id', [Globals::SuperAdminRoleId, Globals::AdminRoleId]);
                 }
                 break;

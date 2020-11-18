@@ -10,7 +10,7 @@
                 Last updated {{ \Carbon\Carbon::parse($item->updated_at, config('laramie.timezone'))->toDayDateTimeString() }}
                 @if (object_get($lastUserToUpdate, 'id'))
                     by
-                    @if ($user->isSuperAdmin || $user->isAdmin)
+                    @if ($user->isSuperAdmin() || $user->isAdmin())
                         <a href="{{ route('laramie::edit', ['modelKey' => 'laramieUser', 'id' => $lastUserToUpdate->id]) }}">{{ $lastUserToUpdate->user }}</a>
                     @else
                         {{ $lastUserToUpdate->user }}
