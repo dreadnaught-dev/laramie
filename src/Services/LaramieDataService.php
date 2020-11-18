@@ -28,6 +28,7 @@ class LaramieDataService
 {
     protected $jsonConfig;
     protected $cachedItems = [];
+    protected static $isFetchingUser = false;
     protected static $cachedUser = null;
 
     public function __construct()
@@ -74,9 +75,13 @@ class LaramieDataService
                     }
                 }
 
+                self::$isFetchingUser = true;
+
                 self::$cachedUser = LaramieUser::depth(1)
                     ->filterQuery(false)
                     ->find($laramieUserId);
+
+                self::$isFetchingUser = false;
             }
         }
 
@@ -145,7 +150,7 @@ class LaramieDataService
         }
 
         $options['curDepth'] = $curDepth;
-        if (config('laramie.suppress_events') !== true && data_get($options, 'filterQuery', true) !== false) {
+        if (config('laramie.suppress_events') !== true && !self::$isFetchingUser) {
             Hook::fire(new PostFetch($model, $laramieModels, $this->getUser(), $options));
         }
 
@@ -779,7 +784,7 @@ class LaramieDataService
         $this->cachedItems[$item->id] = $item;
 
         $itemCollection = collect([$item]); // Wrap the single item in a collection to give `PostFetch` a consistent interface -- it works on collection-like items
-        if (config('laramie.suppress_events') !== true) {
+        if (config('laramie.suppress_events') !== true && !self::$isFetchingUser) {
             Hook::fire(new PostFetch($model, $itemCollection, $this->getUser()));
         }
 
