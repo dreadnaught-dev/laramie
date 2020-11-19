@@ -23,9 +23,9 @@ class MenuHelper
             $itemIsVisible = false;
             switch (gettype($value)) {
                 case 'string':
-                    $itemIsVisible = $this->user->isSuperAdmin
-                       || $this->user->isAdmin
-                       || in_array($value, $this->user->abilities);
+                    $itemIsVisible = $this->user->isSuperAdmin()
+                       || $this->user->isAdmin()
+                       || in_array($value, $this->user->getAbilities());
 
                     $node->$key = (object) [
                         'isLeaf' => true,

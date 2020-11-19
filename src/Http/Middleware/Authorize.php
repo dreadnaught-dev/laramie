@@ -5,6 +5,8 @@ namespace Laramie\Http\Middleware;
 use Closure;
 use Illuminate\Contracts\Auth\Factory as Auth;
 
+use Laramie\Services\LaramieDataService;
+
 class Authorize
 {
     /**
@@ -40,10 +42,11 @@ class Authorize
     {
         if ($this->auth->check() && $request->route()->hasParameter('modelKey')) {
             $modelKey = $request->route()->parameter('modelKey');
-            $laramieUser = object_get($this->auth->user(), '_laramie', ($request->hasSession() ? $request->session()->get('_laramie') : null));
-            $hasAccess = $laramieUser->isSuperAdmin
-               || $laramieUser->isAdmin
-               || in_array($modelKey, $laramieUser->abilities);
+            $service = app(LaramieDataService::class);
+            $laramieUser = $service->getUser();
+            $hasAccess = $laramieUser->isSuperAdmin()
+               || $laramieUser->isAdmin()
+               || in_array($modelKey, $laramieUser->getAbilities());
             if (!$hasAccess) {
                 abort(403, 'Unauthorized.');
             }

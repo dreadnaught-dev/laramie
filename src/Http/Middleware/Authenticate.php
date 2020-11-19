@@ -54,10 +54,11 @@ class Authenticate
             return $next($request);
         }
 
-        // If the user is already logged, we don't need go any further
+        // If the user is already logged in, we don't need go any further
         if (!$request->session()->has('_laramie')) {
             // Get the laramieUser that's linked to the Laravel one (via `$linkedField`)
-            $user = LaramieUser::where('user', '=', $this->auth->user()->{$linkedField})
+            $user = LaramieUser::superficial()
+                ->where('user', '=', $this->auth->user()->{$linkedField})
                 ->where('status', '=', 'Active')
                 ->first();
 
@@ -78,38 +79,15 @@ class Authenticate
                     }
                 }
 
-                // @TODO -- move the following to be methods on laramieuser model
-                $userRoles = object_get($user, 'roles', []);
-                $abilities = [];
-                $isSuperAdmin = false;
-                $isAdmin = false;
-
-                foreach ($userRoles as $role) {
-                    $isSuperAdmin = $isSuperAdmin || $role->id == Globals::SuperAdminRoleId;
-                    $isAdmin = $isAdmin || $role->id == Globals::AdminRoleId;
-                    if ($isSuperAdmin || $isAdmin) {
-                        // Don't dive deeper if the user is an admin or super admin -- both have access to all non system models (see [Authorize.md](Authorize.md).
-                        continue;
-                    }
-                    // The `data` attribute contains the abilities the particular role has been granted
-                    collect(json_decode(data_get($role->toArray(), 'data')))
-                        ->filter(function($item) { return $item === true; })
-                        ->each(function($item, $key) use(&$abilities) { $abilities[$key] = true; });
-                }
-
-                $user->isSuperAdmin = $isSuperAdmin;
-                $user->isAdmin = $isAdmin;
-                $user->abilities = array_keys($abilities);
-
                 // Save all the above processing to the user's session so we don't have to do it on every request
-                $request->session()->put('_laramie', $user);
+                $request->session()->put('_laramie', $user->id);
                 $userUuid = $user->id;
             }
         }
 
         // At this point a user should have been authenticated by above, or have session info set. If not, throw an auth
         // exception.
-        if ($userUuid === null && object_get($request->session()->get('_laramie'), 'id') === null) {
+        if ($userUuid === null && $request->session()->get('_laramie') === null) {
             throw new AuthorizationException('You are not authorized for access.');
         }
 

@@ -8,6 +8,7 @@ use Storage;
 use Ramsey\Uuid\Uuid;
 use JsonSchema\Validator;
 
+use Laramie\LaramieUser;
 use Laramie\Hook;
 use Laramie\Lib\FileInfo;
 use Laramie\Lib\LaramieHelpers;
@@ -27,6 +28,8 @@ class LaramieDataService
 {
     protected $jsonConfig;
     protected $cachedItems = [];
+    protected static $isFetchingUser = false;
+    protected static $cachedUser = null;
 
     public function __construct()
     {
@@ -60,11 +63,29 @@ class LaramieDataService
 
     public function getUser()
     {
-        if (!app()->runningInConsole()) {
-            return data_get(auth()->user(), '_laramie', (request()->hasSession() ? request()->session()->get('_laramie') : null));
+        if (!self::$cachedUser) {
+            if (!app()->runningInConsole()) {
+                // If set here, it's because this is an API request (set in ApiAuthenticate directly on the auth()->user() object as there's no session).
+                $laramieUserId = data_get(auth()->user(), '_laramie');
+
+                if (!$laramieUserId) {
+                    $laramieUserId = session()->get('_laramie', Uuid::uuid4()->toString());
+                    if (gettype($laramieUserId) === 'object') {
+                        $laramieUserId = data_get($laramieUserId, 'id');
+                    }
+                }
+
+                self::$isFetchingUser = true;
+
+                self::$cachedUser = LaramieUser::depth(1)
+                    ->filterQuery(false)
+                    ->find($laramieUserId);
+
+                self::$isFetchingUser = false;
+            }
         }
 
-        return null;
+        return self::$cachedUser;
     }
 
     public function getUserPrefs()
@@ -79,14 +100,7 @@ class LaramieDataService
 
     public function saveUserPrefs($prefs)
     {
-        $user = $this->getUser();
-        $user->prefs = $prefs;
-        if (request()->hasSession()) {
-            request()->session()->put('_laramie', $user);
-        }
-        DB::statement('update laramie_data set data = jsonb_set(data, \'{prefs}\', \''.json_encode($prefs).'\', true) where id = ?', [$user->id]);
-
-        return $user;
+        DB::statement('update laramie_data set data = jsonb_set(data, \'{prefs}\', \''.json_encode($prefs).'\', true) where id = ?', [$this->getUser()->id]);
     }
 
     public function findTypeByTag($model, $tag)
@@ -129,7 +143,7 @@ class LaramieDataService
         }
 
         $options['curDepth'] = $curDepth;
-        if (config('laramie.suppress_events') !== true) {
+        if (config('laramie.suppress_events') !== true && !self::$isFetchingUser) {
             Hook::fire(new PostFetch($model, $laramieModels, $this->getUser(), $options));
         }
 
@@ -763,7 +777,7 @@ class LaramieDataService
         $this->cachedItems[$item->id] = $item;
 
         $itemCollection = collect([$item]); // Wrap the single item in a collection to give `PostFetch` a consistent interface -- it works on collection-like items
-        if (config('laramie.suppress_events') !== true) {
+        if (config('laramie.suppress_events') !== true && !self::$isFetchingUser) {
             Hook::fire(new PostFetch($model, $itemCollection, $this->getUser()));
         }
 

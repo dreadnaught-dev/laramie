@@ -9,9 +9,9 @@
                 recursivelyPrintMenus($modelKeyOrChild, $depth + 1, $user, $dataService);
                 echo '</div>';
             } else {
-                $hasAccess = $user->isSuperAdmin
-                   || $user->isAdmin
-                   || in_array($modelKeyOrChild, $user->abilities);
+                $hasAccess = $user->isSuperAdmin()
+                   || $user->isAdmin()
+                   || in_array($modelKeyOrChild, $user->getAbilities());
                 if (!$hasAccess) {
                     continue;
                 }
