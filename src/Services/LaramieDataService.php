@@ -77,8 +77,7 @@ class LaramieDataService
 
                 self::$isFetchingUser = true;
 
-                self::$cachedUser = LaramieUser::depth(1)
-                    ->filterQuery(false)
+                self::$cachedUser = LaramieUser::filterQuery(false)
                     ->find($laramieUserId);
 
                 self::$isFetchingUser = false;
