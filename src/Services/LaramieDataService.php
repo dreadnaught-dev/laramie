@@ -723,7 +723,7 @@ class LaramieDataService
         $this->cachedItems = [];
     }
 
-    public function findById($model, $id = null, $maxPrefetchDepth = 5)
+    public function findById($model, $id = null, $maxPrefetchDepth = 5, $options = [])
     {
         $id = is_string($model) && Uuid::isValid($model)
             ? $model
@@ -757,6 +757,10 @@ class LaramieDataService
 
         $query = $this->getBaseQuery($model)
             ->where('id', $id);
+
+        if (config('laramie.suppress_events') !== true && data_get($options, 'filterQuery', true) !== false && !self::$isFetchingUser) {
+            Hook::fire(new FilterQuery($model, $query, $this->getUser(), $options));
+        }
 
         $dbItem = $query->first();
 
@@ -860,7 +864,7 @@ class LaramieDataService
         }
     }
 
-    public function findByIdSuperficial($model, $id)
+    public function findByIdSuperficial($model, $id, $options = [])
     {
         $model = $this->getModelByKey($model);
 
@@ -870,6 +874,10 @@ class LaramieDataService
 
         $query = $this->getBaseQuery($model)
             ->where('id', $id);
+
+        if (config('laramie.suppress_events') !== true && data_get($options, 'filterQuery', true) !== false && !self::$isFetchingUser) {
+            Hook::fire(new FilterQuery($model, $query, $this->getUser(), $options));
+        }
 
         return array_first([LaramieModel::load($query->first())]);
     }
