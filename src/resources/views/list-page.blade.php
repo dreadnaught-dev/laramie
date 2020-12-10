@@ -201,7 +201,7 @@
 
     @include('laramie::handlebars.meta-tags-comments')
 
-    {!! object_get($model, 'listJs', '') !!}
+    {!! implode('', object_get($model, 'listJs', [])) !!}
 @endpush
 
 @section('content')

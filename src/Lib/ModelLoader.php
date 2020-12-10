@@ -30,7 +30,7 @@ class ModelLoader
         $configModifiedTime = 0;
         $configCachedTime = file_exists($cachedConfigPath) ? filemtime($cachedConfigPath) : -1;
 
-        $configs = is_array($configPath) ? $configPath : [$configPath];
+        $configs = static::ensureArray($configPath);
         array_unshift($configs, $adminConfigPath);
 
         $configs = collect($configs)
@@ -117,10 +117,11 @@ class ModelLoader
                 $model->isEditable = object_get($model, 'isEditable', true) !== false;
                 $model->isSystemModel = object_get($model, 'isSystemModel', false) === true;
                 $model->isSingular = object_get($model, 'isSingular', false) === true;
-                $model->editJs = object_get($model, 'editJs', '');
-                $model->editCss = object_get($model, 'editCss', '');
-                $model->listJs = object_get($model, 'listJs', '');
-                $model->listCss = object_get($model, 'listCss', '');
+
+                $model->editJs = static::ensureArray(object_get($model, 'editJs', ''));
+                $model->editCss = static::ensureArray(object_get($model, 'editCss', ''));
+                $model->listJs = static::ensureArray(object_get($model, 'listJs', ''));
+                $model->listCss = static::ensureArray(object_get($model, 'listCss', ''));
 
                 // The model `alias` is the field used to identify the model (gererally the
                 // first field on the list page, is shown when items are being pulled in to a
@@ -247,6 +248,11 @@ class ModelLoader
             // Load the cached version of the config.
             return json_decode(file_get_contents($cachedConfigPath));
         }
+    }
+
+    private static function ensureArray($value)
+    {
+        return array_filter(is_array($value) ? $value : [$value]);
     }
 
     private static function dfValidateField($model, $field, $schema, $validator, &$errors)
