@@ -5,6 +5,7 @@ namespace Laramie;
 use DB;
 use Illuminate\Console\Command;
 
+use App\User;
 use Laramie\Globals;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
@@ -45,6 +46,11 @@ class LaramieUser extends LaramieModel
     public static function createWithAuth($username, $password, $enableApi = false, $enableMfa = false)
     {
         return static::makeWithAuth($username, $password, $enableApi = false, $enableMfa = false)->save();
+    }
+
+    public function getLaravelUser()
+    {
+        return User::where(config('laramie.username'), $this->user)->first();
     }
 
     public function getRoles()
