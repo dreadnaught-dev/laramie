@@ -371,7 +371,7 @@ class LaramieQueryBuilder
         if (count($jsonAttributes) > 0) {
             $jsonSql = collect($jsonAttributes)
                 ->map(function ($item, $key) {
-                    return 'jsonb_set(data, \'{'.preg_replace('/(\.|=\>)/', ',', $key).'}\', \''.json_encode($item).'\', \'true\')';
+                    return 'jsonb_set(data, \'{'.preg_replace('/(\.|=\>)/', ',', $key).'}\', \''.str_replace("'", "''", json_encode($item)).'\', \'true\')';
                 })
                 ->reduce(function ($carry, $item) {
                     return str_replace('jsonb_set(data', 'jsonb_set('.$carry, $item);
