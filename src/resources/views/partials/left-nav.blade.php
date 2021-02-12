@@ -6,7 +6,7 @@
             $tmp->printMenu();
         @endphp
 
-        @if ($user->isSuperAdmin() || $user->isAdmin() || in_array('laramieUpload', $user->getAbilities()))
+        @if ($user->isSuperAdmin() || $user->isAdmin() || $user->hasAbility('laramieUpload'))
             <li>
                 <a href="{{ route('laramie::list', ['modelKey' => 'laramieUpload']) }}">Uploads</a>
             </li>

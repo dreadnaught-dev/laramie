@@ -87,6 +87,11 @@ class LaramieUser extends LaramieModel
 
         return $abilities;
     }
+
+    public function hasAbility($ability)
+    {
+        return array_key_exists($ability, $this->getAbilities());
+    }
 }
 
 
