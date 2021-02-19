@@ -503,7 +503,7 @@ class LaramieModel implements \JsonSerializable
         return static::getLaramieQueryBuilder('setOption', [$optionName, $optionValue]);
     }
 
-    public static function spiderAggregates($isSpiderAggregates)
+    public static function spiderAggregates($isSpiderAggregates = true)
     {
         return static::getLaramieQueryBuilder('spiderAggregates', [$isSpiderAggregates]);
     }

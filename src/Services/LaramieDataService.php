@@ -723,6 +723,13 @@ class LaramieDataService
         $this->cachedItems = [];
     }
 
+    public function removeFromCache($id)
+    {
+        if ($id && array_key_exists($id, $this->cachedItems)) {
+            unset($this->cachedItems[$id]);
+        }
+    }
+
     public function findById($model, $id = null, $maxPrefetchDepth = 5)
     {
         $id = is_string($model) && Uuid::isValid($model)

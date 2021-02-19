@@ -11,7 +11,7 @@
             } else {
                 $hasAccess = $user->isSuperAdmin()
                    || $user->isAdmin()
-                   || in_array($modelKeyOrChild, $user->getAbilities());
+                   || $user->hasAbility($modelKeyOrChild);
                 if (!$hasAccess) {
                     continue;
                 }

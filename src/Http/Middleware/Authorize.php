@@ -46,7 +46,7 @@ class Authorize
             $laramieUser = $service->getUser();
             $hasAccess = $laramieUser->isSuperAdmin()
                || $laramieUser->isAdmin()
-               || in_array($modelKey, $laramieUser->getAbilities());
+               || $laramieUser->hasAbility($modelKey);
             if (!$hasAccess) {
                 abort(403, 'Unauthorized.');
             }

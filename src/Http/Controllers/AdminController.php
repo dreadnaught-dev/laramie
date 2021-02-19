@@ -429,6 +429,8 @@ class AdminController extends Controller
             throw new Exception('Items of this type may not be edited');
         }
 
+        $this->dataService->removeFromCache($id);
+
         // If there's an error on the post, `item` will have been flashed to the session
         $item = session('item') ?: $this->dataService->findById($model, $id, 1);
 
@@ -532,6 +534,7 @@ class AdminController extends Controller
     {
         $this->modelKey = $modelKey;
         $model = $this->dataService->getModelByKey($modelKey);
+        $this->dataService->removeFromCache($id);
         $item = $this->dataService->findById($model, $id);
         $metaId = $request->get('_metaId');
         $selectedTab = $request->get('_selectedTab');
