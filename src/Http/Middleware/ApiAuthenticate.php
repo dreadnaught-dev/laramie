@@ -49,29 +49,13 @@ class ApiAuthenticate
             // Success, creds match, users match, etc. Now find and set their access rights / abilities:
             $laramieDataService = app(LaramieDataService::class);
             $laramieUser = LaramieUser::find($laramieUser->id);
-            $userRoles = object_get($laramieUser, 'roles', []);
-            $abilities = [];
-            $isSuperAdmin = false;
-            $isAdmin = false;
 
-            // Permissions are granted by roles (with super and reg admin being special):
-            foreach ($userRoles as $role) {
-                $isSuperAdmin = $isSuperAdmin || $role->id == Globals::SuperAdminRoleId;
-                $isAdmin = $isAdmin || $role->id == Globals::AdminRoleId;
-                if ($isSuperAdmin || $isAdmin) {
-                    continue;
-                }
-                foreach ($nonSystemModels as $modelType) {
-                    if (object_get($role, $modelType, false) === true) {
-                        $abilities[] = $modelType;
-                    }
-                }
+            if ($request->hasSession()) {
+                $request->session()->put('_laramie', $user->id);
             }
-
-            $laramieUser->isSuperAdmin = $isSuperAdmin;
-            $laramieUser->isAdmin = $isAdmin;
-            $laramieUser->abilities = $abilities;
-            Auth::user()->_laramie = $laramieUser;
+            else {
+                Auth::user()->_laramie = $laramieUser;
+            }
 
             return $next($request);
         }

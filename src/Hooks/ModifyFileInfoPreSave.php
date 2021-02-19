@@ -13,7 +13,7 @@ class ModifyFileInfoPreSave
     public $user;
     public $fileInfo;
 
-    public function __construct(LaramieModel $user, FileInfo $fileInfo)
+    public function __construct($user, FileInfo $fileInfo)
     {
         $this->user = $user;
         $this->fileInfo = $fileInfo;
