@@ -40,10 +40,10 @@ class ApiAuthenticate
         $laramieUser = array_first(\DB::select('select id, data->>\'user\' as user from laramie_data where type = \'laramieUser\' and (data#>>\'{api,enabled}\')::boolean = true and data#>>\'{api,username}\'= ? and data#>>\'{api,password}\' = ? limit 1', [array_get($authArray, 0, -1), array_get($authArray, 1, -1)]));
 
         // Next find the Laravel user that corresponds to the Laramie user:
-        $laravelUser = array_first(\DB::select('select id from users where '.config('laramie.username').' like ?', [object_get($laramieUser, 'user')]));
+        $laravelUser = array_first(\DB::select('select id from users where '.config('laramie.username').' like ?', [data_get($laramieUser, 'user')]));
 
         // Using Laravel, log them in by their id (if it exists)
-        $success = Auth::onceUsingId(object_get($laravelUser, 'id', -1));
+        $success = Auth::onceUsingId(data_get($laravelUser, 'id', -1));
 
         if ($success) {
             // Success, creds match, users match, etc. Now find and set their access rights / abilities:

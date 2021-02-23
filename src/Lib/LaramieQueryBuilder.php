@@ -269,7 +269,7 @@ class LaramieQueryBuilder
     public function firstOrFail()
     {
         $item = $this->first();
-        if (!object_get($item, 'id')) {
+        if (!data_get($item, 'id')) {
             throw new Exception('Item not found');
         }
 
@@ -301,7 +301,7 @@ class LaramieQueryBuilder
     public function findOrFail($id)
     {
         $item = $this->find($id, $this->maxPrefetchDepth);
-        if (!object_get($item, 'id')) {
+        if (!data_get($item, 'id')) {
             throw new Exception('Item not found');
         }
 
@@ -345,10 +345,10 @@ class LaramieQueryBuilder
             } else {
                 $path = preg_split('/(\.|=\>)/', $key);
 
-                for ($i = 0, $fields = object_get($jsonModel, 'fields'); $i < count($path); ++$i ) {
-                    $jsonField = object_get($fields, $path[$i]);
+                for ($i = 0, $fields = data_get($jsonModel, 'fields'); $i < count($path); ++$i ) {
+                    $jsonField = data_get($fields, $path[$i]);
 
-                    $fieldType = object_get($jsonField, 'type');
+                    $fieldType = data_get($jsonField, 'type');
 
                     if ($fieldType === 'computed') {
                         throw new Exception('You may not update computed attributes.');
@@ -356,10 +356,10 @@ class LaramieQueryBuilder
                         throw new Exception('You may not update `reference` attributes via `update()`.');
                     } elseif ($fieldType === 'aggregate') {
                         // Unfortunately, we can't update array values en-masse
-                        if (object_get($jsonField, 'isRepeatable')) {
+                        if (data_get($jsonField, 'isRepeatable')) {
                             throw new Exception('You may not update aggregate arrays in this way (aggregate fields where `isRepeatable` is true).');
                         }
-                        $fields = object_get($jsonField, 'fields'); // select aggregate's fields to dive into
+                        $fields = data_get($jsonField, 'fields'); // select aggregate's fields to dive into
                     }
                 }
 

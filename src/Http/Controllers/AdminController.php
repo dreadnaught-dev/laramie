@@ -117,7 +117,7 @@ class AdminController extends Controller
                 $defaultReport = $request->cookie('default_'.$modelKey);
                 if ($defaultReport) {
                     $report = $this->dataService->findById('laramieSavedReport', $defaultReport);
-                    if (object_get($report, 'id')) {
+                    if (data_get($report, 'id')) {
                         return $this->reportRedirect($report);
                     }
                 }
@@ -131,7 +131,7 @@ class AdminController extends Controller
         }
 
         // Check to see if this is a 'singular' model -- meaning there should only ever be one of them (like settings, etc).
-        if (object_get($model, 'isSingular')) {
+        if (data_get($model, 'isSingular')) {
             return $this->redirectToSingularEdit($model);
         }
 
@@ -163,7 +163,7 @@ class AdminController extends Controller
 
         $models = $this->dataService->findByType($model, $options);
 
-        $listableFields = $this->getListableFields($model, (object) object_get($userPrefs, $modelPrefsKey.'.listFields', []));
+        $listableFields = $this->getListableFields($model, (object) data_get($userPrefs, $modelPrefsKey.'.listFields', []));
 
         $listFields = $this->getListedFields($listableFields);
 
@@ -254,7 +254,7 @@ class AdminController extends Controller
             $alert = (object) ['class' => 'is-danger', 'title' => 'Awww snap! That didn\'t work', 'alert' => $e->getMessage()];
         }
 
-        $response = object_get($extra, 'response');
+        $response = data_get($extra, 'response');
 
         return $alert
             ? $response->with('alert', $alert)
@@ -288,7 +288,7 @@ class AdminController extends Controller
             }
         }
 
-        $userPrefs->{$modelPrefsKey} = object_get($userPrefs, $modelPrefsKey, (object) []);
+        $userPrefs->{$modelPrefsKey} = data_get($userPrefs, $modelPrefsKey, (object) []);
         $userPrefs->{$modelPrefsKey}->listFields = $listFields;
 
         $this->dataService->saveUserPrefs($userPrefs);
@@ -332,7 +332,7 @@ class AdminController extends Controller
 
     private function reportRedirect($report)
     {
-        if (object_get($report, 'relatedModel')) {
+        if (data_get($report, 'relatedModel')) {
             return redirect()->to(route('laramie::list', ['modelKey' => $report->relatedModel]).sprintf('?%s', $report->filterString));
         }
 
@@ -351,7 +351,7 @@ class AdminController extends Controller
     public function modifyReport($id, Request $request)
     {
         $report = $this->dataService->findById('laramieSavedReport', $id);
-        $relatedModel = object_get($report, 'relatedModel');
+        $relatedModel = data_get($report, 'relatedModel');
 
         if ($relatedModel) {
             $modificationType = $request->get('type');
@@ -452,7 +452,7 @@ class AdminController extends Controller
         }
 
         $lastEditor = null;
-        $lastEditorId = object_get($item, 'user_id');
+        $lastEditorId = data_get($item, 'user_id');
         if (Uuid::isValid($lastEditorId)) {
             $lastEditor = $this->dataService->findByIdSuperficial('laramieUser', $lastEditorId);
         }
@@ -466,9 +466,9 @@ class AdminController extends Controller
         }
 
         // Ensure that the user can't create a new 'singular' item
-        if ($item->_isNew && object_get($model, 'isSingular')) {
+        if ($item->_isNew && data_get($model, 'isSingular')) {
             return $this->redirectToSingularEdit($model);
-        } elseif (object_get($model, 'isSingular')) {
+        } elseif (data_get($model, 'isSingular')) {
             session()->put('_laramie_last_list_url', route('laramie::dashboard'));
         }
 
@@ -506,7 +506,7 @@ class AdminController extends Controller
         // If you need to modify your _item_ for edit, generally do so here:
         Hook::fire(new PreEdit($model, $item, $user, $extraInfoToPassToEvents));
 
-        if (object_get($extraInfoToPassToEvents, 'response')) {
+        if (data_get($extraInfoToPassToEvents, 'response')) {
             return $extraInfoToPassToEvents->response;
         }
 
@@ -624,8 +624,8 @@ class AdminController extends Controller
                 'alert' => sprintf('The %s was successfully %s. Continue editing or&nbsp;<a class="has-underline" href="%s">go back to the %s</a>.',
                     $model->name,
                     $id == 'new' ? 'created' : 'updated',
-                    object_get($model, 'isSingular') ? route('laramie::dashboard') : route('laramie::go-back', ['modelKey' => $modelKey]),
-                    object_get($model, 'isSingular') ? 'dashboard' : 'list page'),
+                    data_get($model, 'isSingular') ? route('laramie::dashboard') : route('laramie::go-back', ['modelKey' => $modelKey]),
+                    data_get($model, 'isSingular') ? 'dashboard' : 'list page'),
                 ])
             ->with('formStatus', 'success')
             ->with('status', 'saved');
@@ -642,7 +642,7 @@ class AdminController extends Controller
         $request = request();
         $fieldName = $prefix.$field->_fieldName;
 
-        $fieldValidation = object_get($field, 'validation');
+        $fieldValidation = data_get($field, 'validation');
         if ($fieldValidation) {
             $this->validationRules[$fieldName] = $fieldValidation;
         }
@@ -701,7 +701,7 @@ class AdminController extends Controller
             case 'image':
                 if ($request->hasFile($fieldName)) {
                     // First, check to see if we need to remove an old file
-                    //$this->dataService->removeFile(object_get($item, $fieldName));
+                    //$this->dataService->removeFile(data_get($item, $fieldName));
                     // If it's a new upload, store a record of it -- when the item is edited in the future, we'll use the record to persist upload details.
 
                     // Validate the file _before_ we save it; this fixes the
@@ -716,7 +716,7 @@ class AdminController extends Controller
 
                     return $this->dataService->saveFile(
                         $request->file($fieldName),
-                        object_get($field, 'isPublic', config('laramie.files_are_public_by_default', false)),
+                        data_get($field, 'isPublic', config('laramie.files_are_public_by_default', false)),
                         sprintf('%s.%s', $this->modelKey, $fieldName)
                     );
                 } elseif ($request->get('_'.$fieldName)) {
@@ -730,7 +730,7 @@ class AdminController extends Controller
                     return $this->dataService->getFileInfo($request->get('_'.$fieldName));
                 } else {
                     // check to see if we need to remove an old file
-                    //$this->dataService->removeFile(object_get($item, $fieldName));
+                    //$this->dataService->removeFile(data_get($item, $fieldName));
                     return null;
                 }
                 break;
@@ -896,7 +896,7 @@ class AdminController extends Controller
             abort(403, 'Forbidden');
         }
 
-        $itemId = object_get($item, 'laramie_data_id');
+        $itemId = data_get($item, 'laramie_data_id');
 
         // If an item wasn't found found in the archive, it's likely because the current item was selected
         if (!$item->id) {
@@ -913,7 +913,7 @@ class AdminController extends Controller
 
         $diffs = [];
 
-        foreach (object_get($model, 'fields') as $key => $field) {
+        foreach (data_get($model, 'fields') as $key => $field) {
             $diff = null;
 
             switch ($field->type) {
@@ -922,20 +922,20 @@ class AdminController extends Controller
                     break;
                 case 'aggregate': // Aggregates pose a bit of a challenge -- we could recurse into them... but doing a diff on their json encoded data is easier. I'm fine with that for now.
                 case 'hidden': // Hidden fields can literally be anything (including objects, etc), so we're going to handle the same way we handle aggregates for now.
-                    $diff = $differ->render(json_encode(object_get($previousItem, $key, '{}'), JSON_PRETTY_PRINT), json_encode(object_get($item, $key, '{}'), JSON_PRETTY_PRINT));
+                    $diff = $differ->render(json_encode(data_get($previousItem, $key, '{}'), JSON_PRETTY_PRINT), json_encode(object_get($item, $key, '{}'), JSON_PRETTY_PRINT));
                     break;
                 case 'file':
                 case 'image':
                 case 'reference':
-                    $a = object_get($item, $key, '');
+                    $a = data_get($item, $key, '');
                     $a = collect(is_array($a) ? $a : [$a])
                         ->map(function ($e) {
                             // Depending on context, we may be getting an object (diffing from **current** `$item`), or a string (diffing two old items).
-                            return gettype($e) == 'string' ? $e : object_get($e, 'id');
+                            return gettype($e) == 'string' ? $e : data_get($e, 'id');
                         })
                         ->filter()
                         ->all();
-                    $b = object_get($previousItem, $key, '');
+                    $b = data_get($previousItem, $key, '');
                     $b = array_filter(is_array($b) ? $b : [$b]);
 
                     $aAliases = [];
@@ -944,26 +944,26 @@ class AdminController extends Controller
 
                     foreach ($a as $id) {
                         $tmp = $this->dataService->findById($field->relatedModel, $id);
-                        $aAliases[] = object_get($tmp, object_get($tmpRelatedModel, 'alias', 'id'));
+                        $aAliases[] = data_get($tmp, object_get($tmpRelatedModel, 'alias', 'id'));
                     }
 
                     foreach ($b as $id) {
                         $tmp = $this->dataService->findById($field->relatedModel, $id);
-                        $bAliases[] = object_get($tmp, object_get($tmpRelatedModel, 'alias', 'id'));
+                        $bAliases[] = data_get($tmp, object_get($tmpRelatedModel, 'alias', 'id'));
                     }
 
                     $diff = $differ->render(implode(', ', $bAliases), implode('', $aAliases));
                     break;
                 case 'markdown':
-                    $diff = $differ->render(object_get($previousItem, "$key.markdown", ''), object_get($item, "$key.markdown", ''));
+                    $diff = $differ->render(data_get($previousItem, "$key.markdown", ''), object_get($item, "$key.markdown", ''));
                     break;
                 case 'timestamp':
-                    $previous = sprintf('%s %s %s', object_get($previousItem, "$key.date", ''), object_get($previousItem, "$key.time", ''), object_get($previousItem, "$key.timezone", ''));
-                    $current = sprintf('%s %s %s', object_get($item, "$key.date", ''), object_get($item, "$key.time", ''), object_get($item, "$key.timezone", ''));
+                    $previous = sprintf('%s %s %s', data_get($previousItem, "$key.date", ''), object_get($previousItem, "$key.time", ''), object_get($previousItem, "$key.timezone", ''));
+                    $current = sprintf('%s %s %s', data_get($item, "$key.date", ''), object_get($item, "$key.time", ''), object_get($item, "$key.timezone", ''));
                     $diff = $differ->render($previous, $current);
                     break;
                 default:
-                    $diff = $differ->render(object_get($previousItem, $key, ''), object_get($item, $key, ''));
+                    $diff = $differ->render(data_get($previousItem, $key, ''), object_get($item, $key, ''));
                     break;
             }
 

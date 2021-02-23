@@ -50,7 +50,7 @@ class LaramieDataService
             }
 
             return json_decode(json_encode($modelToReturn));
-        } elseif (object_get($model, '_type')) {
+        } elseif (data_get($model, '_type')) {
             return $model;
         }
         throw new Exception(sprintf('Model type does not exist: `%s`.', $model));
@@ -89,12 +89,12 @@ class LaramieDataService
 
     public function getUserPrefs()
     {
-        return object_get($this->getUser(), 'prefs', (object) []);
+        return data_get($this->getUser(), 'prefs', (object) []);
     }
 
     public function getUserUuid()
     {
-        return object_get($this->getUser(), 'id', null);
+        return data_get($this->getUser(), 'id', null);
     }
 
     public function saveUserPrefs($prefs)
@@ -170,7 +170,7 @@ class LaramieDataService
             ->limit(1);
         $item = $query->first();
 
-        if ($item && object_get($item, 'id')) {
+        if ($item && data_get($item, 'id')) {
             return $item->id;
         }
 
@@ -206,7 +206,7 @@ class LaramieDataService
          * the ability to dynamically change the query that retrieves items based
          * on the injected arguments.
          */
-        if (config('laramie.suppress_events') !== true && object_get($options, 'filterQuery', true) !== false) {
+        if (config('laramie.suppress_events') !== true && data_get($options, 'filterQuery', true) !== false) {
             Hook::fire(new FilterQuery($model, $query, $this->getUser(), $options));
         }
 
@@ -268,12 +268,12 @@ class LaramieDataService
                 // Sort singular reference fields by alias of relation
                 $field = array_get($singularReferenceFields, $sort);
                 $relatedModel = $this->getModelByKey($field->relatedModel);
-                $relatedAlias = object_get($relatedModel->fields, $relatedModel->alias);
+                $relatedAlias = data_get($relatedModel->fields, $relatedModel->alias);
                 $fieldSql = $relatedAlias->type == 'computed' ? $relatedAlias->sql : sprintf('n2.data->>\'%s\'', $relatedAlias->_fieldName);
                 $query->orderBy(DB::raw('(select '.$fieldSql.' from laramie_data as n2 where (laramie_data.data->>\''.$field->_fieldName.'\')::uuid = n2.id)'), array_get($options, 'sortDirection', 'asc'));
             } elseif (in_array($sort, array_keys($numericFields))) {
                 $query->orderBy(DB::raw('(data #>> \'{"'.$sort.'"}\')::float'), array_get($options, 'sortDirection', 'asc'));
-            } elseif (object_get($model->fields, $sort)) {
+            } elseif (data_get($model->fields, $sort)) {
                 // Otherwise, check to see if the sort is part one of the model's dynamic fields:
                 $query->orderBy(DB::raw('data #>> \'{"'.$sort.'"}\''), array_get($options, 'sortDirection', 'asc'));
             }
@@ -292,7 +292,7 @@ class LaramieDataService
                     $value = $filter->value;
 
                     // @TODO -- document that one can specify custom sql to search a field by via adding a `sql` attribute to the filter in `FilterQuery`
-                    $field = object_get($filter, 'sql')
+                    $field = data_get($filter, 'sql')
                         ? $filter->sql
                         : $this->getSearchSqlFromFieldName($model, $filter->field, $value);
 
@@ -301,9 +301,9 @@ class LaramieDataService
                     }
 
                     // Check to see if we need to manipulate `$value` for searching (currently limited to date fields):
-                    $modelField = object_get($model->fields, $filter->field);
+                    $modelField = data_get($model->fields, $filter->field);
                     if ($operation !== 'between-dates' && (in_array($filter->field, ['_created_at', '_updated_at'])
-                        || in_array(object_get($modelField, 'dataType', object_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local'])))
+                        || in_array(data_get($modelField, 'dataType', object_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local'])))
                     {
                         try {
                             $value = \Carbon\Carbon::parse($value, config('laramie.timezone'))->timestamp;
@@ -370,7 +370,7 @@ class LaramieDataService
         }
 
         $quickSearch = array_get($options, 'quickSearch');
-        $quickSearchFields = object_get($model, 'quickSearch');
+        $quickSearchFields = data_get($model, 'quickSearch');
         if ($quickSearch && $quickSearchFields) {
             $quickSearchFields = collect($quickSearchFields)
                 ->map(function ($item) use ($model) { return $this->getSearchSqlFromFieldName($model, $item); })
@@ -444,7 +444,7 @@ class LaramieDataService
                 // If we're searching a reference field by a UUID, don't do the gymnastics of searching by its alias
                 $field = 'data->>\''.$field.'\'';
                 $relatedModel = $this->getModelByKey($modelField->relatedModel);
-                $relatedAlias = object_get($relatedModel->fields, $relatedModel->alias);
+                $relatedAlias = data_get($relatedModel->fields, $relatedModel->alias);
 
                 // If the reference's alias is a computed field, modify the SQL, replacing `laramie_data` with `n2`, because we're nesting the subquery
                 $fieldSql = $relatedAlias->type == 'computed' ? preg_replace('/laramie_data\./', 'n2.', $relatedAlias->sql) : sprintf('n2.data->>\'%s\'', $relatedAlias->_fieldName);
@@ -484,7 +484,7 @@ class LaramieDataService
     {
         // Set a convenience `_alias` attribute -- will be useful to save on logic where we'd otherwise be looking the alias up.
         foreach ($laramieModels as $laramieModel) {
-            $laramieModel->_alias = object_get($laramieModel, $model->alias);
+            $laramieModel->_alias = data_get($laramieModel, $model->alias);
         }
 
         if ($maxPrefetchDepth < 0 || $curDepth < $maxPrefetchDepth) {
@@ -499,7 +499,7 @@ class LaramieDataService
             // First, build up a list of related laramieModels we'll need to pull down.
             foreach ($laramieModels as $laramieModel) {
                 foreach ($referenceFields as $fieldKey => $field) {
-                    $refs = object_get($laramieModel, $fieldKey);
+                    $refs = data_get($laramieModel, $fieldKey);
                     $refs = ($refs && is_array($refs)) ? $refs : [$refs];
                     $refs = collect($refs)
                         ->filter(function ($item) {
@@ -543,7 +543,7 @@ class LaramieDataService
             // Finally, swap out the uuid references with concrete laramieModels.
             foreach ($laramieModels as $laramieModel) {
                 foreach ($referenceFields as $fieldKey => $field) {
-                    $refs = object_get($laramieModel, $fieldKey);
+                    $refs = data_get($laramieModel, $fieldKey);
                     if (is_array($refs)) {
                         $newRefs = [];
                         foreach ($refs as $ref) {
@@ -579,14 +579,14 @@ class LaramieDataService
             ->first();
 
         if ($lastRecord) {
-            $lastRecord->user = object_get(DB::table('laramie_data')
+            $lastRecord->user = data_get(DB::table('laramie_data')
                 ->where('id', $lastRecord->user_id)
                 ->select([DB::raw('data->>\'user\' as user')])
                 ->first(), 'user');
         }
 
-        $meta->user = object_get($lastRecord, 'user');
-        $meta->updatedAt = object_get($lastRecord, 'updated_at');
+        $meta->user = data_get($lastRecord, 'user');
+        $meta->updatedAt = data_get($lastRecord, 'updated_at');
 
         return $meta;
     }
@@ -803,7 +803,7 @@ class LaramieDataService
         // is slightly different. It finds reference fields within aggregates and
         // hydrates them (which in turn is a recursive process).
         foreach ($aggregateFields as $aggregateKey => $aggregateField) {
-            $aggregateData = object_get($item, $aggregateKey);
+            $aggregateData = data_get($item, $aggregateKey);
             $aggregateData = ($aggregateData && is_array($aggregateData)) ? $aggregateData : [$aggregateData];
 
             foreach ($aggregateData as $data) {
@@ -826,7 +826,7 @@ class LaramieDataService
         $prefetchDepth = max(0, $maxPrefetchDepth - 1);
 
         foreach ($aggregateFields as $aggregateKey => $aggregateField) {
-            $aggregateData = object_get($item, $aggregateKey, null);
+            $aggregateData = data_get($item, $aggregateKey, null);
             if ($aggregateData !== null) {
                 $aggregateReferenceFields = collect($aggregateField->fields)
                     ->filter(function ($e) {
@@ -837,7 +837,7 @@ class LaramieDataService
                     // If `$aggregateData` is an array, we're processing a repeatable aggregate.
                     if (is_array($aggregateData)) {
                         for ($i = 0; $i < count($aggregateData); ++$i) {
-                            $aggregateReferenceFieldData = object_get($aggregateData[$i], $aggregateReferenceFieldKey);
+                            $aggregateReferenceFieldData = data_get($aggregateData[$i], $aggregateReferenceFieldKey);
                             if (is_array($aggregateReferenceFieldData)) {
                                 // If `$aggregateReferenceFieldData` is an array, we're processing a `reference-many` field
                                 for ($j = 0; $j < count($aggregateReferenceFieldData); ++$j) {
@@ -850,7 +850,7 @@ class LaramieDataService
                         }
                     } else {
                         // Otherwise, it's not repeatable.
-                        $aggregateReferenceFieldData = object_get($aggregateData, $aggregateReferenceFieldKey);
+                        $aggregateReferenceFieldData = data_get($aggregateData, $aggregateReferenceFieldKey);
                         if (is_array($aggregateReferenceFieldData)) {
                             // If `$aggregateReferenceFieldData` is an array, we're processing a `reference-many` field
                             for ($i = 0; $i < count($aggregateReferenceFieldData); ++$i) {
@@ -1023,7 +1023,7 @@ class LaramieDataService
 
             // Save a record of the original id. After saving, we'll reset the item's id back to the original so we have
             // context as to if the item is new in the PostSave event.
-            $origId = object_get($laramieModel, '_origId');
+            $origId = data_get($laramieModel, '_origId');
 
             /*
              * Fire pre-save event: listeners MUST be synchronous. This event
@@ -1042,14 +1042,14 @@ class LaramieDataService
 
             $dbNow = \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString();
 
-            if ($isUpdateTimestamps || !object_get($data, '_origId')) {
+            if ($isUpdateTimestamps || !data_get($data, '_origId')) {
                 $data->updated_at = $dbNow;
             }
 
-            if (!object_get($data, '_origId')) {
+            if (!data_get($data, '_origId')) {
                 // Insert
                 $data->type = $model->_type;
-                $data->created_at = object_get($data, 'created_at', $dbNow);
+                $data->created_at = data_get($data, 'created_at', $dbNow);
             } else if (array_key_exists($data->id, $this->cachedItems)) {
                 unset($this->cachedItems[$data->id]);
             }
@@ -1085,7 +1085,7 @@ class LaramieDataService
                 // what's getting saved adheres to a particular schema.
                 $errors = [];
                 $validator = new Validator();
-                $validator->check($data, object_get($model, '_jsonValidator', ModelLoader::getValidationSchema($model)));
+                $validator->check($data, data_get($model, '_jsonValidator', ModelLoader::getValidationSchema($model)));
                 if (!$validator->isValid()) {
                     foreach ($validator->getErrors() as $error) {
                         $errors[] = sprintf('%s: %s', $error['property'], $error['message']);
@@ -1100,7 +1100,7 @@ class LaramieDataService
             $modelData = $data->toArray();
             $modelData['user_id'] = $this->getUserUuid();
 
-            if (object_get($data, '_origId')) {
+            if (data_get($data, '_origId')) {
                 // Update
                 $archiveId = Uuid::uuid1()->toString();
                 DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [$archiveId, $data->id]);
@@ -1132,7 +1132,7 @@ class LaramieDataService
              * it was a new item or not:
              */
 
-            $item->_wasNew = !object_get($data, '_origId');
+            $item->_wasNew = !data_get($data, '_origId');
 
             if ($runSaveHooks && config('laramie.suppress_events') !== true) {
                 Hook::fire(new PostSave($model, $item, $this->getUser()));
@@ -1260,7 +1260,7 @@ class LaramieDataService
                 ->where('id', $id)
                 ->first();
 
-            return object_get($laramieUpload, 'id') ? json_decode($laramieUpload->data) : null;
+            return data_get($laramieUpload, 'id') ? json_decode($laramieUpload->data) : null;
         }
 
         return null;
@@ -1269,7 +1269,7 @@ class LaramieDataService
     public function removeFile($fileInfo)
     {
         // If there is no file to remove, return
-        if (!$fileInfo || !object_get($fileInfo, 'uploadKey')) {
+        if (!$fileInfo || !data_get($fileInfo, 'uploadKey')) {
             return;
         }
 

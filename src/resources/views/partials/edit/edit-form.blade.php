@@ -5,7 +5,7 @@
     <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;" tabindex="-1" />
 
     @php
-        $tabbedAggregates = collect(object_get($model, 'fields', []))->filter(function($item){ return $item->isEditable && $item->type == 'aggregate' && object_get($item, 'asTab', false); });
+        $tabbedAggregates = collect(data_get($model, 'fields', []))->filter(function($item){ return $item->isEditable && $item->type == 'aggregate' && object_get($item, 'asTab', false); });
         $hasTabs = count($tabbedAggregates) > 0;
     @endphp
 
@@ -14,7 +14,7 @@
           <ul>
             <li {!! $selectedTab == '_main' ? 'class="is-active"' : '' !!}>
               <a data-tab="_main">
-                {{ object_get($model, 'mainTabLabel', 'Main') }}
+                {{ data_get($model, 'mainTabLabel', 'Main') }}
               </a>
             </li>
             @foreach ($tabbedAggregates as $aggregate)
@@ -28,11 +28,11 @@
         </div>
     @endif
 
-    @foreach (object_get($model, 'fields') as $fieldKey => $field)
+    @foreach (data_get($model, 'fields') as $fieldKey => $field)
         @if ($field->isEditable)
             @php
                 $valueOrDefault = isset($item->{$field->id})
-                    ? object_get($item, $field->id)
+                    ? data_get($item, $field->id)
                     : data_get($field, 'default');
             @endphp
             @includeIfFallback('laramie::partials.fields.edit.'.$field->type, 'laramie::partials.fields.edit.generic')

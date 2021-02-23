@@ -1,6 +1,6 @@
 <div class="card revision-history">
     @php
-        $hideRevisions = object_get($user, 'prefs.hideRevisions', false) === true;
+        $hideRevisions = data_get($user, 'prefs.hideRevisions', false) === true;
     @endphp
     <header class="card-header">
         <p class="card-header-title">Revision History</p>
@@ -13,7 +13,7 @@
     </header>
     <div id="revisions-card-content" class="card-content {{ $hideRevisions ? 'is-hidden' : '' }}">
         <div class="revision-item">
-            <span title="by: {{ object_get($lastEditor, 'user', '--') }}">Current <em><small>({{ \Carbon\Carbon::parse($item->updated_at, config('laramie.timezone'))->toDayDateTimeString() }})</small></em></span>
+            <span title="by: {{ data_get($lastEditor, 'user', '--') }}">Current <em><small>({{ \Carbon\Carbon::parse($item->updated_at, config('laramie.timezone'))->toDayDateTimeString() }})</small></em></span>
             <div>
                 <a href="{{ route('laramie::compare-revisions', ['modelKey' => $model->_type, 'revisionId' => $item->id, 'is-child' => 1]) }}" target="_blank" class="js-compare-revisions">View changes</a>
             </div>

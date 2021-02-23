@@ -8,19 +8,19 @@
 
     $filterableFields = collect($model->fields)
         ->filter(function($e){
-            return object_get($e, 'isSearchable') === true
+            return data_get($e, 'isSearchable') === true
                 || (
                     $e->isListable
-                    && !object_get($e, 'isMetaField', false)
-                    && object_get($e, 'isSearchable') !== false
+                    && !data_get($e, 'isMetaField', false)
+                    && data_get($e, 'isSearchable') !== false
                 );
         })
         ->sortBy('label');
 
     $metaFields = collect($model->fields)
         ->filter(function($e){
-            return object_get($e, 'isMetaField')
-                && object_get($e, 'isSearchable') !== false;
+            return data_get($e, 'isMetaField')
+                && data_get($e, 'isSearchable') !== false;
         })
         ->sortBy('label');
 @endphp
@@ -44,13 +44,13 @@
                             <select name="filter_@{{filterIndex}}_field">
                                 <optgroup label="Fields">
                                     @foreach ($filterableFields as $key => $field)
-                                        <option value="{{ $key }}" {{ object_get($model, 'alias') == $key ? 'selected' : '' }}>{{ $field->label }}</option>
+                                        <option value="{{ $key }}" {{ data_get($model, 'alias') == $key ? 'selected' : '' }}>{{ $field->label }}</option>
                                     @endforeach
                                 </optgroup>
                                 @if ($metaFields->count() > 0)
                                     <optgroup label="Meta">
                                         @foreach ($metaFields as $key => $field)
-                                            <option value="{{ $key }}" {{ object_get($model, 'alias') == $key ? 'selected' : '' }}>{{ $field->label }}</option>
+                                            <option value="{{ $key }}" {{ data_get($model, 'alias') == $key ? 'selected' : '' }}>{{ $field->label }}</option>
                                         @endforeach
                                     </optgroup>
                                 @endif
@@ -201,7 +201,7 @@
 
     @include('laramie::handlebars.meta-tags-comments')
 
-    {!! implode('', object_get($model, 'listJs', [])) !!}
+    {!! implode('', data_get($model, 'listJs', [])) !!}
 @endpush
 
 @section('content')
@@ -245,7 +245,7 @@
                     </p>
                 @endif
                 <p class="control">
-                    <input class="input" type="text" name="quick-search" id="quick-search" placeholder="Quick Search" title="Quickly search by {{ implode(', ', object_get($model, 'quickSearch')) }}" value="{{ $quickSearch }}">
+                    <input class="input" type="text" name="quick-search" id="quick-search" placeholder="Quick Search" title="Quickly search by {{ implode(', ', data_get($model, 'quickSearch')) }}" value="{{ $quickSearch }}">
                 </p>
                 <p class="control">
                     <button class="button is-light">Go</button>
@@ -311,7 +311,7 @@
                         <tr id="row-{{ $m->id }}" class="has-invisibles">
                             <th style="width:1px;"><input type="checkbox" name="bulk-action-ids[]" class="js-item-id" value="{{ $m->id }}"></th>
                             @foreach ($listFields as $key => $field)
-                                @php $displayValue = $viewHelper->formatListValue($field, object_get($m, $key)); @endphp
+                                @php $displayValue = $viewHelper->formatListValue($field, data_get($m, $key)); @endphp
                                 <td{!! $loop->first ? ' class="first-td"' : '' !!}>
                                 @if ($loop->first)
                                     <strong>
@@ -338,7 +338,7 @@
                 </table>
             </div>
 
-            @if ($bulkActions = object_get($model, 'bulkActions', config('laramie.default_bulk_actions')))
+            @if ($bulkActions = data_get($model, 'bulkActions', config('laramie.default_bulk_actions')))
             <div class="level">
                 <div class="level-left">
                     <div class="field">

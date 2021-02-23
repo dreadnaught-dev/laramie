@@ -38,7 +38,7 @@ class MFAController extends Controller
     {
         $user = $this->getLaramieUser();
 
-        $isValid = $this->google2fa->verifyKey(object_get($user, 'mfa.secret'), ($request->get('mfa') ?: ''));
+        $isValid = $this->google2fa->verifyKey(data_get($user, 'mfa.secret'), ($request->get('mfa') ?: ''));
 
         if ($isValid) {
             $request->session()->put('_mfa', 'allow');
@@ -56,8 +56,8 @@ class MFAController extends Controller
 
         $qrCodeImage = $this->google2fa->getQRCodeInline(
             config('laramie.site_name'),
-            object_get($user, 'user'),
-            object_get($user, 'mfa.secret')
+            data_get($user, 'user'),
+            data_get($user, 'mfa.secret')
         );
 
         return view('laramie::mfa.register')
@@ -68,7 +68,7 @@ class MFAController extends Controller
     {
         $user = $this->getLaramieUser();
 
-        $isValid = $this->google2fa->verifyKey(object_get($user, 'mfa.secret'), ($request->get('mfa') ?: ''));
+        $isValid = $this->google2fa->verifyKey(data_get($user, 'mfa.secret'), ($request->get('mfa') ?: ''));
 
         if ($isValid) {
             $user->mfa->registrationCompleted = true;

@@ -67,12 +67,12 @@ class Authenticate
                 $mfaGloballyEnabled = config('laramie.enable_mfa', false);
 
                 if ($mfaGloballyEnabled
-                    && object_get($user, 'mfa.enabled')
+                    && data_get($user, 'mfa.enabled')
                     && !$request->session()->has('_mfa')
                 ) {
                     $request->session()->put('url.intended', url()->current());
                     // Is the user registered? Attempt to authenticate them. Otherwise, register them:
-                    if (object_get($user, 'mfa.registrationCompleted')) {
+                    if (data_get($user, 'mfa.registrationCompleted')) {
                         return redirect()->to(route('laramie::mfa-login'));
                     } else {
                         return redirect()->to(route('laramie::mfa-register'));

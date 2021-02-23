@@ -22,7 +22,7 @@
                         <table class="table is-fullwidth is-hoverable">
                             <thead>
                                 <tr>
-                                    <th><a href="javascript:void(0);" class="js-sort" data-field="alias">{{ object_get($model, 'alias') }}</a></th>
+                                    <th><a href="javascript:void(0);" class="js-sort" data-field="alias">{{ data_get($model, 'alias') }}</a></th>
                                     <th><a href="javascript:void(0);" class="js-sort" data-field="created_at">Created</a></th>
                                     <th><a href="javascript:void(0);" class="js-sort" data-field="exists">Belongs to {{ $model->name }}?</a></th>
                                 </tr>
