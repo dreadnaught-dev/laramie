@@ -7,6 +7,8 @@ use Exception;
 use Illuminate\Http\File;
 use Ramsey\Uuid\Uuid;
 use Storage;
+use Str;
+
 use Laramie\Globals;
 use Laramie\Hook;
 use Laramie\Services\LaramieDataService;
@@ -170,7 +172,7 @@ class LaramieListener
                 break;
             case 'laramieUser':
                 if (!data_get($item, 'api.username')) {
-                    $item->api = (object) ['enabled' => false, 'username' => str_random(Globals::API_TOKEN_LENGTH), 'password' => str_random(Globals::API_TOKEN_LENGTH)];
+                    $item->api = (object) ['enabled' => false, 'username' => Str::random(Globals::API_TOKEN_LENGTH), 'password' => str_random(Globals::API_TOKEN_LENGTH)];
                 }
                 break;
             case 'laramieAlert':

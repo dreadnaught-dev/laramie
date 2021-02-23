@@ -3,12 +3,13 @@
 namespace Laramie\Http\Controllers;
 
 use DB;
-use Illuminate\Http\Request;
 use Exception;
-use Validator;
+use Illuminate\Http\Request;
 use Ramsey\Uuid\Uuid;
-use cogpowered\FineDiff\Granularity\Word;
+use Str;
+use Validator;
 use cogpowered\FineDiff\Diff;
+use cogpowered\FineDiff\Granularity\Word;
 
 use Laramie\Hook;
 use Laramie\Lib\LaramieHelpers;
@@ -408,7 +409,7 @@ class AdminController extends Controller
         $report->user = $this->dataService->getUser();
         $report->relatedModel = $model->_type;
         $report->name = $reportName;
-        $report->key = str_random(10);
+        $report->key = Str::random(10);
         $report->filterString = $filterString;
 
         $report = $this->dataService->save($reportModel, $report);

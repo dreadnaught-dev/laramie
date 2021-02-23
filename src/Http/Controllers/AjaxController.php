@@ -4,9 +4,10 @@ namespace Laramie\Http\Controllers;
 
 use DB;
 use Illuminate\Http\Request;
-use Ramsey\Uuid\Uuid;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Services\LaramieDataService;
+use Ramsey\Uuid\Uuid;
+use Str;
 
 /**
  * The AjaxController is primarily responsible for handling all the AJAX interactions initiated by the list and edit
@@ -45,7 +46,7 @@ class AjaxController extends Controller
 
         if ($transformItems) {
             // The name only needs to be unique per reference in case it's a radio select (this value isn't being submitted).
-            $name = str_random(10);
+            $name = Str::random(10);
             $alias = data_get($model, 'fields.'.$model->alias);
 
             $paginator->setCollection($paginator->getCollection()
