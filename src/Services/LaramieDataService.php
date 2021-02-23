@@ -2,6 +2,7 @@
 
 namespace Laramie\Services;
 
+use Arr;
 use DB;
 use Exception;
 use Storage;

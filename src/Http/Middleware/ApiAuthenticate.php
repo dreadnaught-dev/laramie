@@ -2,6 +2,7 @@
 
 namespace Laramie\Http\Middleware;
 
+use Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Access\AuthorizationException;
 

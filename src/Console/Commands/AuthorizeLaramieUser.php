@@ -2,6 +2,7 @@
 
 namespace Laramie\Console\Commands;
 
+use Arr;
 use DB;
 use Illuminate\Console\Command;
 use Str;
