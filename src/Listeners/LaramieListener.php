@@ -172,7 +172,7 @@ class LaramieListener
                 break;
             case 'laramieUser':
                 if (!data_get($item, 'api.username')) {
-                    $item->api = (object) ['enabled' => false, 'username' => Str::random(Globals::API_TOKEN_LENGTH), 'password' => str_random(Globals::API_TOKEN_LENGTH)];
+                    $item->api = (object) ['enabled' => false, 'username' => Str::random(Globals::API_TOKEN_LENGTH), 'password' => Str::random(Globals::API_TOKEN_LENGTH)];
                 }
                 break;
             case 'laramieAlert':
@@ -225,7 +225,7 @@ class LaramieListener
         $postData['quickSearch'] = array_get($postData, 'quick-search');
 
         // @note -- switching on the slugified version of the bulk action
-        switch (str_slug($nameOfBulkAction)) {
+        switch (Str::slug($nameOfBulkAction)) {
             case 'delete':
                 // First create a backup of the items in the archive table
                 $q1 = clone $query;
@@ -294,7 +294,7 @@ class LaramieListener
                 $outputFile = storage_path(Uuid::uuid4()->toString().'.csv');
                 $writer = \League\Csv\Writer::createFromPath($outputFile, 'w+');
                 $writer->insertAll($csvData);
-                $extra->response = response()->download($outputFile, sprintf('%s_%s.csv', snake_case($model->namePlural), date('Ymd')))->deleteFileAfterSend(true);
+                $extra->response = response()->download($outputFile, sprintf('%s_%s.csv', Str::snake($model->namePlural), date('Ymd')))->deleteFileAfterSend(true);
                 break;
         }
     }

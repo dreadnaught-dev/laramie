@@ -773,7 +773,7 @@ class LaramieDataService
 
         $factory = data_get($model, 'factory', LaramieModel::class);
 
-        $item = array_first($this->prefetchRelationships($model, [$factory::load($dbItem)], $maxPrefetchDepth, 0));
+        $item = Arr::first($this->prefetchRelationships($model, [$factory::load($dbItem)], $maxPrefetchDepth, 0));
 
         // NOTE: we're only diving into aggregate relationships for single item
         // selection. What this means is that reference fields within deeply
@@ -878,7 +878,7 @@ class LaramieDataService
         $query = $this->getBaseQuery($model)
             ->where('id', $id);
 
-        return array_first([LaramieModel::load($query->first())]);
+        return Arr::first([LaramieModel::load($query->first())]);
     }
 
     public function findItemRevisions($id)

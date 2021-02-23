@@ -102,7 +102,7 @@ class AuthorizeLaramieUser extends Command
             $laramieModel->password = $laramiePassword;
         } else {
             // The user already exists
-            $laramieModel = array_first($existingUsers);
+            $laramieModel = Arr::first($existingUsers);
         }
 
         $laramieModel->status = 'Active';

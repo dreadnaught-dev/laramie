@@ -2,7 +2,9 @@
 
 namespace Laramie\Lib;
 
+use Arr;
 use Exception;
+use Str;
 
 use Laramie\Globals;
 use Laramie\Hook;
@@ -453,7 +455,7 @@ class ModelLoader
 
                         return (object) array_merge((array) $tmp, ['text' => $text, 'value' => $value]);
                     } elseif ($type == 'array') {
-                        return (object) ['text' => array_first($item), 'value' => array_last($item)];
+                        return (object) ['text' => Arr::first($item), 'value' => Arr::last($item)];
                     } else {
                         throw new Exception('Select / radio `options` must be a valid array.');
                     }
@@ -714,10 +716,10 @@ class ModelLoader
      */
     private static function getPrettyNamesFromKey($key)
     {
-        $tmp = array_values(array_filter(explode('_', snake_case($key))));
-        $singularName = title_case(implode(' ', $tmp));
-        $tmp[count($tmp) - 1] = str_plural($tmp[count($tmp) - 1]);
-        $pluralName = title_case(implode(' ', $tmp));
+        $tmp = array_values(array_filter(explode('_', Str::snake($key))));
+        $singularName = Str::title(implode(' ', $tmp));
+        $tmp[count($tmp) - 1] = Str::plural($tmp[count($tmp) - 1]);
+        $pluralName = Str::title(implode(' ', $tmp));
 
         // Do a superficial adjustment of titles for consistency see `MLA Style Capitalization Rules`, etc
         $overrides = [

@@ -18,8 +18,8 @@
               </a>
             </li>
             @foreach ($tabbedAggregates as $aggregate)
-                <li {!! $selectedTab == str_slug($aggregate->label) ? 'class="is-active"' : '' !!}>
-                  <a data-tab="{{ str_slug($aggregate->label) }}">
+                <li {!! $selectedTab == \Str::slug($aggregate->label) ? 'class="is-active"' : '' !!}>
+                  <a data-tab="{{ \Str::slug($aggregate->label) }}">
                     {{ $aggregate->isRepeatable ? $aggregate->labelPlural : $aggregate->label }}
                   </a>
                 </li>
