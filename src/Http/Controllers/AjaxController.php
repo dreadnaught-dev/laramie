@@ -6,7 +6,6 @@ use DB;
 use Illuminate\Http\Request;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Services\LaramieDataService;
-use Ramsey\Uuid\Uuid;
 use Str;
 
 /**
@@ -71,12 +70,12 @@ class AjaxController extends Controller
         // Ensure that if items are selected, they're valid uuids
         $uuidCollection = collect(preg_split('/\s*[,|]\s*/', $request->get('selectedItems')))
             ->filter(function ($item) {
-                return $item && Uuid::isValid($item);
+                return $item && LaramieHelpers::isValidUuid($item);
             });
 
         // `$outerItemId` refers to the id of the item being edited (may be null).
         $outerItemId = $request->get('itemId');
-        if (!Uuid::isValid($outerItemId)) {
+        if (!LaramieHelpers::isValidUuid($outerItemId)) {
             $outerItemId = null;
         }
         $invertSearch = $request->get('invertSearch') === 'true';
@@ -305,12 +304,12 @@ class AjaxController extends Controller
     public function modifyRef(Request $request, $modelKey)
     {
         $itemId = $request->get('itemId');
-        if (!Uuid::isValid($itemId)) {
+        if (!LaramieHelpers::isValidUuid($itemId)) {
             $itemId = null;
         }
 
         $referenceItemId = $request->get('referenceId');
-        if (!Uuid::isValid($referenceItemId)) {
+        if (!LaramieHelpers::isValidUuid($referenceItemId)) {
             $referenceItemId = null;
         }
 

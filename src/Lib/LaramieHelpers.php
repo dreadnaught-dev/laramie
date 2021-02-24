@@ -3,8 +3,9 @@
 namespace Laramie\Lib;
 
 use Carbon\Carbon;
-use Intervention\Image\ImageManager;
 use Illuminate\Http\File;
+use Intervention\Image\ImageManager;
+use Ramsey\Uuid\Uuid;
 use Storage;
 
 use Laramie\Globals;
@@ -323,5 +324,14 @@ class LaramieHelpers
                 dd($e->getMessage());
             }
         }
+    }
+
+    public static function isValidUuid(?string $uuid): bool
+    {
+        if ($uuid) {
+            return Uuid::isValid($uuid);
+        }
+
+        return false;
     }
 }

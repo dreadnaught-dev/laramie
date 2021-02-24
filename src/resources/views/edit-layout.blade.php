@@ -2,7 +2,7 @@
 
 @push('extra-header')
     <link href="/laramie/admin/css/trix.css" rel="stylesheet">
-    {!! data_get($model, 'editCss', '') !!}
+    {!! implode('', data_get($model, 'editCss', [])) !!}
 @endpush
 
 @push('scripts')

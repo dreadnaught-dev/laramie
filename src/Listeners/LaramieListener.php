@@ -263,7 +263,7 @@ class LaramieListener
                 } else {
                     $itemIds = collect(data_get($postData, 'bulk-action-ids', []))
                         ->filter(function ($item) {
-                            return $item && Uuid::isValid($item);
+                            return $item && LaramieHelpers::isValidUuid($item);
                         });
                 }
 
