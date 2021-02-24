@@ -168,7 +168,7 @@ class AdminController extends Controller
 
         $listFields = $this->getListedFields($listableFields);
 
-        $extra = (object) ['listFields' => array_get($options, 'listFields', $listFields), 'filters' => $filters, 'alert' => data_get($extra, 'alert')]; // passing this so we have context in the post list event;
+        $extra = (object) ['listFields' => data_get($options, 'listFields', $listFields), 'filters' => $filters, 'alert' => data_get($extra, 'alert')]; // passing this so we have context in the post list event;
 
         $listView = data_get($model, 'listView', 'laramie::list-page');
 
@@ -227,7 +227,7 @@ class AdminController extends Controller
         $filters = $this->getFilters($postData);
         $postData['filters'] = $filters;
         $postData['quickSearch'] = $request->get('quick-search');
-        $postData['sort'] = array_get($postData, 'sort', 'id');
+        $postData['sort'] = data_get($postData, 'sort', 'id');
 
         $user = $this->dataService->getUser();
         $query = $this->dataService->getBulkActionQuery($modelKey, $postData);
@@ -763,7 +763,7 @@ class AdminController extends Controller
                 $itemPrefixes = collect(array_keys($request->all()))
                     ->map(function ($e) use ($fieldName) {
                         preg_match(sprintf('/(?<prefix>(^.*_?)?%s_[^_]+_)/', $fieldName), $e, $matches);
-                        $prefix = array_get($matches, 'prefix', null);
+                        $prefix = data_get($matches, 'prefix', null);
                         // For file fields, the prefix that's picked up above may begin with an underscore -- if the `keep` checkbox is checked. But we need the field version.
                         if (strpos($prefix, '_') === 0) {
                             $prefix = substr($prefix, 1);

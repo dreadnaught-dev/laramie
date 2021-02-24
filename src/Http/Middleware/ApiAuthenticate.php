@@ -38,7 +38,7 @@ class ApiAuthenticate
         $authArray = explode(':', base64_decode(trim(str_replace('Basic', '', $request->header('Authorization', '')))));
 
         // First find the laramieUser that corresponds to those creds:
-        $laramieUser = Arr::first(\DB::select('select id, data->>\'user\' as user from laramie_data where type = \'laramieUser\' and (data#>>\'{api,enabled}\')::boolean = true and data#>>\'{api,username}\'= ? and data#>>\'{api,password}\' = ? limit 1', [array_get($authArray, 0, -1), array_get($authArray, 1, -1)]));
+        $laramieUser = Arr::first(\DB::select('select id, data->>\'user\' as user from laramie_data where type = \'laramieUser\' and (data#>>\'{api,enabled}\')::boolean = true and data#>>\'{api,username}\'= ? and data#>>\'{api,password}\' = ? limit 1', [data_get($authArray, 0, -1), array_get($authArray, 1, -1)]));
 
         // Next find the Laravel user that corresponds to the Laramie user:
         $laravelUser = Arr::first(\DB::select('select id from users where '.config('laramie.username').' like ?', [data_get($laramieUser, 'user')]));
