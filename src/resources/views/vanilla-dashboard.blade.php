@@ -1,7 +1,7 @@
 @extends('laramie::layout')
 
 @php
-    function recursivelyPrintMenus($node, $depth = 0, $user, $dataService)
+    function recursivelyPrintMenus($node, $depth, $user, $dataService)
     {
         foreach ($node as $friendlyName => $modelKeyOrChild) {
             if (!is_string($modelKeyOrChild)) {

@@ -93,7 +93,7 @@ class AssetController extends Controller
 
             // Resize the image if it has been zoomed (although this may be removed -- obvious behavior?)
             if (data_get($request, 'zoom') !== '1') {
-                $newWidth = floor(data_get($request, 'width') * array_get($request, 'zoom'));
+                $newWidth = floor(data_get($request, 'width') * data_get($request, 'zoom'));
                 $image->resize($newWidth, null, function ($constraint) {
                     $constraint->aspectRatio();
                 });
