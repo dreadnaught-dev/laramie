@@ -554,15 +554,13 @@ class AdminController extends Controller
         $errors = null;
         $errorMessages = null;
 
-        $validationMessageOverrides = collect(\Lang::get('validation'))
-            ->map(function ($item) {
-                return str_ireplace('the :attribute', 'This', $item);
-            })
-            ->toArray();
+        $validationMessages = \Lang::has('laramie::validation')
+            ? \Lang::get('laramie::validation')
+            : \Lang::get('validation');
 
         // First step of validation: validate using Laravel's validator
         if (array_filter($this->validationRules)) {
-            $validator = Validator::make($request->all(), $this->validationRules, $validationMessageOverrides);
+            $validator = Validator::make($request->all(), $this->validationRules, $validationMessages);
             $success = $validator->passes();
             if (!$success) {
                 $errors = $validator;

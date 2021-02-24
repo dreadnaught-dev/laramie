@@ -48,6 +48,8 @@ class LaramieServiceProvider extends ServiceProvider
         // Tell Laravel where to load Laramie's views from
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'laramie');
 
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'laramie');
+
         // Create a request logger singleton -- otherwise [Laravel will resolve a fresh instance of the middleware from the service container](https://laravel.com/docs/middleware#terminable-middleware).
         $this->app->singleton(RequestLogger::class, function ($app) {
             return new RequestLogger();
