@@ -42,12 +42,8 @@ class Authorize
     {
         if ($this->auth->check() && $request->route()->hasParameter('modelKey')) {
             $modelKey = $request->route()->parameter('modelKey');
-            $service = app(LaramieDataService::class);
-            $laramieUser = $service->getUser();
-            $hasAccess = $laramieUser->isSuperAdmin()
-               || $laramieUser->isAdmin()
-               || $laramieUser->hasAbility($modelKey);
-            if (!$hasAccess) {
+
+            if (!$this->auth->user()->hasAccessToLaramieModel($modelKey)) {
                 abort(403, 'Unauthorized.');
             }
         }

@@ -61,7 +61,7 @@ class AdminController extends Controller
      *     ...
      *     // Inject data into the admin dashboard:
      *     \View::composer(['laramie::dashboard'], function ($view) {
-     *         $view->with('data', app(LaramieDataService::class)->findByType('laramieUser'));
+     *         $view->with('data', MyCoolLaramieModel::get())
      *     });
      * }
      *```
@@ -158,13 +158,13 @@ class AdminController extends Controller
 
         // A user may have saved preferences for hiding / showing fields. Load those and ensure that if they exist they're a subset of the fields on the model.
         // The user's model prefs may include things like which columns to show, etc
-        $userPrefs = $this->dataService->getUserPrefs();
+        $prefs = $request->user()->getLaramiePrefs();
 
         $reports = $this->dataService->getUserReportsForModel($model);
 
         $models = $this->dataService->findByType($model, $options);
 
-        $listableFields = $this->getListableFields($model, (object) data_get($userPrefs, $modelPrefsKey.'.listFields', []));
+        $listableFields = $this->getListableFields($model, (object) data_get($prefs, $modelPrefsKey.'.listFields', []));
 
         $listFields = $this->getListedFields($listableFields);
 
@@ -269,7 +269,7 @@ class AdminController extends Controller
      */
     public function saveListPrefs($modelKey, Request $request)
     {
-        $userPrefs = $this->dataService->getUserPrefs();
+        $prefs = $request->user()->getLaramiePrefs();
         $model = $this->dataService->getModelByKey($modelKey);
         $modelPrefsKey = $request->get('model-prefs-key', $model->_type);
         $weight = 10;
@@ -289,10 +289,10 @@ class AdminController extends Controller
             }
         }
 
-        $userPrefs->{$modelPrefsKey} = data_get($userPrefs, $modelPrefsKey, (object) []);
-        $userPrefs->{$modelPrefsKey}->listFields = $listFields;
+        $prefs->{$modelPrefsKey} = data_get($prefs, $modelPrefsKey, (object) []);
+        $prefs->{$modelPrefsKey}->listFields = $listFields;
 
-        $this->dataService->saveUserPrefs($userPrefs);
+        $this->dataService->saveUserPrefs($prefs);
 
         return redirect()->to(url()->previous());
     }
@@ -382,7 +382,7 @@ class AdminController extends Controller
         $model = $this->dataService->getModelByKey($modelKey);
         $reportName = $request->get('report-name');
 
-        $userUuid = $this->dataService->getUserUuid();
+        $userUuid = $this->dataService->getUserId();
 
         $reportModel = $this->dataService->getModelByKey('laramieSavedReport');
 
@@ -452,11 +452,6 @@ class AdminController extends Controller
             }
         }
 
-        $lastEditor = null;
-        $lastEditorId = data_get($item, 'user_id');
-        if (LaramieHelpers::isValidUuid($lastEditorId)) {
-            $lastEditor = $this->dataService->findByIdSuperficial('laramieUser', $lastEditorId);
-        }
         $metaId = session('metaId') ?: ($item->_isUpdate ? $item->id : Uuid::uuid1()->toString());
         $selectedTab = session('selectedTab') ?: '_main';
         $errorMessages = session('errorMessages') ?: null;
@@ -475,7 +470,7 @@ class AdminController extends Controller
 
         $lastUserToUpdate = null;
         if ($item->_isUpdate) {
-            $lastUserToUpdate = $this->dataService->findByIdSuperficial($this->dataService->getModelByKey('laramieUser'), $item->user_id);
+            $lastUserToUpdate = DB::table('users')->find(data_get($item, 'user_id', -1));
         }
 
         /*
@@ -492,7 +487,7 @@ class AdminController extends Controller
         }
 
         if (count($revisions) > 0) {
-            $sidebars['laramie::partials.edit.revisions-box'] = ['item' => $item, 'revisions' => $revisions, 'model' => $model, 'user' => $user, 'lastEditor' => $lastEditor];
+            $sidebars['laramie::partials.edit.revisions-box'] = ['item' => $item, 'revisions' => $revisions, 'model' => $model, 'user' => $user, 'lastUserToUpdate' => $lastUserToUpdate];
         }
 
         $extraInfoToPassToEvents = (object) $extraInfoToPassToEvents;

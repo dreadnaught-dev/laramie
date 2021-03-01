@@ -71,7 +71,7 @@ class LaramieListener
     /**
      * Handle pre-list event.
      *
-     * Only show system roles to super admins on list page.
+     * Only show system roles to admins on list page.
      *
      * @param $event Laramie\Hooks\PreFetch
      */
@@ -88,8 +88,8 @@ class LaramieListener
                 // authentication -- we don't need to worry about limiting the
                 // query by the user in this case -- it's just to get the list of
                 // their roles.
-                if ($user !== null && !($user->isSuperAdmin() || $user->isAdmin())) {
-                    $query->whereNotIn('id', [Globals::SuperAdminRoleId, Globals::AdminRoleId]);
+                if ($user !== null && !$user->isAdmin()) {
+                    $query->whereNotIn('id', [Globals::AdminRoleId]);
                 }
                 break;
             case 'laramieAlert':
@@ -166,8 +166,8 @@ class LaramieListener
         switch ($type) {
             case 'laramieRole':
                 // Don't allow main system rles to be edited
-                if (in_array($item->id, [Globals::SuperAdminRoleId, Globals::AdminRoleId])) {
-                    throw new Exception('Sorry, you may not edit default system roles (Super admin and User management.');
+                if (in_array($item->id, [Globals::AdminRoleId])) {
+                    throw new Exception('Sorry, you may not edit default system roles.');
                 }
                 break;
             case 'laramieUser':
@@ -229,14 +229,14 @@ class LaramieListener
             case 'delete':
                 // First create a backup of the items in the archive table
                 $q1 = clone $query;
-                $q1->select([DB::raw('uuid_generate_v1()'), 'id', DB::raw('\''.$dataService->getUserUuid().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
+                $q1->select([DB::raw('uuid_generate_v1()'), 'id', DB::raw('\''.$dataService->getUserId().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
                 DB::insert('insert into laramie_data_archive (id, laramie_data_id, user_id, type, data, created_at, updated_at)'.$q1->toSql(), $q1->getBindings());
 
                 $q2 = clone $query;
                 $q2->select(['id']);
 
                 if ($type == 'laramieRole') {
-                    $q2->whereNotIn('id', [Globals::SuperAdminRoleId, Globals::AdminRoleId]); // don't allow deletion of core Laramie roles.
+                    $q2->whereNotIn('id', [Globals::AdminRoleId]); // don't allow deletion of core Laramie roles.
                 }
 
                 // Delete the items
@@ -244,7 +244,7 @@ class LaramieListener
                 break;
 
             case 'duplicate':
-                $query->select([DB::raw('uuid_generate_v1()'), DB::raw('\''.$dataService->getUserUuid().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
+                $query->select([DB::raw('uuid_generate_v1()'), DB::raw('\''.$dataService->getUserId().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
 
                 DB::insert('insert into laramie_data (id, user_id, type, data, created_at, updated_at) '.$query->toSql(), $query->getBindings());
                 break;
@@ -435,7 +435,7 @@ class LaramieListener
         $model = $event->model;
         $item = $event->item;
 
-        if (in_array(data_get($item, 'id'), [Globals::SuperAdminRoleId, Globals::AdminRoleId])) {
+        if (in_array(data_get($item, 'id'), [Globals::AdminRoleId])) {
             throw new Exception('You may not delete one of the core roles.');
         }
 

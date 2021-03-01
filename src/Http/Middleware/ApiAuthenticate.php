@@ -28,36 +28,25 @@ class ApiAuthenticate
      */
     public function handle($request, $next)
     {
-        if ($request->hasSession() && $request->session()->has('_laramie')) {
-            $a = new Authenticate(auth());
-            return $a->handle($request, $next);
+        // API enabled for web? Use normal auth... TODO -- validate this works as expected
+        if ($request->hasSession()) {
+            return $next($request);
         }
 
-        // Get the username and password from request headers. Leverage Laravel's `Auth::onceUsingId` if a corresponding Laramie user is found
+        // Get the username and password from request headers. Leverage Laravel's `Auth::onceUsingId` if a corresponding user is found.
         // The username and password are not the user's acutal username and password, but correspond to the user's `api` username and password.
         $authArray = explode(':', base64_decode(trim(str_replace('Basic', '', $request->header('Authorization', '')))));
 
-        // First find the laramieUser that corresponds to those creds:
-        $laramieUser = Arr::first(\DB::select('select id, data->>\'user\' as user from laramie_data where type = \'laramieUser\' and (data#>>\'{api,enabled}\')::boolean = true and data#>>\'{api,username}\'= ? and data#>>\'{api,password}\' = ? limit 1', [data_get($authArray, 0, -1), data_get($authArray, 1, -1)]));
+        // First find the user that corresponds to those creds:
+        $user = User::where(DB::raw('laramie#>>\'{api,enabled}\')::boolean'), true)
+            ->where(DB::raw('laramie#>>\'{api,username}\''), data_get($authArray, 0, -1))
+            ->where(DB::raw('laramie#>>\'{api,password}\''), data_get($authArray, 1, -1))
+            ->first();
 
-        // Next find the Laravel user that corresponds to the Laramie user:
-        $laravelUser = Arr::first(\DB::select('select id from users where '.config('laramie.username').' like ?', [data_get($laramieUser, 'user')]));
-
-        // Using Laravel, log them in by their id (if it exists)
-        $success = Auth::onceUsingId(data_get($laravelUser, 'id', -1));
+        // Log them in by their id (if it exists)
+        $success = Auth::onceUsingId(data_get($user, 'id', -1));
 
         if ($success) {
-            // Success, creds match, users match, etc. Now find and set their access rights / abilities:
-            $laramieDataService = app(LaramieDataService::class);
-            $laramieUser = LaramieUser::find($laramieUser->id);
-
-            if ($request->hasSession()) {
-                $request->session()->put('_laramie', $user->id);
-            }
-            else {
-                Auth::user()->_laramie = $laramieUser;
-            }
-
             return $next($request);
         }
 

@@ -14,7 +14,7 @@ class CreateDataArchiveTable extends Migration
     {
         Schema::create('laramie_data_archive', function (Blueprint $table) {
             $table->uuid('id');
-            $table->uuid('user_id')->nullable();
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->uuid('laramie_data_id');
             $table->string('type');
             $table->jsonb('data')->default('{}');

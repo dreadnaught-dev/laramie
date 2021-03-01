@@ -6,14 +6,14 @@
             $tmp->printMenu();
         @endphp
 
-        @if ($user->isSuperAdmin() || $user->isAdmin() || $user->hasAbility('laramieUpload'))
+        @if ($user->isAdmin() || $user->hasAbility('laramieUpload'))
             <li>
                 <a href="{{ route('laramie::list', ['modelKey' => 'laramieUpload']) }}">Uploads</a>
             </li>
         @endif
     </ul>
     <hr>
-    @if ($user->isSuperAdmin() || $user->isAdmin())
+    @if ($user->isAdmin())
         <p class="menu-label">System</p>
         <ul class="menu-list">
             <li>

@@ -2,6 +2,8 @@
 
 namespace Laramie\Hooks;
 
+use Illuminate\Foundation\Auth\User;
+
 /*
  * Alter the query used when fetching items. Unless events are explicitly turned
  * off, this is called any time data is fetched (single items / multiple items).
@@ -22,7 +24,7 @@ class FilterQuery
      * @param Illuminate\Database\Query\Builder $query the query that will be used to fetch db instances of the `$model`
      * @param Laramie\Lib\LaramieModel $user laramie's version of the logged in user
      */
-    public function __construct($model, $query, $user, &$extra = null)
+    public function __construct($model, $query, User $user = null, &$extra = null)
     {
         $this->model = $model;
         $this->query = $query;

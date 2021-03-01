@@ -293,10 +293,10 @@ class AjaxController extends Controller
      */
     public function saveEditPrefs(Request $request)
     {
-        $userPrefs = $this->dataService->getUserPrefs();
-        $userPrefs->hideTags = $request->get('hideTags') == '1';
-        $userPrefs->hideRevisions = $request->get('hideRevisions') == '1';
-        $this->dataService->saveUserPrefs($userPrefs);
+        $prefs = $request->user()->getLaramiePrefs();
+        $prefs->hideTags = $request->get('hideTags') == '1';
+        $prefs->hideRevisions = $request->get('hideRevisions') == '1';
+        $this->dataService->saveUserPrefs($prefs);
 
         return response()->json((object) ['success' => true]);
     }

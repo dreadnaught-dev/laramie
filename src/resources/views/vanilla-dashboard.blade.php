@@ -9,9 +9,7 @@
                 recursivelyPrintMenus($modelKeyOrChild, $depth + 1, $user, $dataService);
                 echo '</div>';
             } else {
-                $hasAccess = $user->isSuperAdmin()
-                   || $user->isAdmin()
-                   || $user->hasAbility($modelKeyOrChild);
+                $hasAccess = $user->hasAccessToLaramieModel($modelKeyOrChild, \Laramie\Globals::AccessTypes['list']);
                 if (!$hasAccess) {
                     continue;
                 }

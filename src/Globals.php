@@ -4,9 +4,6 @@ namespace Laramie;
 
 class Globals
 {
-    /** @var string UUID of the super admin role */
-    const SuperAdminRoleId = 'b4eeef88-2b98-11e7-a949-56df5f2b76ee';
-
     /** @var string UUID of the admin role */
     const AdminRoleId = '50890cb6-2b9a-11e7-a7e2-be1ff74bace0';
 
@@ -23,4 +20,12 @@ class Globals
     const SUPPORTED_RASTER_IMAGE_TYPES = ['jpeg', 'jpg', 'png', 'gif'];
 
     const MAX_IMAGE_DIMENSION = 5000;
+
+    // TODO -- convert to enum (requires php 8.1)
+    const AccessTypes = [
+        'list' => 'list',
+        'edit' => 'edit',
+        'create' => 'create',
+        'delete' => 'delete',
+    ];
 }

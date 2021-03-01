@@ -38,12 +38,6 @@ class ApiController extends Controller
     {
         $model = $this->dataService->getModelByKey($modelKey);
 
-        // A user may have saved preferences for hiding / showing fields. Load those and ensure that if they exist
-        // they're a subset of the fields on the model.  The user's model prefs may include things like which columns to
-        // show, etc.
-        $userPrefs = $this->dataService->getUserPrefs();
-        $userUuid = $this->dataService->getUserUuid();
-
         $options = $request->all();
 
         $filters = $this->getFilters($options);

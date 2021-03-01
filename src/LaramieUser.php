@@ -49,25 +49,9 @@ class LaramieUser extends LaramieModel
         return static::makeWithAuth($username, $password, $enableApi = false, $enableMfa = false)->save();
     }
 
-    public function getLaravelUser()
-    {
-        return User::where(config('laramie.username'), $this->user)->first();
-    }
-
     public function getRoles()
     {
         return data_get($this, 'roles', []);
-    }
-
-    public function isSuperAdmin()
-    {
-        foreach ($this->getRoles() as $role) {
-            if ($role->id == Globals::SuperAdminRoleId) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public function isAdmin()

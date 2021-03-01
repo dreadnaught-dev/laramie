@@ -2,6 +2,8 @@
 
 namespace Laramie\Hooks;
 
+use Illuminate\Foundation\Auth\User;
+
 /*
  * The event actually does the work of handling a bulk action request.
  */
@@ -17,7 +19,7 @@ class HandleBulkAction
     /**
      * Create a new HandleBulkAction hook.
      */
-    public function __construct($model, $nameOfBulkAction, $query, $postData, $user, &$extra)
+    public function __construct($model, $nameOfBulkAction, $query, $postData, User $user, &$extra)
     {
         $this->model = $model;
         $this->nameOfBulkAction = $nameOfBulkAction;

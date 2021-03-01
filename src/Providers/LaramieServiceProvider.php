@@ -62,17 +62,10 @@ class LaramieServiceProvider extends ServiceProvider
 
         // Inject data into views and partials as needed
         \View::composer(['laramie::layout'], function ($view) {
-            $view->with('systemUsers',
-                collect(app(LaramieDataService::class)->findByType(
-                    'laramieUser',
-                    ['resultsPerPage' => 0, 'forSystemUsers' => 1],
-                    function ($query) {
-                        $query->where(\DB::raw('data->>\'status\''), '=', 'Active');
-                    },
-                    0)
-                )
-                ->map(function ($item) { return $item->user; })
-            );
+            //$systemUsers = User::where(DB::raw('1=1'))
+                //->get()
+                //->map(function ($item) { return $item->user; }) // todo -- this needs to be Laravel's username field
+            $view->with('systemUsers', []);
         });
 
         // Inject data into views and partials as needed
@@ -82,7 +75,7 @@ class LaramieServiceProvider extends ServiceProvider
                     'laramieAlert',
                     ['resultsPerPage' => 0],
                     function ($query) use ($service) {
-                        $query->where(\DB::raw('data->>\'recipient\''), '=', $service->getUserUuid())
+                        $query->where(\DB::raw('data->>\'recipient\''), '=', $service->getUserId())
                             ->where(\DB::raw('data->>\'status\''), '=', 'Unread');
                     }
                 )
@@ -146,7 +139,7 @@ EOT;
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
-                \Laramie\Console\Commands\AuthorizeLaramieUser::class,
+                \Laramie\Console\Commands\AuthorizeUser::class,
                 \Laramie\Console\Commands\ClearModelCache::class,
             ]);
         }

@@ -9,7 +9,6 @@ use Storage;
 use Ramsey\Uuid\Uuid;
 use JsonSchema\Validator;
 
-use Laramie\LaramieUser;
 use Laramie\Hook;
 use Laramie\Lib\FileInfo;
 use Laramie\Lib\LaramieHelpers;
@@ -64,36 +63,12 @@ class LaramieDataService
 
     public function getUser()
     {
-        if (!self::$cachedUser) {
-            if (!app()->runningInConsole()) {
-                // If set here, it's because this is an API request (set in ApiAuthenticate directly on the auth()->user() object as there's no session).
-                $laramieUserId = data_get(auth()->user(), '_laramie');
-
-                if (!$laramieUserId) {
-                    $laramieUserId = session()->get('_laramie', Uuid::uuid4()->toString());
-                    if (gettype($laramieUserId) === 'object') {
-                        $laramieUserId = data_get($laramieUserId, 'id');
-                    }
-                }
-
-                self::$isFetchingUser = true;
-
-                self::$cachedUser = LaramieUser::filterQuery(false)
-                    ->find($laramieUserId);
-
-                self::$isFetchingUser = false;
-            }
-        }
-
-        return self::$cachedUser;
+        return app()->runningInConsole() // @TODO -- necessary?
+            ? null
+            : auth()->user();
     }
 
-    public function getUserPrefs()
-    {
-        return data_get($this->getUser(), 'prefs', (object) []);
-    }
-
-    public function getUserUuid()
+    public function getUserId()
     {
         return data_get($this->getUser(), 'id', null);
     }
@@ -177,7 +152,7 @@ class LaramieDataService
 
         $modelData = [
             'id' => Uuid::uuid1()->toString(),
-            'user_id' => $this->getUserUuid(),
+            'user_id' => $this->getUserId(),
             'type' => $model->_type,
             'created_at' => 'now()',
             'updated_at' => 'now()',
@@ -469,7 +444,7 @@ class LaramieDataService
         $model = $this->getModelByKey($model);
 
         $modelKey = $model->_type;
-        $userUuid = $this->getUserUuid();
+        $userUuid = $this->getUserId();
 
         return $this->findByType($this->getModelByKey('laramieSavedReport'), ['source' => 'admin', 'resultsPerPage' => 0], function ($query) use ($modelKey, $userUuid) {
             $query->where(DB::raw('data->>\'relatedModel\''), $modelKey)
@@ -704,7 +679,7 @@ class LaramieDataService
         if (LaramieHelpers::isValidUuid($modelId)) {
             $modelData = [
                 'id' => Uuid::uuid1()->toString(),
-                'user_id' => $this->getUserUuid(),
+                'user_id' => $this->getUserId(),
                 'laramie_data_id' => $modelId,
                 'type' => $type,
                 'data' => json_encode($data),
@@ -1099,7 +1074,7 @@ class LaramieDataService
             }
 
             $modelData = $data->toArray();
-            $modelData['user_id'] = $this->getUserUuid();
+            $modelData['user_id'] = $this->getUserId();
 
             if (data_get($data, '_origId')) {
                 // Update

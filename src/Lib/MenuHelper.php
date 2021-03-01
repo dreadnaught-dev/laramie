@@ -2,6 +2,8 @@
 
 namespace Laramie\Lib;
 
+use Laramie\Globals;
+
 class MenuHelper
 {
     protected $menu = null;
@@ -23,9 +25,7 @@ class MenuHelper
             $itemIsVisible = false;
             switch (gettype($value)) {
                 case 'string':
-                    $itemIsVisible = $this->user->isSuperAdmin()
-                       || $this->user->isAdmin()
-                       || $user->hasAbility($value);
+                    $itemIsVisible = $this->user->hasAccessToLaramieModel($value, Globals::AccessTypes['list']);
 
                     $node->$key = (object) [
                         'isLeaf' => true,

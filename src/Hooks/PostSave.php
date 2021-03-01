@@ -4,6 +4,8 @@ namespace Laramie\Hooks;
 
 use Laramie\Lib\LaramieModel;
 
+use Illuminate\Foundation\Auth\User;
+
 /*
  * Do some work _after_ saving an item. Exceptions thrown in this hook will be
  * caught when saving from the admin (rolling back a transaction). Outside of the
@@ -26,7 +28,7 @@ class PostSave
      * @param Laramie\Lib\LaramieModel $item the db item that was edited
      * @param Laramie\Lib\LaramieModel $user laramie's version of the logged in user
      */
-    public function __construct($model, LaramieModel $item, LaramieModel $user = null)
+    public function __construct($model, LaramieModel $item, User $user = null)
     {
         $this->model = $model;
         $this->item = $item;

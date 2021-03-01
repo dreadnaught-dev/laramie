@@ -15,7 +15,7 @@ use PragmaRX\Google2FA\Google2FA;
 
 class AuthorizeLaramieUser extends Command
 {
-    protected $signature = 'laramie:authorize-user {user} {--password=} {--role=}';
+    protected $signature = 'laramie:authorize-user {user} {--password=}';
 
     protected $description = 'Authorize a user for access to the admin platform';
 
@@ -63,20 +63,7 @@ class AuthorizeLaramieUser extends Command
             $laramiePassword = (object) ['encryptedValue' => $dbUser->password];
         }
 
-        // Find the role to assign the user to.
-        $role = $this->option('role');
-        if ($role == 'super') {
-            $role = Globals::SuperAdminRoleId;
-        } else {
-            $role = Globals::AdminRoleId;
-        }
-
-        // Determine if this is the first user. If yes, make them a super admin. Everyone else gets the `admin` role
-        // unless the role option is passed as 'super'.
-        $existingLaramieUsers = $dataService->findByType($model, ['filterQuery' => false]);
-        if (count($existingLaramieUsers) == 0) {
-            $role = Globals::SuperAdminRoleId;
-        }
+        $role = Globals::AdminRoleId;
 
         // Find all Laramie users that correspond to the Laravel one
         $existingUsers = $dataService->findByType($model, ['filterQuery' => false], function ($query) use ($user) {
