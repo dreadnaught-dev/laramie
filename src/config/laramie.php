@@ -200,7 +200,7 @@ return [
     | Useful when you want to inject your own middleware into the mix.
     |--------------------------------------------------------------------------
     */
-    'web_middleware' => ['web', 'auth', LaramieAuthenticate::class, RequestLogger::class],
+    'web_middleware' => ['web', 'auth', RequestLogger::class],
 
-    'api_middleware' => ['web', 'auth', LaramieApiAuthenticate::class, RequestLogger::class],
+    //'api_middleware' => ['web', 'auth', LaramieApiAuthenticate::class, RequestLogger::class],
 ];

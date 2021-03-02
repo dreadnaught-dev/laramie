@@ -13,7 +13,7 @@ use Illuminate\Foundation\Auth\User;
  *
  * This is a synchronous _hook_. So while you can perform post-save actions
  * here (like sending email, etc), any long-running post-save tasks should be
- * handled by the `ItemSaved` _event_ (can be asynch).
+ * handled by async events
  */
 class PostSave
 {

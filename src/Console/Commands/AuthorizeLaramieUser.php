@@ -4,18 +4,19 @@ namespace Laramie\Console\Commands;
 
 use Arr;
 use DB;
+use Hash;
 use Illuminate\Console\Command;
 use Str;
+use Carbon\Carbon;
 
 use Laramie\Globals;
-use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
 use Laramie\Services\LaramieDataService;
 use PragmaRX\Google2FA\Google2FA;
 
 class AuthorizeLaramieUser extends Command
 {
-    protected $signature = 'laramie:authorize-user {user} {--password=}';
+    protected $signature = 'laramie:authorize-user {email} {--password=}';
 
     protected $description = 'Authorize a user for access to the admin platform';
 
@@ -35,77 +36,50 @@ class AuthorizeLaramieUser extends Command
     public function handle(LaramieDataService $dataService)
     {
         $model = $dataService->getModelByKey('laramieUser');
-        $user = $this->argument('user');
+        $email = $this->argument('email');
         $password = $this->option('password');
 
         // Because Laravel can use username or email, etc, Laramie tries to be flexible as well.
         $linkedField = config('laramie.username');
 
-        $laramiePassword = LaramieHelpers::getLaramiePasswordObjectFromPasswordText($password);
+        // Find the Laravel user. If they don't exist, create them if a password was provided
+        $user = DB::table('users')->where($linkedField, 'ilike', $email)->first();
 
-        // First, find the Laravel user. If they don't exist, create them if a password was provided
-        $dbUser = DB::table('users')->where($linkedField, 'like', $user)->first();
-        if (!$dbUser) {
-            if ($password) {
-                \DB::table('users')->insert([
-                    'name' => $user,
-                    'email' => $user,
-                    'password' => $laramiePassword->encryptedValue,
-                    'created_at' => 'now()',
-                    'updated_at' => 'now()',
-                ]);
-            } else {
-                $this->error(sprintf('Could not find user with %s of \'%s\'. If you would like to create them, you may do so by passing an additional `password` option to this command', $linkedField, $user));
+        if (!$user && $password) {
+            DB::table('users')->insert([
+                'name' => $email,
+                'email' => $email,
+                'password' => Hash::make($password),
+                'updated_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+            ]);
+        } elseif (!$user) {
+            $this->error(sprintf('Could not find user with %s of \'%s\'. If you would like to create them, you may do so by passing an additional `password` option to this command', $linkedField, $email));
 
-                return;
-            }
-        } else {
-            $laramiePassword = (object) ['encryptedValue' => $dbUser->password];
+            return;
         }
+
+        // User found. Grant them access to Laramie
 
         $role = Globals::AdminRoleId;
 
-        // Find all Laramie users that correspond to the Laravel one
-        $existingUsers = $dataService->findByType($model, ['filterQuery' => false], function ($query) use ($user) {
-            $query->where(DB::raw('data->>\'user\''), 'ilike', $user);
-        });
+        $laramieData = json_decode(data_get($this, 'laramie', '{}'));
 
-        if (count($existingUsers) == 0) {
-            // No existing Laramie users exist. Set some default info:
-            $laramieModel = new LaramieModel();
-            $laramieModel->api = (object) [
-                'enabled' => false,
-                'username' => Str::random(Globals::API_TOKEN_LENGTH),
-                'password' => Str::random(Globals::API_TOKEN_LENGTH),
-            ];
-
-            $google2fa = new Google2FA();
-
-            $laramieModel->mfa = (object) [
-                'enabled' => true,
-                'registrationCompleted' => false,
-                'secret' => $google2fa->generateSecretKey(),
-            ];
-
-            $laramieModel->password = $laramiePassword;
-        } else {
-            // The user already exists
-            $laramieModel = Arr::first($existingUsers);
+        if (data_get($laramieData, 'roles')) {
+            $this->error('This user has already been granted access.');
+            return;
         }
 
-        $laramieModel->status = 'Active';
+        $laramieData->api = (object) [
+            'enabled' => false,
+            'username' => Str::random(Globals::API_TOKEN_LENGTH),
+            'password' => Str::random(Globals::API_TOKEN_LENGTH),
+        ];
 
-        // Get the laramieRole
-        $role = $dataService->findById($dataService->getModelByKey('laramieRole'), $role);
+        $laramieData->roles = [$role];
 
-        // Set the user's role:
-        $laramieModel->user = $user;
-        $laramieModel->roles = [$role];
-
-        // Save the user, but prevent events -- we've created everything by hand, don't want LaramieUser's pre/post save events to try to double that work:
-        config(['laramie.suppress_events' => true]);
-        $dataService->save($model, $laramieModel);
-
-        $this->info('Done');
+        DB::table('users')
+            ->where('id', $user->id)
+            ->update(['laramie' => json_encode($laramieData)]);
     }
 }
