@@ -6,6 +6,9 @@ trait LaramieAuth
     public function isAdmin() { return $this->isLaramieAdmin(); }
     public function hasAbility($key, $accessType = 'list') { return $this->hasLaramieAbility($key, $accessType); }
 
+    private $_laramie = null;
+    private $_roles = null;
+
     public function isLaramieAdmin()
     {
         return in_array(Globals::AdminRoleId, data_get($this->getLaramieData(), 'roles', []));
@@ -28,12 +31,13 @@ trait LaramieAuth
         return data_get($this->getLaramieData(), 'prefs', (object) []);
     }
 
-    public function setLaramiePrefs()
+    public function updateLaramiePrefs($prefs)
     {
         $laramieData = $this->getLaramieData();
         $laramieData->prefs = $prefs;
 
-        $this->update(['laramie' => $laramieData]); // @todo -- test
+        $this->laramie = json_encode($laramieData);
+        $this->save();
     }
 
     protected function getLaramieData()

@@ -3,11 +3,12 @@
 namespace Laramie\Services;
 
 use Arr;
+use Carbon\Carbon;
 use DB;
 use Exception;
-use Storage;
-use Ramsey\Uuid\Uuid;
 use JsonSchema\Validator;
+use Ramsey\Uuid\Uuid;
+use Storage;
 
 use Laramie\Hook;
 use Laramie\Lib\FileInfo;
@@ -69,11 +70,6 @@ class LaramieDataService
     public function getUserId()
     {
         return data_get($this->getUser(), 'id', null);
-    }
-
-    public function saveUserPrefs($prefs)
-    {
-        DB::statement('update laramie_data set data = jsonb_set(data, \'{prefs}\', \''.json_encode($prefs).'\', true) where id = ?', [$this->getUser()->id]);
     }
 
     public function findTypeByTag($model, $tag)
@@ -152,8 +148,8 @@ class LaramieDataService
             'id' => Uuid::uuid1()->toString(),
             'user_id' => $this->getUserId(),
             'type' => $model->_type,
-            'created_at' => 'now()',
-            'updated_at' => 'now()',
+            'created_at' => $this->getDbNow(),
+            'updated_at' => $this->getDbNow(),
         ];
         DB::table('laramie_data')->insert($modelData);
 
@@ -280,7 +276,7 @@ class LaramieDataService
                         || in_array(data_get($modelField, 'dataType', object_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local'])))
                     {
                         try {
-                            $value = \Carbon\Carbon::parse($value, config('laramie.timezone'))->timestamp;
+                            $value = Carbon::parse($value)->timestamp;
                         } catch (Exception $e) { $value = 0; }
                     }
 
@@ -325,7 +321,7 @@ class LaramieDataService
                             $dates = collect(preg_split('/[|]/', $value))
                                 ->map(function($item) {
                                     try {
-                                        return \Carbon\Carbon::parse($item, config('laramie.timezone'));
+                                        return Carbon::parse($item);
                                     } catch (\Exception $e) { /* error parsing date. don't add filter */ }
                                 })
                                 ->filter()
@@ -553,9 +549,9 @@ class LaramieDataService
             ->first();
 
         if ($lastRecord) {
-            $lastRecord->user = data_get(DB::table('laramie_data')
+            $lastRecord->user = data_get(DB::table('users')
                 ->where('id', $lastRecord->user_id)
-                ->select([DB::raw('data->>\'user\' as user')])
+                ->select([DB::raw(config('laramie.username').' as user')])
                 ->first(), 'user');
         }
 
@@ -615,11 +611,10 @@ class LaramieDataService
     public function getMeta($id, $metaType, $order = 'laramie_data_meta.created_at', $orderDirection = 'desc')
     {
         $rows = DB::table('laramie_data_meta')
-            ->leftJoin('laramie_data', 'laramie_data_meta.user_id', '=', 'laramie_data.id')
+            ->leftJoin('users', 'laramie_data_meta.user_id', '=', 'users.id')
             ->where('laramie_data_id', $id)
             ->where('laramie_data_meta.type', $metaType)
-            ->select(['laramie_data_meta.*', DB::raw('laramie_data.data->>\'user\' as _user')])
-            //->orderBy('laramie_data_meta.created_at', 'desc')
+            ->select(['laramie_data_meta.*', DB::raw(config('laramie.username').' as _user')])
             ->orderBy($order, $orderDirection)
             ->get();
 
@@ -680,8 +675,8 @@ class LaramieDataService
                 'laramie_data_id' => $modelId,
                 'type' => $type,
                 'data' => json_encode($data),
-                'created_at' => 'now()',
-                'updated_at' => 'now()',
+                'created_at' => $this->getDbNow(),
+                'updated_at' => $this->getDbNow(),
             ];
             DB::table('laramie_data_meta')->insert($modelData);
 
@@ -858,9 +853,9 @@ class LaramieDataService
     {
         if (LaramieHelpers::isValidUuid($id)) {
             return DB::table('laramie_data_archive as a')
-                ->leftJoin('laramie_data as ld', 'a.user_id', '=', 'ld.id')
+                ->leftJoin('users', 'a.user_id', '=', 'users.id')
                 ->where('laramie_data_id', $id)
-                ->select(['a.id', 'a.updated_at', DB::raw('ld.data#>>\'{user}\' as user')])
+                ->select(['a.id', 'a.updated_at', DB::raw(config('laramie.username').' as user')])
                 ->orderBy('a.created_at', 'desc')
                 ->get();
         }
@@ -905,10 +900,10 @@ class LaramieDataService
         $shouldArchive = data_get(DB::select('select count(*) as count from laramie_data where id = ? and data != (select data from laramie_data_archive lda where laramie_data_id = laramie_data.id order by created_at desc limit 1)', [$archivedItem->laramie_data_id]), 0)->count > 0;
         if ($shouldArchive) {
             // Archive the primary item
-            DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [Uuid::uuid1()->toString(), $archivedItem->laramie_data_id]);
+            DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, ?, updated_at from laramie_data where id = ?', [Uuid::uuid1()->toString(), $this->getDbNow(), $archivedItem->laramie_data_id]);
         }
         // Update the primary item with the data from the revision we're restoring
-        DB::statement('update laramie_data set updated_at = now(), user_id = (select user_id from laramie_data_archive where id = ?), data = (select data from laramie_data_archive where id = ?) where id = ?', [$id, $id, $archivedItem->laramie_data_id]);
+        DB::statement('update laramie_data set updated_at = ?, user_id = (select user_id from laramie_data_archive where id = ?), data = (select data from laramie_data_archive where id = ?) where id = ?', [$this->getDbNow(), $id, $id, $archivedItem->laramie_data_id]);
 
         // Return the _archived_ item -- we'll use it in an alert message
         return $archivedItem;
@@ -1013,7 +1008,7 @@ class LaramieDataService
             $isUpdateTimestamps = (bool) data_get($data, 'timestamps', true);
             unset($data->{'timestamps'});
 
-            $dbNow = \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString();
+            $dbNow = $this->getDbNow();
 
             if ($isUpdateTimestamps || !data_get($data, '_origId')) {
                 $data->updated_at = $dbNow;
@@ -1076,7 +1071,7 @@ class LaramieDataService
             if (data_get($data, '_origId')) {
                 // Update
                 $archiveId = Uuid::uuid1()->toString();
-                DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [$archiveId, $data->id]);
+                DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, ?, updated_at from laramie_data where id = ?', [$archiveId, $this->getDbNow(), $data->id]);
                 DB::table('laramie_data')->where('id', $data->id)->update($modelData);
                 // Delete the newly inserted archived version if it exactly matches
                 // the updated version. We can potentially mitigate this step by
@@ -1147,7 +1142,7 @@ class LaramieDataService
                     ->where('laramie_data_id', $id)
                     ->delete();
             } else {
-                DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [Uuid::uuid1()->toString(), $id]);
+                DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, ?, updated_at from laramie_data where id = ?', [Uuid::uuid1()->toString(), $this->getDbNow(), $id]);
             }
 
             DB::table('laramie_data')
@@ -1175,7 +1170,7 @@ class LaramieDataService
     public function cloneById($id)
     {
         $newId = Uuid::uuid1()->toString();
-        DB::statement('insert into laramie_data (id, user_id, type, data, created_at, updated_at) select ?, ?, type, data, now(), now() from laramie_data where id = ?', [$newId, $this->getUser()->id, $id]);
+        DB::statement('insert into laramie_data (id, user_id, type, data, created_at, updated_at) select ?, ?, type, data, ?, ? from laramie_data where id = ?', [$newId, $this->getUser()->id, $this->getDbNow(), $this->getDbNow(), $id]);
 
         return $newId;
     }
@@ -1280,5 +1275,10 @@ class LaramieDataService
                     $query->whereIn(DB::raw('id::text'), $itemIds);
                 }
             });
+    }
+
+    private function getDbNow()
+    {
+        return Carbon::now()->toDateTimeString();
     }
 }

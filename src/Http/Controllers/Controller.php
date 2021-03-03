@@ -19,8 +19,8 @@ class Controller extends BaseController
     protected function getListedFields($listableFieldsCollection)
     {
         return $listableFieldsCollection
-            ->filter(function ($e) {
-                return $e->listed;
+            ->filter(function ($item) {
+                return $item->listed;
             })
             ->all();
     }
@@ -36,20 +36,15 @@ class Controller extends BaseController
         $prefs = $prefs !== null ? $prefs : (object) [];
 
         return collect(data_get($model, 'fields', (object) []))
-            ->filter(function ($e) use($prefs) {
-                // If there are prefs set for the user for the model, but they are missing a field, interpret that as not listed.
-                if (count((array)$prefs) > 0 && data_get($prefs, $e->_fieldName) === null) {
-                    return false;
-                }
-
-                return $e->isListable;
+            ->filter(function ($item) use($prefs) {
+                return $item->isListable;
             })
-            ->each(function ($e) use ($prefs) {
-                $e->weight = data_get($prefs, $e->id.'.weight', $e->weight);
-                $e->listed = data_get($prefs, $e->id.'.listed', $e->listByDefault);
+            ->each(function ($item) use ($prefs) {
+                $item->weight = data_get($prefs, $item->id.'.weight', $item->weight);
+                $item->listed = data_get($prefs, $item->id.'.listed', $item->listByDefault);
             })
-            ->sortBy(function ($e) {
-                return $e->weight;
+            ->sortBy(function ($item) {
+                return $item->weight;
             });
     }
 
@@ -63,10 +58,10 @@ class Controller extends BaseController
         $filterRegex = '/^filter_(?<filterIndex>[^_]+)_field$/';
 
         return collect($data)
-            ->filter(function ($e, $key) use ($filterRegex) {
-                return preg_match($filterRegex, $key) && $e;
+            ->filter(function ($item, $key) use ($filterRegex) {
+                return preg_match($filterRegex, $key) && $item;
             })
-            ->map(function ($e, $key) use ($filterRegex, $data) {
+            ->map(function ($item, $key) use ($filterRegex, $data) {
                 preg_match($filterRegex, $key, $matches);
 
                 return (object) [

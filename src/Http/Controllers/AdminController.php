@@ -283,7 +283,7 @@ class AdminController extends Controller
 
         foreach ($fieldsFromRequest as $key => $value) {
             $key = preg_replace('/^_lf_/', '', $key);
-            if (array_key_exists($key, $model->fields)) {
+            if (data_get($model->fields, $key)) {
                 $listFields[$key] = (object) ['weight' => $weight, 'listed' => $value == 1];
                 $weight += 10;
             }
@@ -292,7 +292,7 @@ class AdminController extends Controller
         $prefs->{$modelPrefsKey} = data_get($prefs, $modelPrefsKey, (object) []);
         $prefs->{$modelPrefsKey}->listFields = $listFields;
 
-        $this->dataService->saveUserPrefs($prefs);
+        $request->user()->updateLaramiePrefs($prefs);
 
         return redirect()->to(url()->previous());
     }
@@ -860,13 +860,14 @@ class AdminController extends Controller
      */
     public function restoreRevision($modelKey, $revisionId)
     {
+        $item = $this->dataService->restoreRevision($revisionId);
+
         $model = $this->dataService->getModelByKey($item->type);
 
         if (config('laramie.disable_revisions') || data_get($model, 'disableRevisions')) {
             abort(403, 'Forbidden');
         }
 
-        $item = $this->dataService->restoreRevision($revisionId);
         $alert = (object) ['class' => 'is-warning', 'title' => 'Revision loaded', 'alert' => sprintf('The revision from %s has been loaded successfully.', \Carbon\Carbon::parse($item->updated_at, config('laramie.timezone'))->toDayDateTimeString())];
 
         return redirect()->route('laramie::edit', ['modelKey' => $model->_type, 'id' => $item->laramie_data_id])
