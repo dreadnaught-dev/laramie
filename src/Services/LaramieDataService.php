@@ -592,6 +592,8 @@ class LaramieDataService
 
     public function getComments($id)
     {
+        return [];
+
         return $this->getMeta($id, 'Comment')
             ->map(function ($item) { return LaramieHelpers::transformCommentForDisplay($item); });
     }

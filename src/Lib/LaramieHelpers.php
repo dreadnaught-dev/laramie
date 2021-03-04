@@ -148,16 +148,6 @@ class LaramieHelpers
         }
     }
 
-    public static function transformCommentForDisplay($comment)
-    {
-        $comment->_userFirstInitial = strtoupper(substr(data_get($comment, '_user', '?'), 0, 1));
-        $comment->_user = $comment->_user ?: 'Unknown';
-        $comment->_color = self::getOrdinalColor(ord(strtolower($comment->_userFirstInitial)));
-        $comment->lastModified = Carbon::parse($comment->updated_at, config('laramie.timezone'))->diffForHumans();
-
-        return $comment;
-    }
-
     public static function getOrdinalColor($charValue)
     {
         // Adapted from: https://gist.github.com/bendc/76c48ce53299e6078a76

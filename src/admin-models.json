@@ -76,14 +76,14 @@
             "name": "Notification",
             "namePlural": "Notifications",
             "isSystemModel": true,
-            "alias": "_authorName",
+            "alias": "authorName",
             "defaultSort": "_created_at",
             "defaultSortDirection": "desc",
             "fields": {
+                "author_id": { "type": "hidden", "isListable": false, "isEditable": false },
+                "recipient_id": { "type": "hidden", "isListable": false, "isEditable": false },
                 "metaId": { "type": "hidden", "isListable": false, "isEditable": false },
-                "author": { "type": "reference-single", "relatedModel": "laramieUser", "isListable": false, "isEditable": false },
-                "_authorName": { "type": "computed", "label": "From", "sql": "(select data->>'user' from laramie_data as ld2 where ld2.type = 'laramieUser' and ld2.id::text = laramie_data.data->>'author' limit 1)" },
-                "recipient": { "type": "reference-single", "relatedModel": "laramieUser", "isListable": false, "isEditable": false },
+                "authorName": { "type": "computed", "label": "From", "sql": "(select data->>'user' from laramie_data as ld2 where ld2.type = 'laramieUser' and ld2.id::text = laramie_data.data->>'author' limit 1)" },
                 "message": { "type": "markdown", "required": true },
                 "status": {
                     "type": "select",

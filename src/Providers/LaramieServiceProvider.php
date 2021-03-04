@@ -3,10 +3,12 @@
 namespace Laramie\Providers;
 
 use Arr;
+use DB;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Validator;
 
+use Laramie\AdminModels\LaramieAlert;
 use Laramie\Http\Middleware\RequestLogger;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Hook;
@@ -62,29 +64,18 @@ class LaramieServiceProvider extends ServiceProvider
 
         // Inject data into views and partials as needed
         \View::composer(['laramie::layout'], function ($view) {
-            //$systemUsers = User::where(DB::raw('1=1'))
-                //->get()
-                //->map(function ($item) { return $item->user; }) // todo -- this needs to be Laravel's username field
-            $view->with('systemUsers', []);
+            $systemUsers = DB::table('users')
+                ->whereRaw(DB::raw('jsonb_exists(laramie, \'roles\')')) // TODO -- do we need to add a more specific attribute? assumption is that anyone with roles is some sort of backend user.
+                ->select([config('laramie.username')])
+                ->get()
+                ->pluck(config('laramie.username'));
+
+            $view->with('systemUsers', $systemUsers);
         });
 
         // Inject data into views and partials as needed
         \View::composer(['laramie::partials.header'], function ($view) {
-            $service = app(LaramieDataService::class);
-            $alerts = $service->findByType(
-                    'laramieAlert',
-                    ['resultsPerPage' => 0],
-                    function ($query) use ($service) {
-                        $query->where(\DB::raw('data->>\'recipient\''), '=', $service->getUserId())
-                            ->where(\DB::raw('data->>\'status\''), '=', 'Unread');
-                    }
-                )
-                ->map(function ($item) {
-                    $item->html = data_get($item, 'message.html');
-                    $item->_user = $item->author->user;
-
-                    return LaramieHelpers::transformCommentForDisplay($item);
-                });
+            $alerts = LaramieAlert::where(\DB::raw('data->>\'status\''), '=', 'Unread')->get();
             $view->with('alerts', $alerts);
         });
 

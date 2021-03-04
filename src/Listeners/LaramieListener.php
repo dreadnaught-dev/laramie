@@ -94,13 +94,9 @@ class LaramieListener
                 break;
             case 'laramieAlert':
                 // Only show the messages for which the user is the recipient:
-                if ($user !== null) {
-                    $query->where(function ($query) use ($user) {
-                        $query->where(DB::raw('data->>\'recipient\''), '=', $user->id);
-                    });
-                } elseif ($user === null) {
-                    throw new Exception('You do not have access.');
-                }
+                $query->where(function ($query) use ($user) {
+                    $query->where(DB::raw('data->>\'recipient_id\''), '=', optional($user)->id ?: -1);
+                });
                 break;
         }
     }
@@ -168,11 +164,6 @@ class LaramieListener
                 // Don't allow main system rles to be edited
                 if (in_array($item->id, [Globals::AdminRoleId])) {
                     throw new Exception('Sorry, you may not edit default system roles.');
-                }
-                break;
-            case 'laramieUser':
-                if (!data_get($item, 'api.username')) {
-                    $item->api = (object) ['enabled' => false, 'username' => Str::random(Globals::API_TOKEN_LENGTH), 'password' => Str::random(Globals::API_TOKEN_LENGTH)];
                 }
                 break;
             case 'laramieAlert':
@@ -317,52 +308,6 @@ class LaramieListener
         $dataService->clearCache();
 
         switch ($type) {
-            case 'laramieUser':
-                // If we're saving a new user, we need to create a corresponding Laravel user
-                if (data_get($item, '_isNew')) {
-                    if (DB::table('users')
-                        ->where('email', 'ilike', data_get($item, 'user'))
-                        ->count() > 0
-                    ) {
-                        throw new Exception('That email address is taken');
-                    }
-
-                    DB::table('users')->insert([
-                        'name' => $item->user,
-                        'email' => $item->user,
-                        'password' => $item->password->encryptedValue,
-                        'created_at' => 'now()',
-                        'updated_at' => 'now()',
-                    ]);
-                } else {
-                    // Ensure the email is unique
-                    if (DB::table('laramie_data')
-                        ->where('type', 'laramieUser')
-                        ->where('id', '!=', data_get($item, 'id', Uuid::uuid4()->toString()))
-                        ->where(DB::raw('data->>\'user\''), 'ilike', data_get($item, 'user'))
-                        ->count() > 0
-                    ) {
-                        throw new Exception('That email address is taken');
-                    }
-
-                    // If we're _updating_ a user, we need to grab its state _before_ the update (so that we can map it to its Laravel user).
-                    $oldUserInfo = $dataService->findByIdSuperficial($dataService->getModelByKey('laramieUser'), $item->id);
-                    $userInfoToUpdate = [
-                        'name' => $item->user,
-                        'email' => $item->user,
-                        'updated_at' => 'now()',
-                    ];
-
-                    $hashedPassword = data_get($item, 'password.encryptedValue');
-                    if ($hashedPassword && $hashedPassword !== 'keep') {
-                        $userInfoToUpdate['password'] = $item->password->encryptedValue;
-                    }
-
-                    DB::table('users')
-                        ->where(config('laramie.username'), $oldUserInfo->user)
-                        ->update($userInfoToUpdate);
-                }
-                break;
             // Create thumbnails for images
             case 'laramieUpload':
                 try {
@@ -405,21 +350,20 @@ class LaramieListener
                 break;
             case '_laramieComment':
                 $plainText = data_get($item, 'comment.markdown');
-                preg_match_all('/@(?<mentions>[a-z0-9\-\.\_]+)/i', $plainText, $matches);
+                preg_match_all('/@(?<mentions>[a-z0-9\-\.\_@]+)/i', $plainText, $matches);
                 $mentions = data_get($matches, 'mentions');
                 foreach ($mentions as $mention) {
-                    $tmpUser = $dataService->findByType('laramieUser', null, function ($query) use ($mention) {
-                        $query->where(DB::raw('data->>\'user\''), 'ilike', $mention.'%');
-                    })->first();
-                    if ($tmpUser) {
-                        $alert = LaramieModel::load((object) [
+                    $mentionedUser = DB::table('users')
+                        ->where(config('laramie.username'), 'ilike', $mention . '%')
+                        ->first();
+                    if ($mentionedUser) {
+                        LaramieAlert::create([
                             'metaId' => data_get($item, 'metaId'),
-                            'recipient' => $tmpUser,
-                            'author' => $dataService->getUser(),
+                            'recipient_id' => $mentionedUser->id,
+                            'author_id' => optional($user)->id,
                             'message' => $item->comment,
                             'status' => 'Unread',
                         ]);
-                        $dataService->save('laramieAlert', $alert);
                     }
                 }
         }

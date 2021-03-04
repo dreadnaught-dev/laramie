@@ -48,17 +48,17 @@
                     <div class="navbar-item">
                         <article class="clearfix media margin-bottom is-small">
                             <figure class="media-left">
-                                <span class="tag is-rounded is-medium" style="background-color: {{ $alert->_color}};">{{$alert->_userFirstInitial}}</span>
+                                <span class="tag is-rounded is-medium" style="background-color: {{ $alert->getColor() }};">{{ $alert->getUserInitial() }}</span>
                             </figure>
                             <div class="media-content">
                                 <div class="content">
                                     <p class="is-size-7 is-marginless">
-                                        <strong>{{$alert->_user}}</strong> {{$alert->lastModified}}
+                                        <strong>{{ $alert->getAuthorName() }}</strong> {{ $alert->getHumanReadableCreatedDate() }}
                                         @if (data_get($alert, 'metaId'))
                                             <a class="is-italic" href="{{ route('laramie::alert-redirector', ['id' => $alert->metaId]) }}">view in context &rarr;</a>
                                         @endif
                                     </p>
-                                    {!!$alert->html!!}
+                                    {!! $alert->getMessage() !!}
                                 </div>
                             </div>
                             <div class="media-right">

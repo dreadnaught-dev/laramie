@@ -24,6 +24,7 @@
   },
   "scripts": {
     "watch": "gulp default",
+    "scripts": "gulp scripts",
     "copy-vendor": "gulp copy-vendor",
     "prettier": "gulp prettier",
     "notes": "gulp notes"
