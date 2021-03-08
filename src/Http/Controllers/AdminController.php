@@ -11,6 +11,7 @@ use Validator;
 use cogpowered\FineDiff\Diff;
 use cogpowered\FineDiff\Granularity\Word;
 
+use Laramie\AdminModels\LaramieComment;
 use Laramie\Hook;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Hooks\HandleBulkAction;
@@ -604,6 +605,7 @@ class AdminController extends Controller
 
         if ($isNew) {
             // Update meta that may have been created to point to this new item:
+            // @note: stopped here preston
             $this->dataService->updateMetaIds($metaId, $item->id);
             $redirectRouteParams['id'] = $item->id;
             $previousUrl = preg_replace('/\/new\b/', '/'.$item->id, $previousUrl);
@@ -798,13 +800,20 @@ class AdminController extends Controller
 
     public function alertRedirect($id)
     {
-        $meta = $this->dataService->getEditInfoForMetaItem($id);
-        if ($meta) {
-            return redirect()->to(route('laramie::edit', (array) $meta).'?highlight-comment='.$id);
+        $comment = LaramieComment::find($id);
+
+        $relatedItem = DB::table('laramie_data')->find(data_get($comment, 'relatedItemId', Uuid::uuid4()));
+
+        $context = $relatedItem
+            ? ['id' => $relatedItem->id, 'modelKey' => $relatedItem->type]
+            : null;
+
+        if ($context) {
+            return redirect()->to(route('laramie::edit', (array) $context).'?highlight-comment='.$id);
         }
 
         return redirect()->route('laramie::dashboard')
-            ->with('alert', (object) ['class' => 'is-warning', 'title' => 'Notification not found', 'alert' => 'Well, this is a little embarrassing. The original notification has been removed, so we can\'t send you to its original context.']);
+            ->with('alert', (object) ['class' => 'is-warning', 'title' => 'Notification not found', 'alert' => 'Well, this is a little embarrassing. The comment has been removed, so we can\'t send you to its original context.']);
     }
 
     /**

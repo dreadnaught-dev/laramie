@@ -4,9 +4,13 @@ namespace Laramie\Http\Controllers;
 
 use DB;
 use Illuminate\Http\Request;
+use Str;
+
+use Laramie\AdminModels\LaramieAlert;
+use Laramie\AdminModels\LaramieComment;
+use Laramie\AdminModels\LaramieTag;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Services\LaramieDataService;
-use Str;
 
 /**
  * The AjaxController is primarily responsible for handling all the AJAX interactions initiated by the list and edit
@@ -201,40 +205,38 @@ class AjaxController extends Controller
      */
     public function getMeta($modelKey, $id)
     {
-        $comments = $this->dataService->getComments($id);
-
         return response()->json((object) [
-            'tags' => $this->dataService->getTags($id),
-            'comments' => $comments,
+            'tags' => LaramieTag::where('relatedItemId', $id)->orderBy('created_at', 'desc')->get(),
+            'comments' => LaramieComment::where('relatedItemId', $id)->orderBy('created_at', 'desc')->get()->map(function($item) { return $item->getAjaxViewModel(); }),
         ]);
     }
 
     /**
-     * Delete a meta item. If it doesn't exist, return a json payload of `{ success: false }`. But it should be ok on
-     * the frontend to silently fail if deletion doesn't work.
+     * Delete a tag / comment.
      *
      * @return \Illuminate\Http\Response
      */
     public function deleteMeta($modelKey, $id, Request $request)
     {
-        // After deleting, return meta to repopulate holders
-        $deletedItem = $this->dataService->deleteMeta($id);
-        if ($deletedItem) {
-            return $this->getMeta($modelKey, $deletedItem->laramie_data_id);
-        }
+        DB::table('laramie_data')
+            ->whereIn('type', ['laramieComment', 'laramieTag'])
+            ->where('id', $id)
+            ->delete();
 
-        return response()->json((object) ['success' => false]);
+        return response()->json((object) ['success' => true]);
     }
 
     /**
-     * Add a tag to an item. Return all tags / comments after doing so.
+     * Add a tag to an item. Return tags / comments to repopulate ui
      *
      * @return \Illuminate\Http\Response
      */
     public function addTag($modelKey, $id, Request $request)
     {
-        // After saving, return a list of tags to repopulate tags holder.
-        $this->dataService->createTag($id, $request->get('meta'));
+        LaramieTag::create([
+            'relatedItemId' => $id,
+            'tag' => $request->get('meta'),
+        ]);
 
         return $this->getMeta($modelKey, $id);
     }
@@ -246,8 +248,7 @@ class AjaxController extends Controller
      */
     public function addComment($modelKey, $id, Request $request)
     {
-        // After saving, return a list of comments to repopulate comments holder.
-        $this->dataService->createComment($id, LaramieHelpers::getLaramieMarkdownObjectFromRawText($request->get('meta')));
+        LaramieComment::createFromText($id, $request->get('meta'));
 
         return $this->getMeta($modelKey, $id);
     }
@@ -260,12 +261,12 @@ class AjaxController extends Controller
     public function dismissAlert($id)
     {
         // First, ensure that the the id maps to an alert (don't let this be a vector for arbitrarily deleting items).
-        $alert = $this->dataService->findById('laramieAlert', $id);
+        $alert = LaramieAlert::find($id);
 
         // If the item exists (as an alert), delete it:
         if (data_get($alert, 'id')) {
             $alert->status = 'Read';
-            $this->dataService->save('laramieAlert', $alert);
+            $alert->save();
         }
 
         // Always return success. Not concerned by failure (either due to an

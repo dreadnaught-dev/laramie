@@ -331,7 +331,7 @@ class LaramieQueryBuilder
             ->save($this->callingClass::getJsonClass(), $item, $validate, $this->maxPrefetchDepth, $runSaveHooks));
     }
 
-    // Allow updating of json data via query (may touch deeply-nested data as long as it's not computed, a reference field, or a repeatable aggregate (jsonb_set doesn't have decent facility for mass updating array data)
+    // Allow updating of json data via query (may touch deeply-nested data as long as it's not computed, a reference field, or a repeatable aggregate (jsonb_set doesn't have ability to mass update array data)
     public function update(array $attributes)
     {
         $attributesToUpdate = [];
@@ -424,31 +424,6 @@ class LaramieQueryBuilder
         $column = $this->castColumnAsNumeric($column);
 
         return $this->castResultAsNumeric($this->getAggregateQuery()->sum($column));
-    }
-
-    /* META-RELATED FUNCTIONS */
-    public function getTags($id)
-    {
-        return $this->dataService
-            ->getTags($id);
-    }
-
-    public function addTag($id, $tag)
-    {
-        return $this->dataService
-            ->createTag($id, $tag);
-    }
-
-    public function getComments($id)
-    {
-        return $this->dataService
-            ->getComments($id);
-    }
-
-    public function addComment($id, $comment)
-    {
-        return $this->dataService
-            ->createComment($this->id, $comment);
     }
 
     /* PRIVATE FUNCTIONS */

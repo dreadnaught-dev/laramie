@@ -4,7 +4,7 @@
             @{{#each tags}}
             <div class="control">
                 <div class="tags has-addons">
-                    <span class="tag is-info is-medium">@{{text}}</span>
+                    <span class="tag is-info is-medium">@{{tag}}</span>
                     <a class="tag is-delete is-medium" data-id="@{{id}}"></a>
                 </div>
             </div>
@@ -19,12 +19,12 @@
     @{{#each comments}}
         <article id="comment-@{{id}}" class="media margin-bottom is-small">
             <figure class="media-left">
-                <span class="tag is-rounded is-medium" style="background-color: @{{_color}};">@{{_userFirstInitial}}</span>
+                <span class="tag is-rounded is-medium" style="background-color: @{{color}};">@{{userFirstInitial}}</span>
             </figure>
             <div class="media-content">
                 <div class="content">
-                    <p class="is-size-7 is-marginless"><strong>@{{_user}}</strong> @{{lastModified}}</p>
-                    @{{{html}}}
+                    <p class="is-size-7 is-marginless"><strong>@{{user}}</strong> @{{lastModified}}</p>
+                    @{{{comment.html}}}
                 </div>
             </div>
             <div class="media-right">

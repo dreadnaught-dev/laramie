@@ -5,6 +5,9 @@ namespace Laramie\Lib;
 use Exception;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+
+use Laramie\AdminModels\LaramieComment;
+use Laramie\AdminModels\LaramieTag;
 use Laramie\Lib\LaramieHelpers;
 
 /**
@@ -467,7 +470,7 @@ class LaramieModel implements \JsonSerializable
 
     public function getComments()
     {
-        return static::getLaramieQueryBuilder('getComments', [$this->id]);
+        return LaramieComment::where('relatedItemId', $this->id)->get();
     }
 
     public function getTags()
@@ -477,15 +480,26 @@ class LaramieModel implements \JsonSerializable
 
     public function addTag($tag)
     {
-        // @todo -- case where id is null (or item is new)
-        return static::getLaramieQueryBuilder('addTag', [$this->id, $tag]);
-    }
+        if (!$this->id) {
+            throw new Exception('A tag cannot be added until an item has been saved');
+        }
 
+        return LaramieComment::create([
+            'relatedItemId' => $this->id,
+            'tag' => $tag,
+        ]);
+    }
 
     public function addComment($comment)
     {
-        // @todo -- case where id is null (or item is new)
-        return static::getLaramieQueryBuilder('addComment', [$this->id, $comment]);
+        if (!$this->id) {
+            throw new Exception('A comment cannot be added until an item has been saved');
+        }
+
+        return LaramieComment::create([
+            'relatedItemId' => $this->id,
+            'comment' => LaramieHelpers::getLaramieMarkdownObjectFromRawText($comment),
+        ]);
     }
 
     public static function depth($maxPrefetchDepth)

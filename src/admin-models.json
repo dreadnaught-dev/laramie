@@ -72,6 +72,24 @@
                 }
             }
         },
+        "laramieComment": {
+            "isSystemModel": true,
+            "isListable": false,
+            "isEditable": false,
+            "fields": {
+                "relatedItemId": { "type": "hidden" },
+                "comment": { "type": "markdown", "required": true }
+            }
+        },
+        "laramieTag": {
+            "isSystemModel": true,
+            "isListable": false,
+            "isEditable": false,
+            "fields": {
+                "relatedItemId": { "type": "hidden" },
+                "tag": { "type": "text", "required": true }
+            }
+        },
         "laramieAlert": {
             "name": "Notification",
             "namePlural": "Notifications",
@@ -79,10 +97,12 @@
             "alias": "authorName",
             "defaultSort": "_created_at",
             "defaultSortDirection": "desc",
+            "isListable": false,
+            "isEditable": false,
             "fields": {
                 "author_id": { "type": "hidden", "isListable": false, "isEditable": false },
                 "recipient_id": { "type": "hidden", "isListable": false, "isEditable": false },
-                "metaId": { "type": "hidden", "isListable": false, "isEditable": false },
+                "metaItemId": { "type": "hidden", "_NOTES": "this is the id of the original comment. we'll use the comment's relatedItemId relationship to determine context of where it was made.", "isListable": false, "isEditable": false },
                 "authorName": { "type": "computed", "label": "From", "sql": "(select data->>'user' from laramie_data as ld2 where ld2.type = 'laramieUser' and ld2.id::text = laramie_data.data->>'author' limit 1)" },
                 "message": { "type": "markdown", "required": true },
                 "status": {

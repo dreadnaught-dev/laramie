@@ -27,7 +27,6 @@ class LaramieDataService
 {
     protected $jsonConfig;
     protected $cachedItems = [];
-    protected static $isFetchingUser = false;
     protected static $cachedUser = null;
 
     public function __construct()
@@ -112,7 +111,7 @@ class LaramieDataService
         }
 
         $options['curDepth'] = $curDepth;
-        if (config('laramie.suppress_events') !== true && !self::$isFetchingUser) {
+        if (config('laramie.suppress_events') !== true) {
             Hook::fire(new PostFetch($model, $laramieModels, $this->getUser(), $options));
         }
 
@@ -385,9 +384,9 @@ class LaramieDataService
                 $field = 'date_part(\'epoch\', '.preg_replace('/^_/', '', $field).'::timestamp)::int';
             }
         } elseif ($field == '_tags') {
-            $field = '(select string_agg(ldm.data->>\'text\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
+            $field = '(select string_agg(ld2.data->>\'tag\', \'|\') from laramie_data as ld2 where (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)';
         } elseif ($field == '_comments') {
-            $field = '(select string_agg(ldm.data->>\'markdown\', \'|\') from laramie_data_meta as ldm where ldm.laramie_data_id = laramie_data.id)';
+            $field = '(select string_agg(ld2.data->>\'markdown\', \'|\') from laramie_data as ld2 where (ld2.data->>\'relatedItemId\'):uuid = laramie_data.id)';
         } elseif ($modelFieldType == 'aggregate') {
             // Aggregate fields aren't eligible to take part in filters --
             // if a fitler is needed on an aggregate, a computed field should
@@ -570,124 +569,6 @@ class LaramieDataService
             ->get();
     }
 
-    public function getNumComments($modelIds)
-    {
-        return $this->getNumMeta($modelIds, 'Comment');
-    }
-
-    public function getNumTags($modelIds)
-    {
-        return $this->getNumMeta($modelIds, 'Tag');
-    }
-
-    private function getNumMeta($modelIds, $metaType)
-    {
-        return DB::table('laramie_data_meta')
-            ->where('type', '=', $metaType)
-            ->whereIn('laramie_data_id', $modelIds)
-            ->select(['laramie_data_id', DB::raw('count(*) as count')])
-            ->groupBy('laramie_data_id')
-            ->get();
-    }
-
-    public function getComments($id)
-    {
-        return [];
-
-        return $this->getMeta($id, 'Comment')
-            ->map(function ($item) { return LaramieHelpers::transformCommentForDisplay($item); });
-    }
-
-    public function updateMetaIds($oldLaramieId, $newLaramieId)
-    {
-        return DB::table('laramie_data_meta')
-            ->where('laramie_data_id', $oldLaramieId)
-            ->update(['laramie_data_id' => $newLaramieId]);
-    }
-
-    public function getTags($id)
-    {
-        return $this->getMeta($id, 'Tag', \DB::raw('laramie_data_meta.data->>\'text\''), 'asc');
-    }
-
-    public function getMeta($id, $metaType, $order = 'laramie_data_meta.created_at', $orderDirection = 'desc')
-    {
-        $rows = DB::table('laramie_data_meta')
-            ->leftJoin('users', 'laramie_data_meta.user_id', '=', 'users.id')
-            ->where('laramie_data_id', $id)
-            ->where('laramie_data_meta.type', $metaType)
-            ->select(['laramie_data_meta.*', DB::raw(config('laramie.username').' as _user')])
-            ->orderBy($order, $orderDirection)
-            ->get();
-
-        return LaramieModel::load($rows);
-    }
-
-    public function getEditInfoForMetaItem($metaId)
-    {
-        return DB::table('laramie_data_meta')
-            ->leftJoin('laramie_data', 'laramie_data_meta.laramie_data_id', '=', 'laramie_data.id')
-            ->where('laramie_data_meta.id', $metaId)
-            ->select(['laramie_data.id', 'laramie_data.type'])
-            ->first();
-    }
-
-    public function deleteMeta($id)
-    {
-        if (LaramieHelpers::isValidUuid($id)) {
-            $item = DB::table('laramie_data_meta')
-                ->where('id', $id)
-                ->first();
-            DB::table('laramie_data_meta')
-                ->where('id', $id)
-                ->delete();
-
-            return $item;
-        }
-
-        return false;
-    }
-
-    public function createTag($modelId, $tag)
-    {
-        $success = true;
-        $tags = array_filter(preg_split('/\s*,\s*/', $tag));
-        foreach ($tags as $tag) {
-            $success = $success && $this->createMeta($modelId, 'Tag', (object) ['text' => $tag]);
-        }
-
-        return $success;
-    }
-
-    public function createComment($modelId, $comment)
-    {
-        $comment = $this->createMeta($modelId, 'Comment', $comment);
-        if ($comment && config('laramie.suppress_events') !== true) {
-            // @note: the `_laramieComment` model does not exist, it is simply being used pass info on to a listener
-            Hook::fire(new PostSave((object) ['model' => 'LaramieMeta', '_type' => '_laramieComment'], LaramieModel::load((object) ['metaId' => $comment['id'], 'comment' => json_decode($comment['data'])]), $this->getUser()));
-        }
-    }
-
-    private function createMeta($modelId, $type, $data)
-    {
-        if (LaramieHelpers::isValidUuid($modelId)) {
-            $modelData = [
-                'id' => Uuid::uuid1()->toString(),
-                'user_id' => $this->getUserId(),
-                'laramie_data_id' => $modelId,
-                'type' => $type,
-                'data' => json_encode($data),
-                'created_at' => $this->getDbNow(),
-                'updated_at' => $this->getDbNow(),
-            ];
-            DB::table('laramie_data_meta')->insert($modelData);
-
-            return $modelData;
-        }
-
-        return false;
-    }
-
     public function clearCache()
     {
         $this->cachedItems = [];
@@ -753,7 +634,7 @@ class LaramieDataService
         $this->cachedItems[$item->id] = $item;
 
         $itemCollection = collect([$item]); // Wrap the single item in a collection to give `PostFetch` a consistent interface -- it works on collection-like items
-        if (config('laramie.suppress_events') !== true && !self::$isFetchingUser) {
+        if (config('laramie.suppress_events') !== true) {
             Hook::fire(new PostFetch($model, $itemCollection, $this->getUser()));
         }
 

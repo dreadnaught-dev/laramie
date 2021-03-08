@@ -3,15 +3,18 @@
 namespace Laramie\AdminModels;
 
 use Carbon\Carbon;
+use DB;
 
 use Laramie\Lib\LaramieModel;
 use Laramie\Lib\LaramieHelpers;
 
 class LaramieAlert extends LaramieModel
 {
+    static $userHash = [];
+
     public function getAuthorName()
     {
-        return data_get($this, 'authorName', '??');
+        return data_get($this->getAuthor(), 'handle', '??');
     }
 
     public function getColor()
@@ -32,5 +35,14 @@ class LaramieAlert extends LaramieModel
     public function getMessage()
     {
         return data_get($this, 'message.html');
+    }
+
+    private function getAuthor()
+    {
+        if (!array_key_exists($this->user_id, static::$userHash)) {
+            static::$userHash[$this->user_id] = DB::table('users')->where('id', $this->user_id)->addSelect(DB::raw(config('laramie.username') . ' as handle'))->first();
+        }
+
+        return static::$userHash[$this->user_id];
     }
 }

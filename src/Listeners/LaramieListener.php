@@ -9,12 +9,13 @@ use Ramsey\Uuid\Uuid;
 use Storage;
 use Str;
 
+use Laramie\AdminModels\LaramieAlert;
 use Laramie\Globals;
 use Laramie\Hook;
-use Laramie\Services\LaramieDataService;
-use Laramie\Lib\ModelLoader;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
+use Laramie\Lib\ModelLoader;
+use Laramie\Services\LaramieDataService;
 
 class LaramieListener
 {
@@ -28,8 +29,9 @@ class LaramieListener
         // By default, laramie's listeners will be fired after others (by default,
         // listeners are added with a sort of zero, which will run _before_ Laramie's).
         Hook::listen('Laramie\Hooks\ConfigLoaded', 'Laramie\Listeners\LaramieListener@configLoaded', 1);
-        Hook::listen('Laramie\Hooks\PreFetch', 'Laramie\Listeners\LaramieListener@preFetch', 1);
+        Hook::listen('Laramie\Hooks\FilterQuery', 'Laramie\Listeners\LaramieListener@filterQuery', 1);
         Hook::listen('Laramie\Hooks\PostList', 'Laramie\Listeners\LaramieListener@postList', 1);
+        Hook::listen('Laramie\Hooks\PostFetch', 'Laramie\Listeners\LaramieListener@postFetch', 1);
         Hook::listen('Laramie\Hooks\PreEdit', 'Laramie\Listeners\LaramieListener@preEdit', 1);
         Hook::listen('Laramie\Hooks\PreSave', 'Laramie\Listeners\LaramieListener@preSave', 1);
         Hook::listen('Laramie\Hooks\PostSave', 'Laramie\Listeners\LaramieListener@postSave', 1);
@@ -66,6 +68,16 @@ class LaramieListener
             $showName = data_get($nonSystemModel, 'isSingular', false) ? $nonSystemModel->name : $nonSystemModel->namePlural;
             $laramieRoleModel->fields->{$nonSystemModel->_type} = ModelLoader::processField($nonSystemModel->_type, (object) ['type' => 'boolean', 'label' => 'Can manage '.$showName]);
         }
+
+        if (!config('laramie.disable_meta')) {
+            foreach ($models as $model) {
+                if (data_get($model, 'disableMeta')) {
+                    continue;
+                }
+                $model->fields->_tags = ModelLoader::processField('_tags', (object) ['type' => 'computed', 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieTag\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)']);
+                $model->fields->_comments = ModelLoader::processField('_comments', (object) ['type' => 'computed', 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieComment\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)']);
+            }
+        }
     }
 
     /**
@@ -73,14 +85,16 @@ class LaramieListener
      *
      * Only show system roles to admins on list page.
      *
-     * @param $event Laramie\Hooks\PreFetch
+     * @param $event Laramie\Hooks\preList
      */
-    public function preFetch($event)
+    public function filterQuery($event)
     {
         $model = $event->model;
         $query = $event->query;
         $user = $event->user;
         $type = $model->_type;
+
+        return;
 
         switch ($type) {
             case 'laramieRole':
@@ -98,6 +112,43 @@ class LaramieListener
                     $query->where(DB::raw('data->>\'recipient_id\''), '=', optional($user)->id ?: -1);
                 });
                 break;
+        }
+    }
+
+    /**
+     * Handle pre-list event.
+     *
+     * Only show system roles to admins on list page.
+     *
+     * @param $event Laramie\Hooks\preList
+     */
+    public function postFetch($event)
+    {
+        $model = $event->model;
+        $items = $event->items;
+        $user = $event->user;
+        $type = $model->_type;
+
+        $deferredFields = collect($model->fields)
+            ->filter(function($item) {
+                return data_get($item, 'type') === 'computed' && data_get($item, 'isDeferred');
+            });
+
+        if ($items->count() === 0) {
+            return;
+        }
+
+        foreach ($deferredFields as $deferredFieldKey => $deferredField) {
+            $values = DB::table('laramie_data')
+                ->addSelect('id')
+                ->addSelect(DB::raw($deferredField->sql . ' as val'))
+                ->whereIn('id', $items->pluck('id'))
+                ->get()
+                ->keyBy('id');
+
+            foreach ($items as $item) {
+                $item->{$deferredFieldKey} = data_get($values, $item->id . '.val');
+            }
         }
     }
 
@@ -125,8 +176,6 @@ class LaramieListener
 
         $systemMetaFields = [
             '_versions' => function() use($dataService, $ids) { return $dataService->getNumVersions($ids); },
-            '_comments' => function() use($dataService, $ids) { return $dataService->getNumComments($ids); },
-            '_tags' => function() use($dataService, $ids) { return $dataService->getNumTags($ids); },
         ];
 
         foreach ($systemMetaFields as $metaField => $countGeneratorCallback) {
@@ -164,17 +213,6 @@ class LaramieListener
                 // Don't allow main system rles to be edited
                 if (in_array($item->id, [Globals::AdminRoleId])) {
                     throw new Exception('Sorry, you may not edit default system roles.');
-                }
-                break;
-            case 'laramieAlert':
-                if ($item->_isNew) {
-                    $model->fields->status->isEditable = false;
-                    $model->fields->recipient->isEditable = true;
-                } elseif (data_get($item, 'recipient.id') !== $user->id) {
-                    $model->fields->status->type = 'hidden';
-                } else {
-                    $model->fields->_authorName->isEditable = true;
-                    $model->fields->_authorName->type = 'hidden';
                 }
                 break;
         }
@@ -310,21 +348,7 @@ class LaramieListener
         switch ($type) {
             // Create thumbnails for images
             case 'laramieUpload':
-                try {
-                    LaramieHelpers::postProcessLaramieUpload($item);
-                } catch (Exception $e) { /* there was some issue with creating thumbs... don't bork too hard, though */
-                }
-                break;
-            case 'laramieAlert':
-                // Only show alerts a user has received:
-                if ($item->_isNew) {
-                    $item->author = $user;
-                    $item->status = 'Unread';
-                } else {
-                    $orig = $dataService->findById('laramieAlert', $item->id);
-                    $item->author = $orig->author;
-                    $item->recipient = $orig->recipient;
-                }
+                LaramieHelpers::postProcessLaramieUpload($item);
                 break;
         }
     }
@@ -348,7 +372,7 @@ class LaramieListener
             // Create thumbnails for images?
             case 'laramieUpload':
                 break;
-            case '_laramieComment':
+            case 'laramieComment':
                 $plainText = data_get($item, 'comment.markdown');
                 preg_match_all('/@(?<mentions>[a-z0-9\-\.\_@]+)/i', $plainText, $matches);
                 $mentions = data_get($matches, 'mentions');
@@ -358,7 +382,7 @@ class LaramieListener
                         ->first();
                     if ($mentionedUser) {
                         LaramieAlert::create([
-                            'metaId' => data_get($item, 'metaId'),
+                            'metaItemId' => data_get($item, 'id'),
                             'recipient_id' => $mentionedUser->id,
                             'author_id' => optional($user)->id,
                             'message' => $item->comment,

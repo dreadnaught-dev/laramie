@@ -33,7 +33,7 @@
         <div class="navbar-end">
 
             <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link" href="{{ route('laramie::list', ['modelKey' => 'laramieAlert']) }}" title="Notifications">
+                <div class="navbar-link" title="Notifications">
                     <span class="icon" style="font-size: 1.2em;">
                         <span class="fa-layers fa-fw">
                             <i class="far fa-bell"></i>
@@ -42,7 +42,7 @@
                             @endif
                         </span>
                     </span>
-                </a>
+                </div>
                 <div class="navbar-dropdown is-right">
                     @forelse ($alerts as $alert)
                     <div class="navbar-item">
@@ -54,8 +54,8 @@
                                 <div class="content">
                                     <p class="is-size-7 is-marginless">
                                         <strong>{{ $alert->getAuthorName() }}</strong> {{ $alert->getHumanReadableCreatedDate() }}
-                                        @if (data_get($alert, 'metaId'))
-                                            <a class="is-italic" href="{{ route('laramie::alert-redirector', ['id' => $alert->metaId]) }}">view in context &rarr;</a>
+                                        @if (data_get($alert, 'metaItemId'))
+                                            <a class="is-italic" href="{{ route('laramie::alert-redirector', ['id' => $alert->metaItemId]) }}">view in context &rarr;</a>
                                         @endif
                                     </p>
                                     {!! $alert->getMessage() !!}
