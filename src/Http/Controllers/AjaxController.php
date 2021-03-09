@@ -61,7 +61,7 @@ class AjaxController extends Controller
                             ? LaramieHelpers::formatListValue($alias, data_get($e, $alias->id), true)
                             : null,
                         'selected' => data_get($e, 'selected') == 1,
-                        'created_at' => \Carbon\Carbon::parse(data_get($e, 'created_at'), config('laramie.timezone'))->diffForHumans(),
+                        'created_at' => \Carbon\Carbon::parse(data_get($e, 'created_at'))->diffForHumans(),
                     ];
                 }));
         }

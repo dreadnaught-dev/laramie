@@ -877,7 +877,7 @@ class AdminController extends Controller
             abort(403, 'Forbidden');
         }
 
-        $alert = (object) ['class' => 'is-warning', 'title' => 'Revision loaded', 'alert' => sprintf('The revision from %s has been loaded successfully.', \Carbon\Carbon::parse($item->updated_at, config('laramie.timezone'))->toDayDateTimeString())];
+        $alert = (object) ['class' => 'is-warning', 'title' => 'Revision loaded', 'alert' => sprintf('The revision from %s has been loaded successfully.', \Carbon\Carbon::parse($item->updated_at)->toDayDateTimeString())];
 
         return redirect()->route('laramie::edit', ['modelKey' => $model->_type, 'id' => $item->laramie_data_id])
             ->with('alert', $alert);
@@ -981,8 +981,8 @@ class AdminController extends Controller
         }
 
         $hasPrevious = (bool) $previousItem->id;
-        $leftLabel = $hasPrevious ? sprintf('Item from %s', \Carbon\Carbon::parse($previousItem->updated_at, config('laramie.timezone'))->toDayDateTimeString()) : '--';
-        $rightLabel = sprintf('Item from %s', \Carbon\Carbon::parse($item->updated_at, config('laramie.timezone'))->toDayDateTimeString());
+        $leftLabel = $hasPrevious ? sprintf('Item from %s', \Carbon\Carbon::parse($previousItem->updated_at)->toDayDateTimeString()) : '--';
+        $rightLabel = sprintf('Item from %s', \Carbon\Carbon::parse($item->updated_at)->toDayDateTimeString());
 
         return view(request()->ajax() ? 'laramie::partials.revision-comparison-table' : 'laramie::revision-compare')
             ->with('model', $model)

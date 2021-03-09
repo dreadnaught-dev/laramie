@@ -7,7 +7,7 @@
             @if ($item->_isNew)
                 This is a <em><strong>new</strong></em> item and hasn't been saved yet.
             @else
-                Last updated {{ \Carbon\Carbon::parse($item->updated_at, config('laramie.timezone'))->toDayDateTimeString() }}
+                Last updated {{ \Carbon\Carbon::parse($item->updated_at)->toDayDateTimeString() }}
                 @if (data_get($lastUserToUpdate, 'id'))
                     by
                     {{ data_get($lastUserToUpdate, config('laramie.username', '--')) }}
