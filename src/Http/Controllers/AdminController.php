@@ -605,8 +605,8 @@ class AdminController extends Controller
 
         if ($isNew) {
             // Update meta that may have been created to point to this new item:
-            // @note: stopped here preston
-            $this->dataService->updateMetaIds($metaId, $item->id);
+            $this->repointMetaIds($metaId, $item->id);
+
             $redirectRouteParams['id'] = $item->id;
             $previousUrl = preg_replace('/\/new\b/', '/'.$item->id, $previousUrl);
         }
@@ -989,5 +989,13 @@ class AdminController extends Controller
             ->with('leftLabel', $leftLabel)
             ->with('rightLabel', $rightLabel)
             ->with('diffs', $diffs);
+    }
+
+    private function repointMetaIds($oldId, $newId)
+    {
+        DB::table('laramie_data')
+            ->whereIn('type', ['laramieComment', 'laramieTag'])
+            ->where('data','@>', DB::raw('\'{"relatedItemId":"'.$oldId.'"}\''))
+            ->update(['data' => DB::raw('data || \'{"relatedItem":"'.$newId.'"}\'')]);
     }
 }

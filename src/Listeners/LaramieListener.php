@@ -30,7 +30,6 @@ class LaramieListener
         // listeners are added with a sort of zero, which will run _before_ Laramie's).
         Hook::listen('Laramie\Hooks\ConfigLoaded', 'Laramie\Listeners\LaramieListener@configLoaded', 1);
         Hook::listen('Laramie\Hooks\FilterQuery', 'Laramie\Listeners\LaramieListener@filterQuery', 1);
-        Hook::listen('Laramie\Hooks\PostList', 'Laramie\Listeners\LaramieListener@postList', 1);
         Hook::listen('Laramie\Hooks\PostFetch', 'Laramie\Listeners\LaramieListener@postFetch', 1);
         Hook::listen('Laramie\Hooks\PreEdit', 'Laramie\Listeners\LaramieListener@preEdit', 1);
         Hook::listen('Laramie\Hooks\PreSave', 'Laramie\Listeners\LaramieListener@preSave', 1);
@@ -74,8 +73,9 @@ class LaramieListener
                 if (data_get($model, 'disableMeta')) {
                     continue;
                 }
-                $model->fields->_tags = ModelLoader::processField('_tags', (object) ['type' => 'computed', 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieTag\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)']);
-                $model->fields->_comments = ModelLoader::processField('_comments', (object) ['type' => 'computed', 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieComment\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)']);
+                $model->fields->_tags = ModelLoader::processField('_tags', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieTag\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'listByDefault' => false, 'isSearchable' => false]);
+                $model->fields->_comments = ModelLoader::processField('_comments', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieComment\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'listByDefault' => false, 'isSearchable' => false]);
+                $model->fields->_versions = ModelLoader::processField('_versions', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data_archive as lda where laramie_data.id = lda.laramie_data_id)', 'listByDefault' => false, 'isSearchable' => false]);
             }
         }
     }
@@ -129,66 +129,29 @@ class LaramieListener
         $user = $event->user;
         $type = $model->_type;
 
+        if ($items->count() === 0) {
+            return;
+        }
+
         $deferredFields = collect($model->fields)
             ->filter(function($item) {
                 return data_get($item, 'type') === 'computed' && data_get($item, 'isDeferred');
             });
 
-        if ($items->count() === 0) {
-            return;
-        }
-
-        foreach ($deferredFields as $deferredFieldKey => $deferredField) {
-            $values = DB::table('laramie_data')
+        if (count($deferredFields)) {
+            $valuesQuery = DB::table('laramie_data')
                 ->addSelect('id')
-                ->addSelect(DB::raw($deferredField->sql . ' as val'))
-                ->whereIn('id', $items->pluck('id'))
-                ->get()
-                ->keyBy('id');
+                ->whereIn('id', $items->pluck('id'));
 
-            foreach ($items as $item) {
-                $item->{$deferredFieldKey} = data_get($values, $item->id . '.val');
+            foreach ($deferredFields as $deferredFieldKey => $deferredField) {
+                $valuesQuery->addSelect(DB::raw($deferredField->sql . ' as "' . $deferredFieldKey . '"'));
             }
-        }
-    }
 
-    /**
-     * Handle post-list event.
-     *
-     * @param $event Laramie\Hooks\PostList
-     */
-    public function postList($event)
-    {
-        $model = $event->model;
-        $items = $event->items;
-        $user = $event->user;
-        $extra = $event->extra;
+            $deferredValues = $valuesQuery->get()->keyBy('id');
 
-        $listFields = data_get($extra, 'listFields');
-
-        $ids = [];
-
-        foreach ($items as $item) {
-            $ids[] = $item->id;
-        }
-
-        $dataService = $this->getLaramieDataService();
-
-        $systemMetaFields = [
-            '_versions' => function() use($dataService, $ids) { return $dataService->getNumVersions($ids); },
-        ];
-
-        foreach ($systemMetaFields as $metaField => $countGeneratorCallback) {
-            $counts = null;
-            $map = [];
-            if (data_get($listFields, $metaField)) {
-                $counts = $countGeneratorCallback();
-                foreach ($counts as $count) {
-                    $map[$count->laramie_data_id] = $count;
-                }
+            foreach ($deferredFields as $deferredFieldKey => $deferredField) {
                 foreach ($items as $item) {
-                    $count = data_get($map, $item->id, null);
-                    $item->{$metaField} = str_replace('{*count*}', data_get($count, 'count', 0), $item->{$metaField});
+                    $item->{$deferredFieldKey} = data_get($deferredValues, $item->id . '.' . $deferredFieldKey);
                 }
             }
         }

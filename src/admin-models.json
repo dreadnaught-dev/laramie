@@ -97,6 +97,7 @@
             "alias": "authorName",
             "defaultSort": "_created_at",
             "defaultSortDirection": "desc",
+            "disableMeta": true,
             "isListable": false,
             "isEditable": false,
             "fields": {
@@ -115,6 +116,7 @@
         },
         "laramieSavedReport": {
             "isSystemModel": true,
+            "disableMeta": true,
             "isListable": false,
             "isEditable": false,
             "fields": {

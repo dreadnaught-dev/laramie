@@ -48,7 +48,7 @@ class ModelLoader
             ->all();
 
         // Cache the "loaded" config by saving a hydrated version of it to storage
-        if (true || $configCachedTime < $configModifiedTime) {
+        if ($configCachedTime < $configModifiedTime) {
             $config = (object) [];
             $models = (object) [];
             $menu = (object) [];
@@ -170,17 +170,9 @@ class ModelLoader
                 }
 
                 // Add some utility computed fields
-                if (config('laramie.disable_meta') !== true && data_get($model, 'disableMeta', false) !== true) {
-                    $fields->_id = data_get($fields, '_id', (object) ['type' => 'computed', 'dataType' => 'string', 'label' => 'Id', 'sql' => '(id::text)', 'listByDefault' => false, 'weight' => 900]);
-                    $fields->_created_at = data_get($fields, '_created_at', (object) ['type' => 'computed', 'dataType' => 'dbtimestamp', 'label' => 'Created at', 'sql' => '(created_at)', 'listByDefault' => false, 'weight' => 910]);
-                    $fields->_updated_at = data_get($fields, '_updated_at', (object) ['type' => 'computed', 'dataType' => 'dbtimestamp', 'label' => 'Updated at', 'sql' => '(updated_at)', 'listByDefault' => false, 'weight' => 920]);
-
-                    //$fields->_version = (object) ['type' => 'computed', 'label' => 'Version', 'sql' => '(select (count(*) + 1) from laramie_data_archive as lda where lda.laramie_data_id = laramie_data.id)', 'listByDefault' => false, 'weight' => 920];
-                    // @optimize -- can we dynamically add a sort-by that hooks into the query to allow sorting? Maybe at list-level.
-                    $fields->_versions = (object) ['type' => 'computed', 'isMetaField' => true, 'label' => 'Versions', 'sql' => '(select \'{*count*}\')', 'listByDefault' => false, 'isSearchable' => false, 'sortBy' => null, 'weight' => 920];
-                    //$fields->_tags = (object) ['type' => 'computed', 'isMetaField' => true, 'label' => 'Tags', 'sql' => '(select \'<span class="js-meta" data-meta-type="tags"><i class="fas fa-tags has-text-grey"></i>&nbsp;<span class="tag-count">{*count*}</span></span>\')', 'listByDefault' => false, 'sortBy' => null, 'weight' => 930];
-                    //$fields->_comments = (object) ['type' => 'computed', 'isMetaField' => true, 'label' => 'Comments', 'sql' => '(select \'<span class="js-meta" data-meta-type="comments"><i class="far fa-comments has-text-grey"></i>&nbsp;<span class="comment-count">{*count*}</span></span>\')', 'listByDefault' => false, 'sortBy' => null, 'weight' => 940];
-                }
+                $fields->_id = data_get($fields, '_id', (object) ['type' => 'computed', 'dataType' => 'string', 'label' => 'Id', 'sql' => '(id::text)', 'listByDefault' => false, 'weight' => 900]);
+                $fields->_created_at = data_get($fields, '_created_at', (object) ['type' => 'computed', 'dataType' => 'dbtimestamp', 'label' => 'Created at', 'sql' => '(created_at)', 'listByDefault' => false, 'weight' => 910]);
+                $fields->_updated_at = data_get($fields, '_updated_at', (object) ['type' => 'computed', 'dataType' => 'dbtimestamp', 'label' => 'Updated at', 'sql' => '(updated_at)', 'listByDefault' => false, 'weight' => 920]);
 
                 // Ensure certain attributes are set for each field (set them if they aren't already)
                 foreach ($fields as $fieldName => $field) {
