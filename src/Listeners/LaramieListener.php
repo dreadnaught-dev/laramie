@@ -206,88 +206,57 @@ class LaramieListener
     {
         $model = $event->model;
         $nameOfBulkAction = $event->nameOfBulkAction;
-        $query = $event->query;
-        $postData = $event->postData;
+        $items = $event->items;
         $user = $event->user;
         $extra = $event->extra;
         $type = $model->_type;
 
         $dataService = $this->getLaramieDataService();
 
-        $postData['quickSearch'] = data_get($postData, 'quick-search');
+        $bulkActionName = Str::slug($nameOfBulkAction);
 
-        // @note -- switching on the slugified version of the bulk action
-        switch (Str::slug($nameOfBulkAction)) {
-            case 'delete':
-                // First create a backup of the items in the archive table
-                $q1 = clone $query;
-                $q1->select([DB::raw('uuid_generate_v1()'), 'id', DB::raw('\''.$dataService->getUserId().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
-                DB::insert('insert into laramie_data_archive (id, laramie_data_id, user_id, type, data, created_at, updated_at)'.$q1->toSql(), $q1->getBindings());
+        if ($bulkActionName === 'delete') {
+            foreach ($items as $item) {
+                $dataService->deleteById($model, $item->id);
+            }
+        }
 
-                $q2 = clone $query;
-                $q2->select(['id']);
+        else if ($bulkActionName === 'duplicate') {
+            foreach ($items as $item) {
+                $newItem = $item->replicate();
+                $dataService->save($model, $newItem);
+            }
+        }
 
-                if ($type == 'laramieRole') {
-                    $q2->whereNotIn('id', [Globals::AdminRoleId]); // don't allow deletion of core Laramie roles.
-                }
-
-                // Delete the items
-                DB::statement('delete from laramie_data where id in ('.$q2->toSql().')', $q2->getBindings());
-                break;
-
-            case 'duplicate':
-                $query->select([DB::raw('uuid_generate_v1()'), DB::raw('\''.$dataService->getUserId().'\''), 'type', 'data', DB::raw('now()'), DB::raw('now()')]);
-
-                DB::insert('insert into laramie_data (id, user_id, type, data, created_at, updated_at) '.$query->toSql(), $query->getBindings());
-                break;
-
-            case 'export-to-csv':
-                $itemIds = [];
-                $listableFields = data_get($extra, 'listableFields', collect(['id'])) // should always be defined, but default to `id` just in case
-                    ->filter(function ($item) { // Don't include meta fields in export (versions, tags, comments).
-                        return data_get($item, 'isMetaField') !== true;
-                    });
-
-                // Have "all" matching records been selected? Great. But limit to `max_csv_records` just in case there are too many records
-                $isAllSelected = data_get($postData, 'bulk-action-all-selected') === '1';
-                if ($isAllSelected) {
-                    $postData['resultsPerPage'] = config('laramie.max_csv_records');
-                } else {
-                    $itemIds = collect(data_get($postData, 'bulk-action-ids', []))
-                        ->filter(function ($item) {
-                            return $item && LaramieHelpers::isValidUuid($item);
-                        });
-                }
-
-                $records = $dataService->findByType($model, $postData, function ($query) use ($itemIds) {
-                    if ($itemIds) {
-                        $query->whereIn(DB::raw('id::text'), $itemIds);
-                    }
+        else if ($bulkActionName === 'export-to-csv') {
+            $listableFields = data_get($extra, 'listableFields', collect(['id'])) // should always be defined, but default to `id` just in case
+                ->filter(function ($item) { // Don't include meta fields in export (versions, tags, comments).
+                    return data_get($item, 'isMetaField') !== true;
                 });
-                $csvData = [];
-                $csvHeaders = [];
-                $csvFieldOrder = [];
-                foreach ($listableFields as $key => $field) {
-                    $csvHeaders[] = $field->label;
-                    $csvFieldOrder[$key] = $field;
+
+            $csvData = [];
+            $csvHeaders = [];
+            $csvFieldOrder = [];
+            foreach ($listableFields as $key => $field) {
+                $csvHeaders[] = $field->label;
+                $csvFieldOrder[$key] = $field;
+            }
+
+            $csvData[] = $csvHeaders;
+
+            foreach ($items as $record) {
+                $csvOutput = [];
+                foreach ($csvFieldOrder as $key => $field) {
+                    $value = data_get($record, $key);
+                    $csvOutput[] = LaramieHelpers::formatListValue($field, $value, false);
                 }
-                $csvData[] = $csvHeaders;
-                if ($isAllSelected && $records->hasMorePages()) {
-                    $csvData[] = ['This report exceeds the maximum number of records to export ('.config('laramie.max_csv_records').'). Please filter or sort your data if other records are needed.'];
-                }
-                foreach ($records as $record) {
-                    $csvOutput = [];
-                    foreach ($csvFieldOrder as $key => $field) {
-                        $value = data_get($record, $key);
-                        $csvOutput[] = LaramieHelpers::formatListValue($field, $value, false);
-                    }
-                    $csvData[] = $csvOutput;
-                }
-                $outputFile = storage_path(Uuid::uuid4()->toString().'.csv');
-                $writer = \League\Csv\Writer::createFromPath($outputFile, 'w+');
-                $writer->insertAll($csvData);
-                $extra->response = response()->download($outputFile, sprintf('%s_%s.csv', Str::snake($model->namePlural), date('Ymd')))->deleteFileAfterSend(true);
-                break;
+                $csvData[] = $csvOutput;
+            }
+
+            $outputFile = storage_path(Uuid::uuid4()->toString().'.csv');
+            $writer = \League\Csv\Writer::createFromPath($outputFile, 'w+');
+            $writer->insertAll($csvData);
+            $extra->response = response()->download($outputFile, sprintf('%s_%s.csv', Str::snake($model->namePlural), date('Ymd')))->deleteFileAfterSend(true);
         }
     }
 

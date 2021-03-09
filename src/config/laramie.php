@@ -121,7 +121,7 @@ return [
     | Exporting records to CSV can be a processor intensive function. Set limit higher if needed
     |
     */
-    'max_csv_records' => 5000,
+    'max_bulk_records' => 5000,
 
     /*
     |--------------------------------------------------------------------------

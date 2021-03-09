@@ -1132,34 +1132,6 @@ class LaramieDataService
         $this->deleteById($fileInfo->uploadKey);
     }
 
-    public function getBulkActionQuery($model, $postData)
-    {
-        $model = $this->getModelByKey($model);
-
-        // Override the sort for the bulk action to values we are confident won't cause issues (computed fields, etc, will).
-        $postData['sort'] = 'created_at';
-        $postData['sort-direction'] = 'asc';
-
-        return DB::table('laramie_data')
-            ->whereIn('id', function ($query) use ($model, $postData) {
-                $query->select(['id'])
-                    ->from('laramie_data')
-                    ->where('type', $model->_type);
-
-                $this->augmentListQuery($query, $model, $postData);
-
-                $isAllSelected = data_get($postData, 'bulk-action-all-selected') === '1';
-
-                if (!$isAllSelected) {
-                    $itemIds = collect(data_get($postData, 'bulk-action-ids', []))
-                        ->filter(function ($item) {
-                            return $item && LaramieHelpers::isValidUuid($item);
-                        });
-                    $query->whereIn(DB::raw('id::text'), $itemIds);
-                }
-            });
-    }
-
     private function getDbNow()
     {
         return Carbon::now()->toDateTimeString();

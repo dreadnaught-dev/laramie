@@ -225,13 +225,37 @@ class AdminController extends Controller
         $nameOfBulkAction = $request->get('bulk-action-operation');
 
         $postData = $request->all();
-        $filters = $this->getFilters($postData);
-        $postData['filters'] = $filters;
+
+        $postData['filters'] = $this->getFilters($postData);
         $postData['quickSearch'] = $request->get('quick-search');
         $postData['sort'] = data_get($postData, 'sort', 'id');
 
         $user = $this->dataService->getUser();
-        $query = $this->dataService->getBulkActionQuery($modelKey, $postData);
+
+        $itemIds = [];
+
+        $isAllSelected = data_get($postData, 'bulk-action-all-selected') === '1';
+
+        // Have "all" matching records been selected? Great. But limit to `max_bulk_records` just in case there are too many records
+        if ($isAllSelected) {
+            $postData['resultsPerPage'] = config('laramie.max_bulk_records');
+        }
+        else {
+            $itemIds = collect(data_get($postData, 'bulk-action-ids', []))
+                ->filter(function ($item) {
+                    return $item && LaramieHelpers::isValidUuid($item);
+                });
+        }
+
+        $items = $this->dataService->findByType($model, $postData, function ($query) use ($itemIds) {
+            if ($itemIds) {
+                $query->whereIn(DB::raw('id::text'), $itemIds);
+            }
+        });
+
+        if ($isAllSelected && $items->hasMorePages()) {
+            throw new Exception('For performance reasons, you may only select up to '.config('laramie.max_bulk_records').' items at a time for bulk actions');
+        }
 
         $extra = (object) [
             'response' => $this->redirectToFilteredListPage($modelKey, $request),
@@ -243,7 +267,7 @@ class AdminController extends Controller
         DB::beginTransaction();
         try {
             // Execute the bulk action
-            Hook::fire(new HandleBulkAction($model, $nameOfBulkAction, $query, $postData, $user, $extra));
+            Hook::fire(new HandleBulkAction($model, $nameOfBulkAction, $items, $user, $extra));
 
             DB::commit();
         } catch (\Illuminate\Database\QueryException $e) {
