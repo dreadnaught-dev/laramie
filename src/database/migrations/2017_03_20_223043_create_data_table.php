@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 use Laramie\Globals;
+use Carbon\Carbon;
 
 class CreateDataTable extends Migration
 {
@@ -26,7 +27,7 @@ class CreateDataTable extends Migration
         \DB::statement('CREATE INDEX on laramie_data (type)');
         \DB::statement('CREATE INDEX on laramie_data USING GIN (data jsonb_path_ops)');
 
-        \DB::statement('INSERT INTO laramie_data (id, user_id, type, data, created_at, updated_at) VALUES(\''.Globals::AdminRoleId.'\', null, \'laramieRole\', \'{"name": "Admin"}\', now(), now())');
+        \DB::statement('INSERT INTO laramie_data (id, user_id, type, data, created_at, updated_at) VALUES(\''.Globals::AdminRoleId.'\', null, \'laramieRole\', \'{"name": "Admin"}\', ?, ?)', [Carbon::now(), Carbon::now()]);
     }
 
     /**
