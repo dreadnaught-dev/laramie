@@ -22,7 +22,7 @@
                 },
                 "excerpt": {
                     "listByDefault": true,
-                    "sql": "(select count(*) from laramie_data as nd where type = 'Comment' and nd.data->>'post' = laramie_data.id::text)",
+                    "sql": "(substring(data->'content'->>'markdown', 0, 5))",
                     "type": "computed",
                     "weight": 5
                 },

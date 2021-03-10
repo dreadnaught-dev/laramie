@@ -248,10 +248,10 @@ class AdminController extends Controller
         }
 
         $items = $this->dataService->findByType($model, $postData, function ($query) use ($itemIds) {
-            if ($itemIds) {
-                $query->whereIn(DB::raw('id::text'), $itemIds);
-            }
-        });
+                if ($itemIds) {
+                    $query->whereIn(DB::raw('id::text'), $itemIds);
+                }
+            }, 0);
 
         if ($isAllSelected && $items->hasMorePages()) {
             throw new Exception('For performance reasons, you may only select up to '.config('laramie.max_bulk_records').' items at a time for bulk actions');
