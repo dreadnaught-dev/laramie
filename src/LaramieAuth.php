@@ -1,10 +1,15 @@
 <?php
 namespace Laramie;
 
+use Cache;
+
+use Laramie\Globals;
+use Laramie\AdminModels\LaramieRole;
+
 trait LaramieAuth
 {
     public function isAdmin() { return $this->isLaramieAdmin(); }
-    public function hasAbility($key, $accessType = 'list') { return $this->hasLaramieAbility($key, $accessType); }
+    public function hasAbility($modelType, $ability = 'read') { return $this->hasLaramieAbility($modelType, $ability); }
 
     private $_laramie = null;
     private $_roles = null;
@@ -14,16 +19,23 @@ trait LaramieAuth
         return in_array(Globals::AdminRoleId, data_get($this->getLaramieData(), 'roles', []));
     }
 
-    public function hasAccessToLaramieModel($key, string $accessType = 'list')
+    public function hasAccessToLaramieModel($modelType, string $ability = null)
     {
         return $this->isLaramieAdmin()
-            || $this->hasLaramieAbility($key, $accessType);
+            || $this->hasLaramieAbility($modelType, $ability);
     }
 
-    // @TODO -- implement access types (from Globals::AccessTypes).
-    public function hasLaramieAbility($key, $accessType = 'list')
+    public function hasLaramieAbility($modelType, $ability)
     {
-        return array_key_exists($ability, $this->getLaramieAbilities());
+        $userAbilitiesForType = data_get($this->getLaramieAbilities(), $modelType, []);
+
+        // If no ability is specified, just make sure the user has _some_ ability for the model.
+        if (!$ability) {
+            return (count($userAbilitiesForType) > 0);
+        }
+
+        return in_array('all', $userAbilitiesForType)
+            || in_array($ability, $userAbilitiesForType);
     }
 
     public function getLaramiePrefs()
@@ -53,10 +65,7 @@ trait LaramieAuth
     protected function getLaramieRoles()
     {
         if (!isset($this->_roles)) {
-            $this->_roles = collect($this->getLaramieData(), 'roles', [])
-                ->map(function($item) {
-                    return LaramieRole::find($item);
-                });
+            $this->_roles = LaramieRole::superficial()->whereIn('id', data_get($this->getLaramieData(), 'roles', [Globals::DummyId]))->get();
         }
 
         return $this->_roles;
@@ -65,14 +74,29 @@ trait LaramieAuth
     protected function getLaramieAbilities()
     {
         $abilities = [];
+        $types = $this->getNonSystemModelTypes();
 
         foreach ($this->getLaramieRoles() as $role) {
-            // The `data` attribute contains the abilities the particular role has been granted
-            collect(json_decode(data_get($role->toArray(), 'data')))
-                ->filter(function($item) { return $item === true; })
-                ->each(function($item, $key) use(&$abilities) { $abilities[$key] = true; });
+            foreach ($types as $type) {
+                // @preston stopped here
+                $abilitiesForRoleForType = data_get($role, $type, []);
+                data_set($abilities, $type, array_unique(array_merge(data_get($abilities, $type, []), $abilitiesForRoleForType)));
+            }
         }
 
         return $abilities;
+    }
+
+    private function getNonSystemModelTypes()
+    {
+        // The types cache gets cleared any time there's an update that triggers a new `ConfigLoaded` hook.
+        return Cache::rememberForever(Globals::LARAMIE_TYPES_CACHE_KEY, function() {
+            return collect(app(\Laramie\Services\LaramieDataService::class)->getAllModels())
+                ->filter(function ($e) {
+                    return !data_get($e, 'isSystemModel');
+                })
+                ->keys()
+                ->toArray();
+        });
     }
 }

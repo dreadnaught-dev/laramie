@@ -105,8 +105,6 @@ class AdminController extends Controller
             })
             ->all();
 
-        $options['isFromAdmin'] = true;
-
         session()->put('_laramie_last_list_url', $request->fullUrl());
 
         // If there aren't any qs params, check to see if the referrer is
@@ -141,6 +139,8 @@ class AdminController extends Controller
 
         $extra->alert = session()->get('alert');
 
+        $extra->context = 'admin';
+
         // Fire the `PreList` event. This allows for a user to specify a redirect response if necessary
         Hook::fire(new PreList($model, $this->dataService->getUser(), $extra));
 
@@ -169,7 +169,7 @@ class AdminController extends Controller
 
         $listFields = $this->getListedFields($listableFields);
 
-        $extra = (object) ['listFields' => data_get($options, 'listFields', $listFields), 'filters' => $filters, 'alert' => data_get($extra, 'alert')]; // passing this so we have context in the post list event;
+        $extra = (object) ['listFields' => data_get($options, 'listFields', $listFields), 'filters' => $filters, 'alert' => data_get($extra, 'alert'), 'context' => 'admin']; // passing this so we have context in the post list event;
 
         $listView = data_get($model, 'listView', 'laramie::list-page');
 
@@ -260,6 +260,7 @@ class AdminController extends Controller
         $extra = (object) [
             'response' => $this->redirectToFilteredListPage($modelKey, $request),
             'listableFields' => $this->getListableFields($model), // inject context of what fields the list page is showing
+            'context' => 'admin',
         ];
 
         $alert = null;
@@ -520,6 +521,7 @@ class AdminController extends Controller
         $extraInfoToPassToEvents->sidebars = $sidebars;
         $extraInfoToPassToEvents->alert = session()->get('alert');
         $extraInfoToPassToEvents->formStatus = session()->get('formStatus');
+        $extraInfoToPassToEvents->context = 'admin';
 
         // Generally speaking, if you need to dynamically alter your model for edit, do so in this event:
         Hook::fire(new TransformModelForEdit($model,  $item, $user));

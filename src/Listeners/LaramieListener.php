@@ -3,6 +3,7 @@
 namespace Laramie\Listeners;
 
 use DB;
+use Cache;
 use Exception;
 use Illuminate\Http\File;
 use Ramsey\Uuid\Uuid;
@@ -31,6 +32,7 @@ class LaramieListener
         Hook::listen('Laramie\Hooks\ConfigLoaded', 'Laramie\Listeners\LaramieListener@configLoaded', 1);
         Hook::listen('Laramie\Hooks\FilterQuery', 'Laramie\Listeners\LaramieListener@filterQuery', 1);
         Hook::listen('Laramie\Hooks\PostFetch', 'Laramie\Listeners\LaramieListener@postFetch', 1);
+        Hook::listen('Laramie\Hooks\PreList', 'Laramie\Listeners\LaramieListener@preList', 1);
         Hook::listen('Laramie\Hooks\PreEdit', 'Laramie\Listeners\LaramieListener@preEdit', 1);
         Hook::listen('Laramie\Hooks\PreSave', 'Laramie\Listeners\LaramieListener@preSave', 1);
         Hook::listen('Laramie\Hooks\PostSave', 'Laramie\Listeners\LaramieListener@postSave', 1);
@@ -51,6 +53,8 @@ class LaramieListener
 
         $models = collect($config->models);
 
+        Cache::forget(Globals::LARAMIE_TYPES_CACHE_KEY);
+
         $nonSystemModels = $models
             ->filter(function ($e) {
                 return !data_get($e, 'isSystemModel');
@@ -65,7 +69,7 @@ class LaramieListener
 
         foreach ($nonSystemModels as $nonSystemModel) {
             $showName = data_get($nonSystemModel, 'isSingular', false) ? $nonSystemModel->name : $nonSystemModel->namePlural;
-            $laramieRoleModel->fields->{$nonSystemModel->_type} = ModelLoader::processField($nonSystemModel->_type, (object) ['type' => 'boolean', 'label' => 'Can manage '.$showName]);
+            $laramieRoleModel->fields->{$nonSystemModel->_type} = ModelLoader::processField($nonSystemModel->_type, (object) ['type' => 'select', 'label' => 'Can manage '.$showName, 'isMultiple' => true, 'isSelect2' => true, 'options' => [['All abilities', 'all'], ['List & View', 'read'], ['Create', 'create'], ['Update', 'update'], ['Delete', 'delete']]]);
         }
 
         if (!config('laramie.disable_meta')) {
@@ -77,6 +81,28 @@ class LaramieListener
                 $model->fields->_comments = ModelLoader::processField('_comments', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieComment\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'listByDefault' => false, 'isSearchable' => false]);
                 $model->fields->_versions = ModelLoader::processField('_versions', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data_archive as lda where laramie_data.id = lda.laramie_data_id)', 'listByDefault' => false, 'isSearchable' => false]);
             }
+        }
+    }
+
+    /**
+     * Handle pre-list event.
+     *
+     * Only show system roles to admins on list page.
+     *
+     * @param $event Laramie\Hooks\preList
+     */
+    public function preList($event)
+    {
+        $model = $event->model;
+        $user = $event->user;
+        $extra = $event->extra;
+
+        // If coming from the admin, ensure the user has access to read for the model
+        if (
+            data_get($extra, 'context') === 'admin' &&
+            !$user->hasAccessToLaramieModel($model->_type, 'read')
+        ) {
+            abort(403);
         }
     }
 
@@ -102,7 +128,7 @@ class LaramieListener
                 // authentication -- we don't need to worry about limiting the
                 // query by the user in this case -- it's just to get the list of
                 // their roles.
-                if ($user !== null && !$user->isAdmin()) {
+                if ($user !== null && !optional($user)->isAdmin()) {
                     $query->whereNotIn('id', [Globals::AdminRoleId]);
                 }
                 break;
@@ -169,7 +195,22 @@ class LaramieListener
         $model = $event->model;
         $item = $event->item;
         $user = $event->user;
+        $extra = $event->extra;
         $type = $model->_type;
+
+        // If coming from the admin, ensure the user has create access to create new items or read access if updating an existing item (can view the page, but may not be able to update).
+        if (data_get($extra, 'context') === 'admin') {
+            if (
+                ($item->isNew() && !$user->hasAccessToLaramieModel($model->_type, 'create')) ||
+                ($item->isUpdate() && !$user->hasAccessToLaramieModel($model->_type, 'read'))
+            ) {
+                abort(403);
+            }
+
+            if ($item->isUpdate() && !$user->hasAccessToLaramieModel($model->_type, 'update')) {
+                $extra->alert = (object) ['class' => 'is-warning', 'title' => 'Heads up!', 'alert' => 'You only have read access to this item, you may not save changes.'];
+            }
+        }
 
         switch ($type) {
             case 'laramieRole':

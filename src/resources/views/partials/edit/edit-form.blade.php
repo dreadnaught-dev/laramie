@@ -1,4 +1,10 @@
+@php
+    $canSave = ($item->isNew() && $user->hasAccessToLaramieModel($model->_type, 'create')) ||
+        ($item->isUpdate() && $user->hasAccessToLaramieModel($model->_type, 'update'));
+@endphp
+
 <form id="edit-form" class="edit-container {{ $selectedTab !== '_main' ? 'has-tab-selected' : '' }}" action="{{ url()->full() }}" method="post" enctype="multipart/form-data" data-item-id="{{ $item->id ?: 'new' }}">
+    {!! !$canSave ? '<fieldset disabled>' : '' !!}
     {{ csrf_field() }}
     <input type="hidden" name="_metaId" value="{{ $metaId }}">
     <input type="hidden" name="_selectedTab" value="{{ $selectedTab }}">
@@ -40,5 +46,6 @@
     @endforeach
 
     @stack('aggregate-scripts')
+    {!! !$canSave ? '</fieldset>' : '' !!}
 </form>
 

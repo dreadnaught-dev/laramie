@@ -82,6 +82,16 @@ class LaramieModel implements \JsonSerializable
         return $data;
     }
 
+    public function isNew()
+    {
+        return $this->_isNew;
+    }
+
+    public function isUpdate()
+    {
+        return !$this->isNew();
+    }
+
     public static function loadOrFail($data)
     {
         return self::load($data, false);

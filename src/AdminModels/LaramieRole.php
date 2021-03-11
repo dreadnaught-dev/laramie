@@ -1,6 +1,6 @@
 <?php
 
-namespace Laramie;
+namespace Laramie\AdminModels;
 
 use Laramie\Lib\LaramieModel;
 

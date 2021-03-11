@@ -6,7 +6,7 @@
                 echo '<a class="navbar-item is-hidden-desktop navbar-link">'.$friendlyName.'</a>';
                 headerMenu($modelKeyOrChild, $currentRoute, $user);
             } else {
-                $hasAccess = $user->hasAccessToLaramieModel($modelKeyOrChild, \Laramie\Globals::AccessTypes['list']);
+                $hasAccess = $user->hasAccessToLaramieModel($modelKeyOrChild, \Laramie\Globals::AccessTypes['read']);
                 if (!$hasAccess) {
                     continue;
                 }

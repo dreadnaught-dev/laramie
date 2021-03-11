@@ -3,20 +3,21 @@
 namespace Laramie\Console\Commands;
 
 use Arr;
+use Carbon\Carbon;
 use DB;
 use Hash;
 use Illuminate\Console\Command;
+use PragmaRX\Google2FA\Google2FA;
 use Str;
-use Carbon\Carbon;
 
 use Laramie\Globals;
 use Laramie\Lib\LaramieModel;
 use Laramie\Services\LaramieDataService;
-use PragmaRX\Google2FA\Google2FA;
+use Laramie\AdminModels\LaramieRole;
 
-class AuthorizeLaramieUser extends Command
+class AuthorizeUser extends Command
 {
-    protected $signature = 'laramie:authorize-user {email} {--password=}';
+    protected $signature = 'laramie:authorize-user {email} {--password=} {--role=}';
 
     protected $description = 'Authorize a user for access to the admin platform';
 
@@ -35,12 +36,21 @@ class AuthorizeLaramieUser extends Command
      */
     public function handle(LaramieDataService $dataService)
     {
-        $model = $dataService->getModelByKey('laramieUser');
         $email = $this->argument('email');
         $password = $this->option('password');
+        $roleName = $this->option('role');
 
         // Because Laravel can use username or email, etc, Laramie tries to be flexible as well.
         $linkedField = config('laramie.username');
+
+        $roleId = $roleName
+            ? data_get(LaramieRole::where('name', 'ilike', $roleName)->first(), 'id')
+            : Globals::AdminRoleId;
+
+        if (!$roleId) {
+            $this->error(sprintf('Could not find the role with the name of \'%s\'', $roleName));
+            return;
+        }
 
         // Find the Laravel user. If they don't exist, create them if a password was provided
         $user = DB::table('users')->where($linkedField, 'ilike', $email)->first();
@@ -61,8 +71,6 @@ class AuthorizeLaramieUser extends Command
 
         // User found. Grant them access to Laramie
 
-        $role = Globals::AdminRoleId;
-
         $laramieData = json_decode(data_get($this, 'laramie', '{}'));
 
         if (data_get($laramieData, 'roles')) {
@@ -76,7 +84,7 @@ class AuthorizeLaramieUser extends Command
             'password' => Str::random(Globals::API_TOKEN_LENGTH),
         ];
 
-        $laramieData->roles = [$role];
+        $laramieData->roles = [$roleId];
 
         DB::table('users')
             ->where('id', $user->id)

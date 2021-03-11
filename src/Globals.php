@@ -21,11 +21,13 @@ class Globals
 
     const MAX_IMAGE_DIMENSION = 5000;
 
+    const LARAMIE_TYPES_CACHE_KEY = 'laramie_non_system_types';
+
     // TODO -- convert to enum (requires php 8.1)
     const AccessTypes = [
-        'list' => 'list',
-        'edit' => 'edit',
         'create' => 'create',
+        'read' => 'read',
+        'update' => 'update',
         'delete' => 'delete',
     ];
 }

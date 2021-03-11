@@ -25,7 +25,7 @@ class MenuHelper
             $itemIsVisible = false;
             switch (gettype($value)) {
                 case 'string':
-                    $itemIsVisible = $this->user->hasAccessToLaramieModel($value, Globals::AccessTypes['list']);
+                    $itemIsVisible = $this->user->hasAccessToLaramieModel($value, Globals::AccessTypes['read']);
 
                     $node->$key = (object) [
                         'isLeaf' => true,

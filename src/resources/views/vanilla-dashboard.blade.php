@@ -9,7 +9,7 @@
                 recursivelyPrintMenus($modelKeyOrChild, $depth + 1, $user, $dataService);
                 echo '</div>';
             } else {
-                $hasAccess = $user->hasAccessToLaramieModel($modelKeyOrChild, \Laramie\Globals::AccessTypes['list']);
+                $hasAccess = $user->hasAccessToLaramieModel($modelKeyOrChild, \Laramie\Globals::AccessTypes['read']);
                 if (!$hasAccess) {
                     continue;
                 }
