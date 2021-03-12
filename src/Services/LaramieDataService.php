@@ -538,7 +538,7 @@ class LaramieDataService
         $query = DB::table('laramie_data')
             ->where('type', $model->_type);
 
-        $this->augmentListQuery($query, $model, ['isMetaRequest' => true, 'sort' => null]);
+        $this->augmentListQuery($query, $model, ['sort' => null]);
 
         $meta = (object) [];
         $meta->count = $query->count();
@@ -558,15 +558,6 @@ class LaramieDataService
         $meta->updatedAt = data_get($lastRecord, 'updated_at');
 
         return $meta;
-    }
-
-    public function getNumVersions($modelIds)
-    {
-        return DB::table('laramie_data_archive')
-            ->whereIn('laramie_data_id', $modelIds)
-            ->select(['laramie_data_id', DB::raw('count(*) as count')])
-            ->groupBy('laramie_data_id')
-            ->get();
     }
 
     public function clearCache()

@@ -32,7 +32,6 @@ class LaramieListener
         Hook::listen('Laramie\Hooks\ConfigLoaded', 'Laramie\Listeners\LaramieListener@configLoaded', 1);
         Hook::listen('Laramie\Hooks\FilterQuery', 'Laramie\Listeners\LaramieListener@filterQuery', 1);
         Hook::listen('Laramie\Hooks\PostFetch', 'Laramie\Listeners\LaramieListener@postFetch', 1);
-        Hook::listen('Laramie\Hooks\PreList', 'Laramie\Listeners\LaramieListener@preList', 1);
         Hook::listen('Laramie\Hooks\PreEdit', 'Laramie\Listeners\LaramieListener@preEdit', 1);
         Hook::listen('Laramie\Hooks\PreSave', 'Laramie\Listeners\LaramieListener@preSave', 1);
         Hook::listen('Laramie\Hooks\PostSave', 'Laramie\Listeners\LaramieListener@postSave', 1);
@@ -85,33 +84,11 @@ class LaramieListener
     }
 
     /**
-     * Handle pre-list event.
+     * Handle filter query event.
      *
      * Only show system roles to admins on list page.
      *
-     * @param $event Laramie\Hooks\preList
-     */
-    public function preList($event)
-    {
-        $model = $event->model;
-        $user = $event->user;
-        $extra = $event->extra;
-
-        // If coming from the admin, ensure the user has access to read for the model
-        if (
-            data_get($extra, 'context') === 'admin' &&
-            !$user->hasAccessToLaramieModel($model->_type, 'read')
-        ) {
-            abort(403);
-        }
-    }
-
-    /**
-     * Handle pre-list event.
-     *
-     * Only show system roles to admins on list page.
-     *
-     * @param $event Laramie\Hooks\preList
+     * @param $event Laramie\Hooks\FilterQuery
      */
     public function filterQuery($event)
     {
@@ -197,20 +174,6 @@ class LaramieListener
         $user = $event->user;
         $extra = $event->extra;
         $type = $model->_type;
-
-        // If coming from the admin, ensure the user has create access to create new items or read access if updating an existing item (can view the page, but may not be able to update).
-        if (data_get($extra, 'context') === 'admin') {
-            if (
-                ($item->isNew() && !$user->hasAccessToLaramieModel($model->_type, 'create')) ||
-                ($item->isUpdate() && !$user->hasAccessToLaramieModel($model->_type, 'read'))
-            ) {
-                abort(403);
-            }
-
-            if ($item->isUpdate() && !$user->hasAccessToLaramieModel($model->_type, 'update')) {
-                $extra->alert = (object) ['class' => 'is-warning', 'title' => 'Heads up!', 'alert' => 'You only have read access to this item, you may not save changes.'];
-            }
-        }
 
         switch ($type) {
             case 'laramieRole':

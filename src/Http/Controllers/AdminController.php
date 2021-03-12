@@ -99,6 +99,9 @@ class AdminController extends Controller
      */
     public function getList($modelKey, Request $request, LaramieHelpers $viewHelper)
     {
+        $user = $this->dataService->getUser();
+        $this->ensureHasReadAccess($user, $modelKey);
+
         $options = collect($request->all())
             ->filter(function ($item) {
                 return $item !== null && $item !== '';
@@ -191,10 +194,14 @@ class AdminController extends Controller
 
     public function goBack($modelKey)
     {
+        $model = $this->dataService->getModelByKey($modelKey);
         $redirectUrl = session()->get('_laramie_last_list_url', route('laramie::dashboard'));
 
         // If one jumped to another edit page from a relationship field or something, don't redirect back to a potentially different model's list page:
-        if (strpos($redirectUrl, $modelKey) === false) {
+        if (
+            strpos($redirectUrl, $modelKey) === false &&
+            !data_get($model, 'isSingular')
+        ) {
             $redirectUrl = route('laramie::list', ['modelKey' => $modelKey]);
         }
 
@@ -231,6 +238,14 @@ class AdminController extends Controller
         $postData['sort'] = data_get($postData, 'sort', 'id');
 
         $user = $this->dataService->getUser();
+
+        // Ensure user's abilities allow bulk action
+        $slugifiedAction = Str::slug($nameOfBulkAction);
+        if ($slugifiedAction === 'delete') {
+            $this->ensureDeleteAccess($user, $modelKey);
+        } else if ($slugifiedAction === 'duplicate') {
+            $this->ensureBulkDuplicateAccess($user, $modelKey);
+        }
 
         $itemIds = [];
 
@@ -451,6 +466,7 @@ class AdminController extends Controller
     public function getEdit(Request $request, $modelKey, $id, array $extraInfoToPassToEvents = [])
     {
         $model = $this->dataService->getModelByKey($modelKey);
+        $user = $this->dataService->getUser();
 
         if (!$model->isEditable) {
             throw new Exception('Items of this type may not be edited');
@@ -463,6 +479,11 @@ class AdminController extends Controller
 
         if (LaramieHelpers::isValidUuid($id) && $item === null) {
             abort(404);
+        }
+
+        $this->ensureCreateOrUpdateAccess($user, $item, $modelKey);
+        if ($item->isUpdate() && !$user->hasAccessToLaramieModel($modelKey, 'update')) {
+            session()->flash('alert', (object) ['class' => 'is-warning', 'title' => 'Heads up!', 'alert' => 'You only have read access to this item, you may not save any changes.']);
         }
 
         // If we're editing a new item, check to see if we need to pre-set any of the singular relationships (from QS)
@@ -504,8 +525,6 @@ class AdminController extends Controller
          * the ability to dynamically alter the model that will be edited based on
          * the injected arguments.
          */
-        $user = $this->dataService->getUser();
-
         $sidebars = ['laramie::partials.edit.save-box' => ['item' => $item, 'user' => $user, 'lastUserToUpdate' => $lastUserToUpdate]];
 
         if (!(config('laramie.disable_meta') || data_get($model, 'disableMeta'))) {
@@ -561,11 +580,14 @@ class AdminController extends Controller
         $item = $this->dataService->findById($model, $id);
         $metaId = $request->get('_metaId');
         $selectedTab = $request->get('_selectedTab');
+        $user = $this->dataService->getUser();
 
         $isNew = $item->_isNew;
 
+        $this->ensureCreateOrUpdateAccess($user, $item, $modelKey);
+
         // Fire `TransformModelForEdit` to give opportunity to hooks to change model (to dynamically change field types, etc).
-        Hook::fire(new TransformModelForEdit($model, $item, $this->dataService->getUser()));
+        Hook::fire(new TransformModelForEdit($model, $item, $user));
 
         // Load item with new values _before_ validation. If there are errors, flash updated item and redirect.
         foreach ($model->fields as $fieldName => $field) {
@@ -629,12 +651,23 @@ class AdminController extends Controller
                 ->withErrors($errors);
         }
 
+        $alertMessage = sprintf('The %s was successfully %s. Continue editing or&nbsp;<a class="has-underline" href="%s">go back to the %s</a>.',
+            $model->name,
+            $id == 'new' ? 'created' : 'updated',
+            data_get($model, 'isSingular') ? route('laramie::dashboard') : route('laramie::go-back', ['modelKey' => $modelKey]),
+            data_get($model, 'isSingular') ? 'dashboard' : 'list page');
+
         if ($isNew) {
             // Update meta that may have been created to point to this new item:
             $this->repointMetaIds($metaId, $item->id);
 
             $redirectRouteParams['id'] = $item->id;
             $previousUrl = preg_replace('/\/new\b/', '/'.$item->id, $previousUrl);
+
+            if (!$user->hasAccessToLaramieModel($modelKey, 'update')) {
+                $previousUrl = session()->get('_laramie_last_list_url', route('laramie::dashboard'));
+                $alertMessage = sprintf('The %s was successfully created.', $model->name);
+            }
         }
 
         return redirect()
@@ -643,12 +676,7 @@ class AdminController extends Controller
             ->with('alert', (object) [
                 'class' => 'is-success',
                 'title' => 'Success!',
-                'alert' => sprintf('The %s was successfully %s. Continue editing or&nbsp;<a class="has-underline" href="%s">go back to the %s</a>.',
-                    $model->name,
-                    $id == 'new' ? 'created' : 'updated',
-                    data_get($model, 'isSingular') ? route('laramie::dashboard') : route('laramie::go-back', ['modelKey' => $modelKey]),
-                    data_get($model, 'isSingular') ? 'dashboard' : 'list page'),
-                ])
+                'alert' => $alertMessage])
             ->with('formStatus', 'success')
             ->with('status', 'saved');
     }
@@ -850,6 +878,9 @@ class AdminController extends Controller
     public function deleteItem($modelKey, $id, Request $request)
     {
         $error = null;
+        $user = this->dataService->getUser();
+
+        $this->ensureDeleteAccess($user, $modelKey);
 
         try {
             $this->dataService->deleteById($modelKey, $id);
@@ -1023,5 +1054,40 @@ class AdminController extends Controller
             ->whereIn('type', ['laramieComment', 'laramieTag'])
             ->where('data','@>', DB::raw('\'{"relatedItemId":"'.$oldId.'"}\''))
             ->update(['data' => DB::raw('data || \'{"relatedItem":"'.$newId.'"}\'')]);
+    }
+
+    private function ensureHasReadAccess($user, $modelKey)
+    {
+        if (!$user->hasAccessToLaramieModel($modelKey, 'read')) {
+            abort(403);
+        }
+    }
+
+    private function ensureCreateOrUpdateAccess($user, $item, $modelKey)
+    {
+        if (
+            ($item->isNew() && !$user->hasAccessToLaramieModel($modelKey, 'create')) ||
+            ($item->isUpdate() && !$user->hasAccessToLaramieModel($modelKey, 'read'))
+        ) {
+            abort(403);
+        }
+    }
+
+    private function ensureBulkDuplicateAccess($user, $modelKey)
+    {
+        if (!
+            ($user->hasAccessToLaramieModel($modelKey, 'read') &&
+                $user->hasAccessToLaramieModel($modelKey, 'create')
+            )
+        ) {
+            abort(403);
+        }
+    }
+
+    private function ensureDeleteAccess($user, $modelKey)
+    {
+        if (!$user->hasAccessToLaramieModel($modelKey, 'delete')) {
+            abort(403);
+        }
     }
 }
