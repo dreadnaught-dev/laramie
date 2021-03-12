@@ -865,7 +865,7 @@ class LaramieDataService
 
             // Save a record of the original id. After saving, we'll reset the item's id back to the original so we have
             // context as to if the item is new in the PostSave event.
-            $origId = data_get($laramieModel, '_origId');
+            $origId = $laramieModel->origId();
 
             /*
              * Fire pre-save event: listeners MUST be synchronous. This event
@@ -884,11 +884,11 @@ class LaramieDataService
 
             $dbNow = $this->getDbNow();
 
-            if ($isUpdateTimestamps || !data_get($data, '_origId')) {
+            if ($isUpdateTimestamps || !$origId) {
                 $data->updated_at = $dbNow;
             }
 
-            if (!data_get($data, '_origId')) {
+            if (!$origId) {
                 // Insert
                 $data->type = $model->_type;
                 $data->created_at = data_get($data, 'created_at', $dbNow);
@@ -942,16 +942,12 @@ class LaramieDataService
             $modelData = $data->toArray();
             $modelData['user_id'] = $this->getUserId();
 
-            if (data_get($data, '_origId')) {
+            if ($origId) {
                 // Update
                 $archiveId = Uuid::uuid1()->toString();
                 DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, ?, updated_at from laramie_data where id = ?', [$archiveId, $this->getDbNow(), $data->id]);
                 DB::table('laramie_data')->where('id', $data->id)->update($modelData);
-                // Delete the newly inserted archived version if it exactly matches
-                // the updated version. We can potentially mitigate this step by
-                // leveraging the _origData attribute on $data before inserting
-                // the archive version in the first place, but whitespace doesn't
-                // match up between $data->_origData and $modelData['data']...
+                // Delete the newly inserted archived version if it exactly matches the updated version.
                 DB::statement('delete from laramie_data_archive where id = ? and data = (select data from laramie_data where id = ?)', [$archiveId, $data->id]);
             } else {
                 // Insert
@@ -974,7 +970,7 @@ class LaramieDataService
              * it was a new item or not:
              */
 
-            $item->_wasNew = !data_get($data, '_origId');
+            $item->_wasNew = !$origId;
 
             if ($runSaveHooks && config('laramie.suppress_events') !== true) {
                 Hook::fire(new PostSave($model, $item, $this->getUser()));

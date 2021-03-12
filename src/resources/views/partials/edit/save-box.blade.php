@@ -1,6 +1,6 @@
 @php
     $canSave = ($item->isNew() && $user->hasAccessToLaramieModel($model->_type, 'create')) ||
-        ($item->isUpdate() && $user->hasAccessToLaramieModel($model->_type, 'update'));
+        ($item->isUpdating() && $user->hasAccessToLaramieModel($model->_type, 'update'));
 @endphp
 
 <div class="card save-box">
@@ -28,10 +28,10 @@
                     <a href="javascript:void(0);" class="button is-primary js-save is-fullwidth">Save{{ $item->isNew() ? '' : ' changes' }}</a>
                 </p>
                 @endif
-                <p class="control {{ $item->_isNew ? 'is-expanded' : '' }}">
+                <p class="control {{ $item->isNew() ? 'is-expanded' : '' }}">
                     <a href="{{ route('laramie::go-back', ['modelKey' => $model->_type]) }}" class="button is-light js-cancel-edit">{{ $canSave ? 'Cancel' : 'Go Back' }}</a>
                 </p>
-                @if ($item->_isUpdate && data_get($model, 'isDeletable', true) !== false && $user->hasAccessToLaramieModel($model->_type, 'delete'))
+                @if ($item->isUpdating() && data_get($model, 'isDeletable', true) !== false && $user->hasAccessToLaramieModel($model->_type, 'delete'))
                     <p class="control">
                         <a href="javascript:void(0);" class="button is-text has-text-danger js-delete">Delete</a>
                     </p>

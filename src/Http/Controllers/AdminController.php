@@ -482,12 +482,12 @@ class AdminController extends Controller
         }
 
         $this->ensureCreateOrUpdateAccess($user, $item, $modelKey);
-        if ($item->isUpdate() && !$user->hasAccessToLaramieModel($modelKey, 'update')) {
+        if ($item->isUpdating() && !$user->hasAccessToLaramieModel($modelKey, 'update')) {
             session()->flash('alert', (object) ['class' => 'is-warning', 'title' => 'Heads up!', 'alert' => 'You only have read access to this item, you may not save any changes.']);
         }
 
         // If we're editing a new item, check to see if we need to pre-set any of the singular relationships (from QS)
-        if ($item->_isNew && !session('isFromPost')) {
+        if ($item->isNew() && !session('isFromPost')) {
             $singularRefs = collect($model->fields)
                 ->filter(function($item, $key) use($request) {
                     return $item->type == 'reference'
@@ -499,7 +499,7 @@ class AdminController extends Controller
             }
         }
 
-        $metaId = session('metaId') ?: ($item->_isUpdate ? $item->id : Uuid::uuid1()->toString());
+        $metaId = session('metaId') ?: ($item->isUpdating() ? $item->id : Uuid::uuid1()->toString());
         $selectedTab = session('selectedTab') ?: '_main';
         $errorMessages = session('errorMessages') ?: null;
 
@@ -509,14 +509,14 @@ class AdminController extends Controller
         }
 
         // Ensure that the user can't create a new 'singular' item
-        if ($item->_isNew && data_get($model, 'isSingular')) {
+        if ($item->isNew() && data_get($model, 'isSingular')) {
             return $this->redirectToSingularEdit($model);
         } elseif (data_get($model, 'isSingular')) {
             session()->put('_laramie_last_list_url', route('laramie::dashboard'));
         }
 
         $lastUserToUpdate = null;
-        if ($item->_isUpdate) {
+        if ($item->isUpdating()) {
             $lastUserToUpdate = DB::table('users')->find(data_get($item, 'user_id', -1));
         }
 
@@ -582,7 +582,7 @@ class AdminController extends Controller
         $selectedTab = $request->get('_selectedTab');
         $user = $this->dataService->getUser();
 
-        $isNew = $item->_isNew;
+        $isNew = $item->isNew();
 
         $this->ensureCreateOrUpdateAccess($user, $item, $modelKey);
 
@@ -878,7 +878,7 @@ class AdminController extends Controller
     public function deleteItem($modelKey, $id, Request $request)
     {
         $error = null;
-        $user = this->dataService->getUser();
+        $user = $this->dataService->getUser();
 
         $this->ensureDeleteAccess($user, $modelKey);
 
@@ -1067,7 +1067,7 @@ class AdminController extends Controller
     {
         if (
             ($item->isNew() && !$user->hasAccessToLaramieModel($modelKey, 'create')) ||
-            ($item->isUpdate() && !$user->hasAccessToLaramieModel($modelKey, 'read'))
+            ($item->isUpdating() && !$user->hasAccessToLaramieModel($modelKey, 'read'))
         ) {
             abort(403);
         }

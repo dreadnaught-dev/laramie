@@ -52,7 +52,7 @@
 
     {!! implode('', data_get($model, 'editJs', [])) !!}
 
-    @if ($item->_isUpdate)
+    @if ($item->isUpdating())
         <form id="delete-form" action="{{ route('laramie::delete-item', ['modelKey' => $model->_type, 'id' => $item->id]) }}" method="POST" style="display: none;">
             <input type="hidden" name="_method" value="DELETE">
             {{ csrf_field() }}

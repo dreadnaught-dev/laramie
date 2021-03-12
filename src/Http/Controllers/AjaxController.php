@@ -328,7 +328,7 @@ class AjaxController extends Controller
         $item = $this->dataService->findByIdSuperficial($model, $itemId);
         // TODO -- validate referenceItemId is NOT in the db (new item) or belongs to type: `data_get($referenceField, 'relatedModel')`
 
-        $data = json_decode(data_get($item, '_origData', '{}'));
+        $data = json_decode($item->origData() ?: '{}');
 
         // Single reference -- only one allowed at a time
         if (data_get($referenceField, 'subtype') == 'single') {

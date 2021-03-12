@@ -32,8 +32,9 @@ class LaramieModel implements \JsonSerializable
     public $data = null;
     public $created_at = null;
     public $updated_at = null;
-    public $_isNew = true;
-    public $_isUpdate = false;
+    private $_isNew = true;
+    private $_origId = null;
+    private $_origData = null;
 
     protected static $dataService = null;
     protected static $globalHidden = [];
@@ -87,7 +88,17 @@ class LaramieModel implements \JsonSerializable
         return $this->_isNew;
     }
 
-    public function isUpdate()
+    public function origId()
+    {
+        return $this->_origId;
+    }
+
+    public function origData()
+    {
+        return $this->_origData;
+    }
+
+    public function isUpdating()
     {
         return !$this->isNew();
     }
@@ -164,10 +175,9 @@ class LaramieModel implements \JsonSerializable
             $this->{$key} = $value;
         }
 
-        $this->_origId = $this->id;
-        $this->_isNew = $this->id == null || !LaramieHelpers::isValidUuid($this->id);
-        $this->_isUpdate = !$this->_isNew;
+        $this->_isNew = $this->id === null || !LaramieHelpers::isValidUuid($this->id);
         $this->_origData = $this->data;
+        $this->_origId = $this->id;
 
         $origData = $this->data;
         unset($this->data);
@@ -451,11 +461,10 @@ class LaramieModel implements \JsonSerializable
         $tmp = new static();
         $tmp->fill($this);
         $tmp->id = null;
-        $tmp->_origId = null;
-        $tmp->_isNew = true;
-        $tmp->_isUpdate = false;
         $tmp->created_at = null;
         $tmp->updated_at = null;
+        $tmp->_isNew = true;
+        $tmp->_origId = null;
 
         foreach ($except as $attributeToUnset) {
             unset($tmp->{$attributeToUnset});
