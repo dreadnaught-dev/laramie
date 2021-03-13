@@ -458,6 +458,26 @@ class AdminController extends Controller
         return $this->redirectToFilteredListPage($modelKey, $request);
     }
 
+    public function getProfile(Request $request)
+    {
+        return $this->getEdit($request, 'profile', $this->getUserUuid());
+    }
+
+    public function postProfile(Request $request)
+    {
+        return $this->postEdit($request, 'profile', $this->getUserUuid());
+    }
+
+    private function getUserUuid()
+    {
+        $user = $this->dataService->getUser();
+        $id = $user->id;
+
+        return collect(DB::select('select uuid_generate_v3(uuid_ns_url(), ?)::text as id', [$id]))
+            ->pluck('id')
+            ->first();
+    }
+
     /**
      * Return the edit screen for a model item.
      *

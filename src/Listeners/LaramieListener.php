@@ -113,13 +113,14 @@ class LaramieListener
                     $query->where(DB::raw('data->>\'recipient_id\''), '=', optional($user)->id ?: -1);
                 });
                 break;
+            case 'profile':
             case 'laramieUser':
                 // `laramieUser` is a stand-in, there shouldn't' be any `laramieUser` records in the db. Union information from the user's table so we can make it work.
                 // @todo -- we may be able to make this less fragile. inspect output from dd($query).columns, etc
                 $userQuery = DB::table('users')
                     ->addSelect(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text) as id'))
                     ->addSelect(DB::raw('id as user_id'))
-                    ->addSelect(DB::raw('\'laramieUser\' as type'))
+                    ->addSelect(DB::raw('\'' . $type . '\' as type'))
                     ->addSelect(DB::raw('data || concat(\'{"user":"\','.config('laramie.username').',\'"}\')::jsonb as data'))
                     ->addSelect('created_at')
                     ->addSelect('updated_at')
@@ -233,9 +234,9 @@ class LaramieListener
                     throw new Exception('Sorry, you may not edit default system roles.');
                 }
                 break;
+            case 'profile':
             case 'laramieUser':
                 $laravelUser = DB::table('users')->find($item->user_id);
-                $item->user = $laravelUser->{config('laramie.username')};
                 $item->password = LaramieHelpers::getLaramiePasswordObjectFromPasswordText('password');
                 break;
         }
@@ -342,6 +343,22 @@ class LaramieListener
             case 'laramieUpload':
                 LaramieHelpers::postProcessLaramieUpload($item);
                 break;
+
+            case 'profile':
+                $userInfoToUpdate = [
+                    config('laramie.username') => $item->user,
+                    'updated_at' => \Carbon\Carbon::now(),
+                ];
+                $hashedPassword = data_get($item, 'password.encryptedValue');
+                if ($hashedPassword && $hashedPassword !== 'keep') {
+                    $userInfoToUpdate['password'] = $item->password->encryptedValue;
+                }
+
+                DB::table('users')
+                    ->where('id', $item->user_id)
+                    ->update($userInfoToUpdate);
+                break;
+
             case 'laramieUser':
                 // Update the underlying laravel user:
                 $userInfoToUpdate = [

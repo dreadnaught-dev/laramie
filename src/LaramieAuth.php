@@ -14,6 +14,11 @@ trait LaramieAuth
     private $_laramie = null;
     private $_roles = null;
 
+    public function getHandle()
+    {
+        return data_get($this, config('laramie.username'));
+    }
+
     public function isLaramieAdmin()
     {
         return in_array(Globals::AdminRoleId, data_get($this->getLaramieData(), 'roles', []));

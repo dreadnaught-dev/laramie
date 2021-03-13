@@ -32,6 +32,16 @@
                 "source": { "type": "hidden", "isVisibleOnEdit": false, "required": false, "listByDefault": false }
             }
         },
+        "profile": {
+            "isSystemModel": true,
+            "isSingular": true,
+            "disableMeta": true,
+            "name": "Profile Information",
+            "fields": {
+                "user": { "type": "text", "label": "Email", "required": true },
+                "password": { "type": "password", "required": true }
+            }
+        },
         "laramieUser": {
             "isSystemModel": true,
             "alias": "user",

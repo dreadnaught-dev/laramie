@@ -74,8 +74,8 @@
                 </div>
             </div>
             <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link">
-                    Hi, {{ $user->user }}
+                <a class="navbar-link" href="{{ route('laramie::profile') }}">
+                    Hi, {{ $user->getHandle() }}
                 </a>
                 <div class="navbar-dropdown is-right">
                     <a class="navbar-item" href="{{ route('logout') }}"

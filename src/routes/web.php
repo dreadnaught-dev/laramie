@@ -80,6 +80,8 @@ Route::group(
 
                 Route::get('/go-back/{modelKey}', 'AdminController@goBack')->name('go-back');
 
+                Route::get('/profile', 'AdminController@getProfile')->name('profile')->middleware([LaramieAuthorize::class, ShareAlertFromSession::class]);
+                Route::post('/profile', 'AdminController@postProfile')->middleware([LaramieAuthorize::class, ShareAlertFromSession::class]);
                 Route::get('/{modelKey}/{id}', 'AdminController@getEdit')->name('edit')->middleware([LaramieAuthorize::class, ShareAlertFromSession::class]);
                 Route::post('/{modelKey}/{id}', 'AdminController@postEdit')->name('post-edit')->middleware(LaramieAuthorize::class);
                 Route::delete('/{modelKey}/{id}', 'AdminController@deleteItem')->name('delete-item')->middleware(LaramieAuthorize::class);
