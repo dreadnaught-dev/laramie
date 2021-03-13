@@ -48,7 +48,7 @@ trait LaramieAuth
         $laramieData = $this->getLaramieData();
         $laramieData->prefs = $prefs;
 
-        $this->laramie = json_encode($laramieData);
+        $this->data = json_encode($laramieData);
         $this->save();
     }
 
@@ -56,7 +56,7 @@ trait LaramieAuth
     {
         if (!isset($this->_laramie)) {
             // TODO -- remove the default
-            $this->_laramie = json_decode(data_get($this, 'laramie', '{"roles": ["'.Globals::AdminRoleId.'"]}'));
+            $this->_laramie = json_decode(data_get($this, 'data', '{"roles": ["'.Globals::AdminRoleId.'"]}'));
         }
 
         return $this->_laramie;

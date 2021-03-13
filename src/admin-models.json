@@ -37,10 +37,12 @@
             "alias": "user",
             "defaultSort": "_created_at",
             "defaultSortDirection": "asc",
+            "disableMeta": true,
             "fields": {
                 "user": { "type": "text", "required": true },
                 "password": { "type": "password", "label": "password", "required": true },
                 "roles": {
+                    "isSearchable": false,
                     "type": "reference-many",
                     "relatedModel": "laramieRole"
                 },

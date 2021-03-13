@@ -88,6 +88,6 @@ class AuthorizeUser extends Command
 
         DB::table('users')
             ->where('id', $user->id)
-            ->update(['laramie' => json_encode($laramieData)]);
+            ->update(['data' => json_encode($laramieData)]);
     }
 }

@@ -39,7 +39,7 @@ class LaramieDataService
         return $this->jsonConfig->menu;
     }
 
-    public function getModelByKey($model)
+    public function getModelByKey(mixed $model)
     {
         if (is_string($model)) {
             $modelToReturn = data_get($this->jsonConfig->models, $model, null);
@@ -169,15 +169,6 @@ class LaramieDataService
         }
 
         $options = (object) $options;
-
-        /*
-         * Fire pre-list event: listeners MUST be synchronous. This event enables
-         * the ability to dynamically change the query that retrieves items based
-         * on the injected arguments.
-         */
-        if (config('laramie.suppress_events') !== true && data_get($options, 'filterQuery', true) !== false) {
-            Hook::fire(new FilterQuery($model, $query, $this->getUser(), $options));
-        }
 
         $options = (array) $options;
 
@@ -350,6 +341,15 @@ class LaramieDataService
                     $query->orWhere(DB::raw($field), 'ilike', '%'.$quickSearch.'%');
                 }
             });
+        }
+
+        /*
+         * Fire filter-query event: listeners MUST be synchronous. This event enables
+         * the ability to dynamically change the query that retrieves items based
+         * on the injected arguments.
+         */
+        if (config('laramie.suppress_events') !== true && data_get($options, 'filterQuery', true) !== false) {
+            Hook::fire(new FilterQuery($model, $query, $this->getUser(), $options));
         }
 
         return $query;
@@ -572,7 +572,7 @@ class LaramieDataService
         }
     }
 
-    public function findById($model, $id = null, $maxPrefetchDepth = 5)
+    public function findById($model, $id = null, $maxPrefetchDepth = 5, $options = [])
     {
         $id = is_string($model) && LaramieHelpers::isValidUuid($model)
             ? $model
@@ -584,9 +584,8 @@ class LaramieDataService
 
         if (is_string($model) && LaramieHelpers::isValidUuid($model)) {
             $model = data_get(DB::table('laramie_data')
-                ->where('type', $model->_type)
+                ->where('id', $model)
                 ->select(['type'])
-                ->limit(1)
                 ->first(), 'type');
         }
 
@@ -606,6 +605,10 @@ class LaramieDataService
 
         $query = $this->getBaseQuery($model)
             ->where('id', $id);
+
+        if (config('laramie.suppress_events') !== true && data_get($options, 'filterQuery', true) !== false) {
+            Hook::fire(new FilterQuery($model, $query, $this->getUser(), $options));
+        }
 
         $dbItem = $query->first();
 

@@ -187,10 +187,6 @@ class ModelLoader
                 $models->{$key} = $model;
             }
 
-            // Set what the label for the laramieUser model (email, username, etc)
-            $tmp = static::getPrettyNamesFromKey(config('laramie.username'));
-            $models->laramieUser->fields->user->label = $tmp[0];
-
             // Save the processed menu and models to the config
             $config->menu = $menu;
             $config->models = $models;

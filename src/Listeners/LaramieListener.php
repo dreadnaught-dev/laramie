@@ -97,8 +97,6 @@ class LaramieListener
         $user = $event->user;
         $type = $model->_type;
 
-        return;
-
         switch ($type) {
             case 'laramieRole':
                 // The only way we can hit preFetch and not have a user is on
@@ -114,6 +112,59 @@ class LaramieListener
                 $query->where(function ($query) use ($user) {
                     $query->where(DB::raw('data->>\'recipient_id\''), '=', optional($user)->id ?: -1);
                 });
+                break;
+            case 'laramieUser':
+                // `laramieUser` is a stand-in, there shouldn't' be any `laramieUser` records in the db. Union information from the user's table so we can make it work.
+                // @todo -- we may be able to make this less fragile. inspect output from dd($query).columns, etc
+                $userQuery = DB::table('users')
+                    ->addSelect(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text) as id'))
+                    ->addSelect(DB::raw('id as user_id'))
+                    ->addSelect(DB::raw('\'laramieUser\' as type'))
+                    ->addSelect(DB::raw('data || concat(\'{"user":"\','.config('laramie.username').',\'"}\')::jsonb as data'))
+                    ->addSelect('created_at')
+                    ->addSelect('updated_at')
+                    ->addSelect(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text as _id'))
+                    ->addSelect(DB::raw('created_at as _created_at'))
+                    ->addSelect(DB::raw('updated_at as _updated_at'));
+
+                // Where conditions and order bys added to the laramieUser query have to be copied and translated to work with the users table:
+
+                // Copy the order bys
+                foreach (data_get($query, 'orders', []) as $order) {
+                    if (optional(data_get($order, 'column'))->getValue() === 'data #>> \'{"user"}\'') {
+                        $userQuery->orderBy(config('laramie.username'), data_get($order, 'direction'));
+                    } else {
+                        $userQuery->orderBy(data_get($order, 'column'), data_get($order, 'direction'));
+                    }
+                }
+
+                // Copy the wheres:
+                $wheres = [];
+                $bindings = [];
+                $queryWheres = $query->wheres;
+                $queryBindings = $query->getBindings();
+                for ($i = 0; $i < count($queryWheres); $i ++) {
+                    if (data_get($queryWheres, $i . '.column')) {
+                        continue;
+                    }
+                    if (optional(data_get($queryWheres, $i . '.query.wheres.0.column'))->getValue() === 'data->>\'user\'') {
+                        $userQuery->where(config('laramie.username'), data_get($queryWheres, $i . '.query.wheres.0.operator'), $queryBindings[$i]);
+                    }
+                    else {
+                        $wheres[] = $queryWheres[$i];
+                        $bindings[] = $queryBindings[$i];
+                    }
+                }
+                $userQuery->mergeWheres($wheres, $bindings);
+
+                // If filtering by id, translate it to work for the users table
+                $whereId = collect($queryWheres)->filter(function($item) { return data_get($item, 'column') === 'id'; })->first();
+                if ($whereId) {
+                    $userQuery->where(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text'), data_get($whereId, 'value'));
+                }
+
+                $query->unionAll($userQuery);
+
                 break;
         }
     }
@@ -181,6 +232,11 @@ class LaramieListener
                 if (in_array($item->id, [Globals::AdminRoleId])) {
                     throw new Exception('Sorry, you may not edit default system roles.');
                 }
+                break;
+            case 'laramieUser':
+                $laravelUser = DB::table('users')->find($item->user_id);
+                $item->user = $laravelUser->{config('laramie.username')};
+                $item->password = LaramieHelpers::getLaramiePasswordObjectFromPasswordText('password');
                 break;
         }
 
@@ -285,6 +341,53 @@ class LaramieListener
             // Create thumbnails for images
             case 'laramieUpload':
                 LaramieHelpers::postProcessLaramieUpload($item);
+                break;
+            case 'laramieUser':
+                // Update the underlying laravel user:
+                $userInfoToUpdate = [
+                    config('laramie.username') => $item->user,
+                    'updated_at' => \Carbon\Carbon::now(),
+                ];
+
+                $hashedPassword = data_get($item, 'password.encryptedValue');
+                if ($hashedPassword && $hashedPassword !== 'keep') {
+                    $userInfoToUpdate['password'] = $item->password->encryptedValue;
+                }
+
+                $userRecord = DB::table('users')->where('id', $item->user_id)->first();
+                $jsonInfo = json_decode(data_get($userRecord, 'data'));
+
+                $modelFields = data_get($model, 'fields');
+                foreach ($modelFields as $fieldName => $field) {
+                    // Don't store dummy info
+                    if (
+                        strpos($fieldName, '_') === 0 ||
+                        in_array($fieldName, ['user', 'password'])
+                    ) {
+                        continue;
+                    }
+                    // We're not going through the main service for saving, so we need to do some finagling here:
+                    if ($field->type === 'reference') {
+                        if ($field->subtype === 'many') {
+                            $jsonInfo->{$fieldName} = collect(data_get($item, $fieldName))
+                                ->map(function($item) { return data_get($item, 'id'); })
+                                ->toArray();
+                        }
+                        else {
+                            $jsonInfo->{$fieldName} = data_get($item, $fieldName . '.id');
+                        }
+                    }
+                    else {
+                        $jsonInfo->{$fieldName} = data_get($item, $fieldName);
+                    }
+                }
+
+                $userInfoToUpdate['data'] = json_encode($jsonInfo);
+
+                DB::table('users')
+                    ->where('id', $item->user_id)
+                    ->update($userInfoToUpdate);
+
                 break;
         }
     }
