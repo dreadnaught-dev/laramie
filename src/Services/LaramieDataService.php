@@ -374,7 +374,7 @@ class LaramieDataService
         $modelFieldType = data_get($modelField, 'dataType', data_get($modelField, 'type'));
 
         // If searching by the `data` field, don't transform -- it's a manual query
-        if ($field === 'data') {
+        if (preg_match('/\bdata\b/', $field)) {
             return 'data';
         }
         if ($modelFieldType == 'dbtimestamp') {
