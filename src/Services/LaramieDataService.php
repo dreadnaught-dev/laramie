@@ -230,7 +230,7 @@ class LaramieDataService
                 // Sort singular reference fields by alias of relation
                 $field = data_get($singularReferenceFields, $sort);
                 $relatedModel = $this->getModelByKey($field->relatedModel);
-                $relatedAlias = data_get($relatedModel->fields, $relatedModel->alias);
+                $relatedAlias = $relatedModel->getField($relatedModel->getAlias());
                 $fieldSql = $relatedAlias->type == 'computed' ? $relatedAlias->sql : sprintf('n2.data->>\'%s\'', $relatedAlias->_fieldName);
                 $query->orderBy(DB::raw('(select '.$fieldSql.' from laramie_data as n2 where (laramie_data.data->>\''.$field->_fieldName.'\')::uuid = n2.id)'), data_get($options, 'sortDirection', 'asc'));
             } elseif (in_array($sort, array_keys($numericFields))) {
@@ -415,7 +415,7 @@ class LaramieDataService
                 // If we're searching a reference field by a UUID, don't do the gymnastics of searching by its alias
                 $field = 'data->>\''.$field.'\'';
                 $relatedModel = $this->getModelByKey($modelField->relatedModel);
-                $relatedAlias = data_get($relatedModel->fields, $relatedModel->alias);
+                $relatedAlias = $relatedModel->getField($relatedModel->getAlias());
 
                 // If the reference's alias is a computed field, modify the SQL, replacing `laramie_data` with `n2`, because we're nesting the subquery
                 $fieldSql = $relatedAlias->type == 'computed' ? preg_replace('/laramie_data\./', 'n2.', $relatedAlias->sql) : sprintf('n2.data->>\'%s\'', $relatedAlias->_fieldName);

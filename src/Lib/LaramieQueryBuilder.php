@@ -345,7 +345,7 @@ class LaramieQueryBuilder
             } else {
                 $path = preg_split('/(\.|=\>)/', $key);
 
-                for ($i = 0, $fields = data_get($jsonModel, 'fields'); $i < count($path); ++$i ) {
+                for ($i = 0, $fields = $jsonModel->getFields(); $i < count($path); ++$i ) {
                     $jsonField = data_get($fields, $path[$i]);
 
                     $fieldType = data_get($jsonField, 'type');

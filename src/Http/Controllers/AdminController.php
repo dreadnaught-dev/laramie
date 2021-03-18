@@ -1025,12 +1025,12 @@ class AdminController extends Controller
 
                     foreach ($a as $id) {
                         $tmp = $this->dataService->findById($field->relatedModel, $id);
-                        $aAliases[] = data_get($tmp, object_get($tmpRelatedModel, 'alias', 'id'));
+                        $aAliases[] = data_get($tmp, $tmpRelatedModel->getAlias());
                     }
 
                     foreach ($b as $id) {
                         $tmp = $this->dataService->findById($field->relatedModel, $id);
-                        $bAliases[] = data_get($tmp, object_get($tmpRelatedModel, 'alias', 'id'));
+                        $bAliases[] = data_get($tmp, $tmpRelatedModel->getAlias());
                     }
 
                     $diff = $differ->render(implode(', ', $bAliases), implode('', $aAliases));
