@@ -29,7 +29,7 @@ class MenuHelper
 
                     $node->$key = (object) [
                         'isLeaf' => true,
-                        'modelName' => $value,
+                        'modelKey' => $value,
                         'isVisible' => $itemIsVisible,
                     ];
                     break;
@@ -64,7 +64,7 @@ class MenuHelper
                 echo '</ul></li>';
             } else {
                 $isActive = false; // $currentRoute->hasParameter('modelKey') && $currentRoute->parameter('modelKey') == $modelKeyOrChild;
-                echo '<li><a class="'.($isActive ? 'is-active' : '').'" href="'.route('laramie::list', ['modelKey' => data_get($value, 'modelName')]).'">'.$key.'</a></li>';
+                echo '<li><a class="'.($isActive ? 'is-active' : '').'" href="'.route('laramie::list', ['modelKey' => data_get($value, 'modelKey')]).'">'.$key.'</a></li>';
             }
         }
     }

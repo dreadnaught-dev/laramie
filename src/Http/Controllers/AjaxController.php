@@ -70,7 +70,7 @@ class AjaxController extends Controller
         return $paginator;
     }
 
-    protected function doSearch(ModelSpec $outerModel, $model, Request $request)
+    protected function doSearch(ModelSpec $outerModel, ModelSpec $model, Request $request)
     {
         // Ensure that if items are selected, they're valid uuids
         $uuidCollection = collect(preg_split('/\s*[,|]\s*/', $request->get('selectedItems')))
@@ -136,7 +136,7 @@ class AjaxController extends Controller
                     $query->orderBy('selected', 'asc');
                 }
                 // If searching laramieUploads, limit returned extensions if the subtype is `image`.
-                if ($model->_type == 'laramieUpload' && $lookupSubtype == 'image') {
+                if ($model->getType() == 'laramieUpload' && $lookupSubtype == 'image') {
                     $query->whereRaw(\DB::raw('data->>\'extension\' in (\''.implode("','", config('laramie.allowed_image_types')).'\')'));
                 }
                 // If a tag was passed, only show items that were tagged accordingly
@@ -156,7 +156,7 @@ class AjaxController extends Controller
                         }
 
                         // Search by the model's quickSearch array (will generally be the model's `alias` unless manually set).
-                        foreach ($model->quickSearch as $searchFieldName) {
+                        foreach ($model->getQuickSearch() as $searchFieldName) {
                             // for, we'll also search by id and tags
                             $searchField = data_get($model->getFields(), $searchFieldName);
 

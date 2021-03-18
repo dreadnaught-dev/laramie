@@ -532,9 +532,9 @@ class LaramieDataService
         return $laramieModels;
     }
 
-    public function getMetaInformation($modelName)
+    public function getMetaInformation($modelKey)
     {
-        $model = $this->getModelByKey($modelName);
+        $model = $this->getModelByKey($modelKey);
 
         // Create the base query
         $query = DB::table('laramie_data')
