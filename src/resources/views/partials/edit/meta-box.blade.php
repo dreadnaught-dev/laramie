@@ -11,7 +11,7 @@
             </span>
         </a>
     </header>
-    <div id="tags-card-content" class="card-content meta-wrapper {{ $hideTags ? 'is-hidden' : '' }}" data-load-meta-endpoint="{{ route('laramie::load-meta', ['modelKey' => $model->_type, 'id' => '_id_']) }}">
+    <div id="tags-card-content" class="card-content meta-wrapper {{ $hideTags ? 'is-hidden' : '' }}" data-load-meta-endpoint="{{ route('laramie::load-meta', ['modelKey' => $model->getType(), 'id' => '_id_']) }}">
         @include('laramie::partials.meta-form')
     </div>
 </div>

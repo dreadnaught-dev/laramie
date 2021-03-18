@@ -35,7 +35,7 @@
         "profile": {
             "isSystemModel": true,
             "isSingular": true,
-            "disableMeta": true,
+            "isDisableMeta": true,
             "name": "Profile Information",
             "fields": {
                 "user": { "type": "text", "label": "Email", "required": true },
@@ -47,7 +47,7 @@
             "alias": "user",
             "defaultSort": "_created_at",
             "defaultSortDirection": "asc",
-            "disableMeta": true,
+            "isDisableMeta": true,
             "fields": {
                 "user": { "type": "text", "required": true },
                 "password": { "type": "password", "label": "password", "required": true },
@@ -109,7 +109,7 @@
             "alias": "authorName",
             "defaultSort": "_created_at",
             "defaultSortDirection": "desc",
-            "disableMeta": true,
+            "isDisableMeta": true,
             "isListable": false,
             "isEditable": false,
             "fields": {
@@ -128,7 +128,7 @@
         },
         "laramieSavedReport": {
             "isSystemModel": true,
-            "disableMeta": true,
+            "isDisableMeta": true,
             "isListable": false,
             "isEditable": false,
             "fields": {

@@ -4,6 +4,8 @@ namespace Laramie\Hooks;
 
 use Illuminate\Foundation\Auth\User;
 
+use Laramie\Lib\ModelSpec;
+
 /*
  * Perform logic _before_ data is queried and the admin list page is presented to
  * a user (admin only). For example, you can set a redirect response here if the
@@ -11,8 +13,8 @@ use Illuminate\Foundation\Auth\User;
  */
 class PreList
 {
-    public $model;
-    public $user;
+    public ModelSpec $model;
+    public User $user;
     public $extra;
 
     /**
@@ -22,7 +24,7 @@ class PreList
      * @param Illuminate\Database\Query\Builder $query the query that will be used to fetch db instances of the `$model`
      * @param Laramie\Lib\LaramieModel $user laramie's version of the logged in user
      */
-    public function __construct($model, User $user, &$extra)
+    public function __construct(ModelSpec $model, User $user, &$extra)
     {
         $this->model = $model;
         $this->user = $user;

@@ -33,11 +33,11 @@
                 $addLink = '';
                 $model = $dataService->getModelByKey($modelKeyOrChild);
 
-                if ($model->isEditable) {
-                    $addLink = '<a class="button is-light is-pulled-right" href="'.route('laramie::edit', ['modelKey' => $modelKeyOrChild, 'id' => 'new']).'"><span class="icon"><i class="fas fa-'. ($model->isSingular ? 'pencil-alt' : 'plus') .'"></i></span></a>';
+                if ($model->isEditable()) {
+                    $addLink = '<a class="button is-light is-pulled-right" href="'.route('laramie::edit', ['modelKey' => $modelKeyOrChild, 'id' => 'new']).'"><span class="icon"><i class="fas fa-'. ($model->isSingular() ? 'pencil-alt' : 'plus') .'"></i></span></a>';
                 }
 
-                if (!$model->isSingular) {
+                if (!$model->isSingular()) {
                     $numItems = " ($numItems)";
                 } else {
                     $numItems = '';

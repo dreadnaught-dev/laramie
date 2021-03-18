@@ -27,7 +27,7 @@
             "isDeletable": { "type": "boolean" },
             "isSingular": { "type": "boolean" },
             "isSystemModel": { "type": "boolean" },
-            "disableMeta": { "type": "boolean" },
+            "isDisableMeta": { "type": "boolean" },
             "disableRevisions": { "type": "boolean" },
             "editView": { "type": "string" },
             "listView": { "type": "string" },

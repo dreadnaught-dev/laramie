@@ -129,12 +129,12 @@ class AdminController extends Controller
 
         $model = $this->dataService->getModelByKey($modelKey);
 
-        if (!$model->isListable) {
+        if (!$model->isListable()) {
             throw new Exception('Items of this type may not be listed');
         }
 
         // Check to see if this is a 'singular' model -- meaning there should only ever be one of them (like settings, etc).
-        if (data_get($model, 'isSingular')) {
+        if ($model->isSingular()) {
             return $this->redirectToSingularEdit($model);
         }
 
@@ -174,7 +174,7 @@ class AdminController extends Controller
 
         $extra = (object) ['listFields' => data_get($options, 'listFields', $listFields), 'filters' => $filters, 'alert' => data_get($extra, 'alert'), 'context' => 'admin']; // passing this so we have context in the post list event;
 
-        $listView = data_get($model, 'listView', 'laramie::list-page');
+        $listView = $model->getListView();
 
         $extra->response = view($listView)
             ->with('model', $model)
@@ -200,7 +200,7 @@ class AdminController extends Controller
         // If one jumped to another edit page from a relationship field or something, don't redirect back to a potentially different model's list page:
         if (
             strpos($redirectUrl, $modelKey) === false &&
-            !data_get($model, 'isSingular')
+            !$model->isSingular()
         ) {
             $redirectUrl = route('laramie::list', ['modelKey' => $modelKey]);
         }
@@ -218,7 +218,7 @@ class AdminController extends Controller
     {
         $id = $this->dataService->getSingularItemId($model);
 
-        return redirect()->to(route('laramie::edit', ['modelKey' => $model->_type, 'id' => $id]));
+        return redirect()->to(route('laramie::edit', ['modelKey' => $model->getType(), 'id' => $id]));
     }
 
     /**
@@ -312,7 +312,7 @@ class AdminController extends Controller
     {
         $prefs = $request->user()->getLaramiePrefs();
         $model = $this->dataService->getModelByKey($modelKey);
-        $modelPrefsKey = $request->get('model-prefs-key', $model->_type);
+        $modelPrefsKey = $request->get('model-prefs-key', $model->getType());
         $weight = 10;
 
         $listFields = [];
@@ -324,7 +324,7 @@ class AdminController extends Controller
 
         foreach ($fieldsFromRequest as $key => $value) {
             $key = preg_replace('/^_lf_/', '', $key);
-            if (data_get($model->fields, $key)) {
+            if (data_get($model->getFields(), $key)) {
                 $listFields[$key] = (object) ['weight' => $weight, 'listed' => $value == 1];
                 $weight += 10;
             }
@@ -431,7 +431,7 @@ class AdminController extends Controller
         // @TODO -- move this out of the controller
         $tmp = collect($this->dataService->findByType($reportModel, ['resultsPerPage' => 0], function ($query) use ($model, $reportName, $userUuid) {
             $query->where(DB::raw('data->>\'user\''), $userUuid)
-                ->where(DB::raw('data->>\'relatedModel\''), $model->_type)
+                ->where(DB::raw('data->>\'relatedModel\''), $model->getType())
                 ->where(DB::raw('data->>\'name\''), $reportName);
         }))
         ->each(function ($e) {
@@ -448,7 +448,7 @@ class AdminController extends Controller
 
         $report = new LaramieModel();
         $report->user = $this->dataService->getUser();
-        $report->relatedModel = $model->_type;
+        $report->relatedModel = $model->getType();
         $report->name = $reportName;
         $report->key = Str::random(10);
         $report->filterString = $filterString;
@@ -488,7 +488,7 @@ class AdminController extends Controller
         $model = $this->dataService->getModelByKey($modelKey);
         $user = $this->dataService->getUser();
 
-        if (!$model->isEditable) {
+        if (!$model->isEditable()) {
             throw new Exception('Items of this type may not be edited');
         }
 
@@ -508,7 +508,7 @@ class AdminController extends Controller
 
         // If we're editing a new item, check to see if we need to pre-set any of the singular relationships (from QS)
         if ($item->isNew() && !session('isFromPost')) {
-            $singularRefs = collect($model->fields)
+            $singularRefs = collect($model->getFields())
                 ->filter(function($item, $key) use($request) {
                     return $item->type == 'reference'
                     && $item->subtype == 'single'
@@ -524,14 +524,14 @@ class AdminController extends Controller
         $errorMessages = session('errorMessages') ?: null;
 
         $revisions = [];
-        if (!(config('laramie.disable_revisions') || data_get($model, 'disableRevisions'))) {
+        if (!(config('laramie.disable_revisions') || $model->isDisableRevisions())) {
             $revisions = $this->dataService->findItemRevisions($id);
         }
 
         // Ensure that the user can't create a new 'singular' item
-        if ($item->isNew() && data_get($model, 'isSingular')) {
+        if ($item->isNew() && $model->isSingular()) {
             return $this->redirectToSingularEdit($model);
-        } elseif (data_get($model, 'isSingular')) {
+        } elseif ($model->isSingular()) {
             session()->put('_laramie_last_list_url', route('laramie::dashboard'));
         }
 
@@ -547,7 +547,7 @@ class AdminController extends Controller
          */
         $sidebars = ['laramie::partials.edit.save-box' => ['item' => $item, 'user' => $user, 'lastUserToUpdate' => $lastUserToUpdate]];
 
-        if (!(config('laramie.disable_meta') || data_get($model, 'disableMeta'))) {
+        if (!(config('laramie.disable_meta') || $model->isDisableMeta())) {
             $sidebars['laramie::partials.edit.meta-box'] = ['user' => $user];
         }
 
@@ -572,7 +572,7 @@ class AdminController extends Controller
             return $extraInfoToPassToEvents->response;
         }
 
-        $editView = data_get($model, 'editView', 'laramie::edit-page');
+        $editView = $model->getEditView();
 
         return view($editView)
             ->with('model', $model)
@@ -610,7 +610,7 @@ class AdminController extends Controller
         Hook::fire(new TransformModelForEdit($model, $item, $user));
 
         // Load item with new values _before_ validation. If there are errors, flash updated item and redirect.
-        foreach ($model->fields as $fieldName => $field) {
+        foreach ($model->getFields() as $fieldName => $field) {
             $item->{$fieldName} = $this->updateField($field);
         }
 
@@ -654,7 +654,7 @@ class AdminController extends Controller
         $previousUrl = url()->previous();
 
         if (!$success) {
-            $alert = (object) ['class' => 'is-danger', 'title' => 'Awww snap! That didn\'t work', 'alert' => sprintf('There was an error while saving your information. Please review the form, address all errors, and try again.', $model->name)];
+            $alert = (object) ['class' => 'is-danger', 'title' => 'Awww snap! That didn\'t work', 'alert' => sprintf('There was an error while saving your information. Please review the form, address all errors, and try again.', $model->getName())];
             if (is_array($errors) && array_key_exists('schemaError', $errors)) {
                 $alert->alert = $alert->alert.'<br>'.$errors['message'];
             }
@@ -672,10 +672,10 @@ class AdminController extends Controller
         }
 
         $alertMessage = sprintf('The %s was successfully %s. Continue editing or&nbsp;<a class="has-underline" href="%s">go back to the %s</a>.',
-            $model->name,
+            $model->getName(),
             $id == 'new' ? 'created' : 'updated',
-            data_get($model, 'isSingular') ? route('laramie::dashboard') : route('laramie::go-back', ['modelKey' => $modelKey]),
-            data_get($model, 'isSingular') ? 'dashboard' : 'list page');
+            $model->isSingular() ? route('laramie::dashboard') : route('laramie::go-back', ['modelKey' => $modelKey]),
+            $model->isSingular() ? 'dashboard' : 'list page');
 
         if ($isNew) {
             // Update meta that may have been created to point to this new item:
@@ -686,7 +686,7 @@ class AdminController extends Controller
 
             if (!$user->hasAccessToLaramieModel($modelKey, 'update')) {
                 $previousUrl = session()->get('_laramie_last_list_url', route('laramie::dashboard'));
-                $alertMessage = sprintf('The %s was successfully created.', $model->name);
+                $alertMessage = sprintf('The %s was successfully created.', $model->getName());
             }
         }
 
@@ -930,7 +930,7 @@ class AdminController extends Controller
     {
         $model = $this->dataService->getModelByKey($item->type);
 
-        if (config('laramie.disable_revisions') || data_get($model, 'disableRevisions')) {
+        if (config('laramie.disable_revisions') || $model->isDisableRevisions()) {
             abort(403, 'Forbidden');
         }
 
@@ -950,13 +950,13 @@ class AdminController extends Controller
 
         $model = $this->dataService->getModelByKey($item->type);
 
-        if (config('laramie.disable_revisions') || data_get($model, 'disableRevisions')) {
+        if (config('laramie.disable_revisions') || $model->issDisableRevisions()) {
             abort(403, 'Forbidden');
         }
 
         $alert = (object) ['class' => 'is-warning', 'title' => 'Revision loaded', 'alert' => sprintf('The revision from %s has been loaded successfully.', \Carbon\Carbon::parse($item->updated_at)->toDayDateTimeString())];
 
-        return redirect()->route('laramie::edit', ['modelKey' => $model->_type, 'id' => $item->laramie_data_id])
+        return redirect()->route('laramie::edit', ['modelKey' => $model->getType(), 'id' => $item->laramie_data_id])
             ->with('alert', $alert);
     }
 
@@ -973,7 +973,7 @@ class AdminController extends Controller
         $item = $this->dataService->getItemRevision($revisionId);
         $model = $this->dataService->getModelByKey($modelKey);
 
-        if (config('laramie.disable_revisions') || data_get($model, 'disableRevisions')) {
+        if (config('laramie.disable_revisions') || $model->isDisableRevisions()) {
             abort(403, 'Forbidden');
         }
 
@@ -994,7 +994,7 @@ class AdminController extends Controller
 
         $diffs = [];
 
-        foreach (data_get($model, 'fields') as $key => $field) {
+        foreach ($model->getFields() as $key => $field) {
             $diff = null;
 
             switch ($field->type) {

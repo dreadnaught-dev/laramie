@@ -2,8 +2,10 @@
 
 namespace Laramie\Hooks;
 
-use Laramie\Lib\LaramieModel;
 use Illuminate\Foundation\Auth\User;
+
+use Laramie\Lib\ModelSpec;
+use Laramie\Lib\LaramieModel;
 
 /*
  * Called before editing an item in the admin (and only the admin). Can be used
@@ -11,9 +13,9 @@ use Illuminate\Foundation\Auth\User;
  */
 class PreEdit
 {
-    public $model;
+    public ModelSpec $model;
     public $item;
-    public $user;
+    public ?User $user;
 
     /**
      * Create a new PreEdit event hook.
@@ -22,7 +24,7 @@ class PreEdit
      * @param Laramie\Lib\LaramieModel $item the db item that will be edited
      * @param Laramie\Lib\LaramieModel $user laramie's version of the logged in user
      */
-    public function __construct($model, LaramieModel $item, User $user = null, &$extra = null)
+    public function __construct(ModelSpec $model, LaramieModel $item, User $user = null, &$extra = null)
     {
         $this->model = $model;
         $this->item = $item;

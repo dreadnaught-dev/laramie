@@ -2,7 +2,7 @@
 
 @push('extra-header')
     <link href="/laramie/admin/css/trix.css" rel="stylesheet">
-    {!! implode('', data_get($model, 'editCss', [])) !!}
+    {!! implode('', $model->getEditCss()) !!}
 @endpush
 
 @push('scripts')
@@ -20,7 +20,7 @@
         <div class="modal-background"></div>
         <div class="modal-card">
             <header class="modal-card-head">
-                <p class="modal-card-title">Compare {{ $model->name }} Revisions</p>
+                <p class="modal-card-title">Compare {{ $model->getName() }} Revisions</p>
                 <button class="delete js-hide-modal" onclick="return false;"></button>
             </header>
             <div id="revision-diff" class="modal-card-body">
@@ -50,10 +50,10 @@
 
     @include('laramie::handlebars.meta-tags-comments')
 
-    {!! implode('', data_get($model, 'editJs', [])) !!}
+    {!! implode('', $model->getEditJs()) !!}
 
     @if ($item->isUpdating())
-        <form id="delete-form" action="{{ route('laramie::delete-item', ['modelKey' => $model->_type, 'id' => $item->id]) }}" method="POST" style="display: none;">
+        <form id="delete-form" action="{{ route('laramie::delete-item', ['modelKey' => $model->getType(), 'id' => $item->id]) }}" method="POST" style="display: none;">
             <input type="hidden" name="_method" value="DELETE">
             {{ csrf_field() }}
         </form>

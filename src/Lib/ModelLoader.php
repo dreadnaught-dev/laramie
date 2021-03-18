@@ -49,7 +49,6 @@ class ModelLoader
 
         // Cache the "loaded" config by saving a hydrated version of it to storage
         if ($configCachedTime < $configModifiedTime) {
-            $config = (object) [];
             $models = (object) [];
             $menu = (object) [];
 
@@ -98,7 +97,7 @@ class ModelLoader
                     $model = json_decode(file_get_contents($modelPath));
                 }
 
-                $model->{'_type'} = $key;
+                $model->_type = $key;
 
                 $fields = data_get($model, 'fields', (object) []);
 
@@ -111,11 +110,11 @@ class ModelLoader
                 }
 
                 // Set some required name attributes (although they're not necessarily required by the JSON schema)
-                list($singularName, $pluralName) = static::getPrettyNamesFromKey($key);
-                $model->name = data_get($model, 'name', $singularName);
-                $model->namePlural = data_get($model, 'namePlural', $pluralName);
+                $name = data_get($model, 'name', static::getNameFromKey($key));
+
+                $model->name = $name;
+                $model->namePlural = data_get($model, 'namePlural', Str::plural($name));
                 $model->isListable = data_get($model, 'isListable', true) !== false;
-                //$model->isMetaField = data_get($model, 'isMetaField', false) === true; // NOTE: keeping here for reference, but it's only used on the list page for excluding meta fields (atm only tags/comments/versions); we don't necessarily need to add another attribute to each field for it.
                 $model->isEditable = data_get($model, 'isEditable', true) !== false;
                 $model->isSystemModel = data_get($model, 'isSystemModel', false) === true;
                 $model->isSingular = data_get($model, 'isSingular', false) === true;
@@ -125,7 +124,7 @@ class ModelLoader
                 $model->listJs = static::ensureArray(data_get($model, 'listJs', ''));
                 $model->listCss = static::ensureArray(data_get($model, 'listCss', ''));
 
-                // The model `alias` is the field used to identify the model (gererally the
+                // The `alias` is the field used to identify the model (gererally the
                 // first field on the list page, is shown when items are being pulled in to a
                 // relationship, etc); It should refer to one of the model's non reference fields.
                 // If it's not set, pick out the first text field. If there isn't one, use the id.
@@ -188,8 +187,7 @@ class ModelLoader
             }
 
             // Save the processed menu and models to the config
-            $config->menu = $menu;
-            $config->models = $models;
+            $models = collect($models)->map(function($item) { return new ModelSpec($item); });
 
             $validator = new Validator();
             $modelValidator = json_decode(file_get_contents(__DIR__.'/../model-validator.json'));
@@ -200,15 +198,15 @@ class ModelLoader
 
             $errors = [];
             foreach ($models as $m) {
-                $validator->check($m, $modelValidator->modelSchema);
+                $validator->check($m->toData(), $modelValidator->modelSchema);
                 if (!$validator->isValid()) {
                     foreach ($validator->getErrors() as $error) {
                         $errors[] = sprintf('%s: %s', $error['property'], $error['message']);
                     }
                 }
                 // recursively validate fields -- recursion only needed for aggregate fields
-                foreach ($m->fields as $fieldName => $field) {
-                    self::dfValidateField($m, $field, $modelValidator, $validator, $errors);
+                foreach ($m->getFields() as $fieldName => $field) {
+                    self::dfValidateField($m, $field, $modelValidator, $validator, $errors); // @TODO preston -- common interface for aggregates and models (FieldContainer)?
                 }
             }
 
@@ -222,12 +220,17 @@ class ModelLoader
                 throw new Exception($errorString);
             }
 
+            $config = (object) [];
+            $config->menu = $menu;
+            $config->models = $models;
             Hook::fire(new ConfigLoaded($config));
 
             // Add json validation _post_ `ConfigLoaded` event in case fields were dynamically added to models via `ConfigLoaded` event
-            foreach ($models as $model) {
-                $model->_jsonValidator = static::getValidationSchema($model);
+            foreach ($config->models as $model) {
+                $model->setJsonValidator(static::getValidationSchema($model));
             }
+
+            $config->models = $models->map(function($item) { return $item->toData(); });
 
             // Save the processed config to storage so we don't have to that processing on every request.
             file_put_contents($cachedConfigPath, json_encode($config, JSON_PRETTY_PRINT));
@@ -245,7 +248,7 @@ class ModelLoader
         return array_filter(is_array($value) ? $value : [$value]);
     }
 
-    private static function dfValidateField($model, $field, $schema, $validator, &$errors)
+    private static function dfValidateField(ModelSpec $model, $field, $schema, $validator, &$errors)
     {
         $type = $field->type;
         if ($type == 'aggregate') {
@@ -258,7 +261,7 @@ class ModelLoader
         $validator->check($field, $fieldValidator);
         if (!$validator->isValid()) {
             foreach ($validator->getErrors() as $error) {
-                $errors[] = sprintf('%s -> %s -> %s %s: %s', $model->name, $field->{'_fieldName'}, $field->type, $error['property'], $error['message']);
+                $errors[] = sprintf('%s -> %s -> %s %s: %s', $model->getName(), $field->{'_fieldName'}, $field->type, $error['property'], $error['message']);
             }
         }
     }
@@ -302,14 +305,14 @@ class ModelLoader
      */
     public static function processField($fieldName, $field, $modelAlias = null, $prefix = '')
     {
-        list($fieldSingularName, $fieldPluralName) = static::getPrettyNamesFromKey($fieldName);
         $field->type = data_get($field, 'type', 'text'); // default fields to text types
 
         $field->id = $prefix.$fieldName.($field->type == 'aggregate' ? '_{{'.$fieldName.'Key}}' : '');
         $field->_fieldName = $fieldName;
 
-        $field->label = data_get($field, 'label', $fieldSingularName);
-        $field->labelPlural = data_get($field, 'labelPlural', $fieldPluralName); // Used in relationships
+        $label = data_get($field, 'label', static::getNameFromKey($fieldName));
+        $field->label = $label;
+        $field->labelPlural = data_get($field, 'labelPlural', Str::plural($label)); // Used in relationships
         $field->listByDefault = data_get($field, 'listByDefault', $field->type !== 'password');
 
         $weight = $fieldName == $modelAlias ? -1 : data_get($field, 'weight', 100);
@@ -489,7 +492,7 @@ class ModelLoader
      *
      * @return mixed Object representing this models's json-validation schema
      */
-    public static function getValidationSchema($model)
+    public static function getValidationSchema(ModelSpec $model)
     {
         $schema = (object) [
             '$schema' => 'http://json-schema.org/draft-04/schema#',
@@ -508,7 +511,7 @@ class ModelLoader
                 ],
                 'type' => (object) [
                     'type' => 'string',
-                    'pattern' => '^'.$model->_type.'$',
+                    'pattern' => '^'.$model->getType().'$',
                 ],
                 'created_at' => (object) ['type' => 'string'],
                 'updated_at' => (object) ['type' => 'string'],
@@ -518,7 +521,7 @@ class ModelLoader
             ],
         ];
 
-        $fieldCollection = collect($model->fields);
+        $fieldCollection = collect($model->getFields());
 
         $requiredFields = $fieldCollection
             ->filter(function ($e) {
@@ -702,12 +705,10 @@ class ModelLoader
      *
      * @return string[] Singular name, Plural name
      */
-    private static function getPrettyNamesFromKey($key)
+    private static function getNameFromKey($key)
     {
         $tmp = array_values(array_filter(explode('_', Str::snake($key))));
-        $singularName = Str::title(implode(' ', $tmp));
-        $tmp[count($tmp) - 1] = Str::plural($tmp[count($tmp) - 1]);
-        $pluralName = Str::title(implode(' ', $tmp));
+        $name = Str::title(implode(' ', $tmp));
 
         // Do a superficial adjustment of titles for consistency see `MLA Style Capitalization Rules`, etc
         $overrides = [
@@ -723,11 +724,10 @@ class ModelLoader
         ];
 
         foreach ($overrides as $token => $replacement) {
-            $singularName = preg_replace('/\b'.$token.'\b/', $replacement, $singularName);
-            $pluralName = preg_replace('/\b'.$token.'\b/', $replacement, $pluralName);
+            $name = preg_replace('/\b'.$token.'\b/', $replacement, $name);
         }
 
-        return [$singularName, $pluralName];
+        return $name;
     }
 
     /**

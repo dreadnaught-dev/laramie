@@ -2,8 +2,10 @@
 
 namespace Laramie\Hooks;
 
-use Laramie\Lib\LaramieModel;
 use Illuminate\Foundation\Auth\User;
+
+use Laramie\Lib\ModelSpec;
+use Laramie\Lib\LaramieModel;
 
 /*
  * Called before deleting an item. Do additional validation to ensure the item
@@ -11,9 +13,9 @@ use Illuminate\Foundation\Auth\User;
  */
 class PreDelete
 {
-    public $model;
+    public ModelSpec $model;
     public $item;
-    public $user;
+    public ?User $user;
 
     /**
      * Create a new PreDelete hook.
@@ -22,7 +24,7 @@ class PreDelete
      * @param Laramie\Lib\LaramieModel $item the db item that will be edited
      * @param Laramie\Lib\LaramieModel $user laramie's version of the logged in user
      */
-    public function __construct($model, LaramieModel $item, User $user = null)
+    public function __construct(ModelSpec $model, LaramieModel $item, User $user = null)
     {
         $this->model = $model;
         $this->item = $item;

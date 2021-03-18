@@ -4,6 +4,8 @@ namespace Laramie\Hooks;
 
 use Illuminate\Foundation\Auth\User;
 
+use Laramie\Lib\ModelSpec;
+
 /*
  * Alter LaramieModels after they've been fetched from the db, but before
  * they've been returned from the admin list view. Only called from the admin.
@@ -11,14 +13,14 @@ use Illuminate\Foundation\Auth\User;
 
 class PostList
 {
-    public $model;
+    public ModelSpec $model;
     public $query;
-    public $user;
+    public User $user;
 
     /**
      * Create a new PostList hook.
      */
-    public function __construct($model, &$items, User $user, &$extra = null)
+    public function __construct(ModelSpec $model, &$items, User $user, &$extra = null)
     {
         $this->model = $model;
         $this->items = $items;

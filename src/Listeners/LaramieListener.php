@@ -50,35 +50,35 @@ class LaramieListener
 
         $laramieRoleModel = data_get($config, 'models.laramieRole');
 
-        $models = collect($config->models);
+        $models = $config->models;
 
         Cache::forget(Globals::LARAMIE_TYPES_CACHE_KEY);
 
         $nonSystemModels = $models
-            ->filter(function ($e) {
-                return !data_get($e, 'isSystemModel');
+            ->filter(function ($item) {
+                return $item->isSystemModel() !== true;
             })
             ->sortBy(function ($e) {
-                return $e->namePlural;
+                return $e->getNamePlural();
             });
 
         // Tweak laramie upload preview to reference appropriate admin url:
         $laramieUpload = data_get($models, 'laramieUpload');
-        $laramieUpload->fields->preview->sql = str_replace('_admin_url_', config('laramie.admin_url'), $laramieUpload->fields->preview->sql);
+        $laramieUpload->getField('preview')->sql = str_replace('_admin_url_', config('laramie.admin_url'), $laramieUpload->getField('preview')->sql);
 
         foreach ($nonSystemModels as $nonSystemModel) {
-            $showName = data_get($nonSystemModel, 'isSingular', false) ? $nonSystemModel->name : $nonSystemModel->namePlural;
-            $laramieRoleModel->fields->{$nonSystemModel->_type} = ModelLoader::processField($nonSystemModel->_type, (object) ['type' => 'select', 'label' => 'Can manage '.$showName, 'isMultiple' => true, 'isSelect2' => true, 'options' => [['All abilities', 'all'], ['List & View', 'read'], ['Create', 'create'], ['Update', 'update'], ['Delete', 'delete']]]);
+            $showName = data_get($nonSystemModel, 'isSingular', false) ? $nonSystemModel->getName() : $nonSystemModel->getNamePlural();
+            $laramieRoleModel->addField($nonSystemModel->getType(), (object) ['type' => 'select', 'label' => 'Can manage '.$showName, 'isMultiple' => true, 'isSelect2' => true, 'options' => [['All abilities', 'all'], ['List & View', 'read'], ['Create', 'create'], ['Update', 'update'], ['Delete', 'delete']]]);
         }
 
         if (!config('laramie.disable_meta')) {
             foreach ($models as $model) {
-                if (data_get($model, 'disableMeta')) {
+                if ($model->isDisableMeta()) {
                     continue;
                 }
-                $model->fields->_tags = ModelLoader::processField('_tags', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieTag\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'listByDefault' => false, 'isSearchable' => false]);
-                $model->fields->_comments = ModelLoader::processField('_comments', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieComment\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'listByDefault' => false, 'isSearchable' => false]);
-                $model->fields->_versions = ModelLoader::processField('_versions', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data_archive as lda where laramie_data.id = lda.laramie_data_id)', 'listByDefault' => false, 'isSearchable' => false]);
+                $model->addField('_tags', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieTag\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'listByDefault' => false, 'isSearchable' => false]);
+                $model->addField('_comments', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieComment\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'listByDefault' => false, 'isSearchable' => false]);
+                $model->addField('_versions', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data_archive as lda where laramie_data.id = lda.laramie_data_id)', 'listByDefault' => false, 'isSearchable' => false]);
             }
         }
     }
@@ -95,7 +95,7 @@ class LaramieListener
         $model = $event->model;
         $query = $event->query;
         $user = $event->user;
-        $type = $model->_type;
+        $type = $model->getType();
 
         switch ($type) {
             case 'laramieRole':
@@ -182,13 +182,13 @@ class LaramieListener
         $model = $event->model;
         $items = $event->items;
         $user = $event->user;
-        $type = $model->_type;
+        $type = $model->getType();
 
         if ($items->count() === 0) {
             return;
         }
 
-        $deferredFields = collect($model->fields)
+        $deferredFields = collect($model->getFields())
             ->filter(function($item) {
                 return data_get($item, 'type') === 'computed' && data_get($item, 'isDeferred');
             });
@@ -225,7 +225,7 @@ class LaramieListener
         $item = $event->item;
         $user = $event->user;
         $extra = $event->extra;
-        $type = $model->_type;
+        $type = $model->getType();
 
         switch ($type) {
             case 'laramieRole':
@@ -242,7 +242,7 @@ class LaramieListener
         }
 
         $dataService = $this->getLaramieDataService();
-        $refs = data_get($model, 'refs', []);
+        $refs = $model->getRefs();
         if ($refs) {
             $model->refs = collect($refs)
                 ->map(function($item) use($dataService) {
@@ -270,7 +270,7 @@ class LaramieListener
         $items = $event->items;
         $user = $event->user;
         $extra = $event->extra;
-        $type = $model->_type;
+        $type = $model->getType();
 
         $dataService = $this->getLaramieDataService();
 
@@ -317,7 +317,7 @@ class LaramieListener
             $outputFile = storage_path(Uuid::uuid4()->toString().'.csv');
             $writer = \League\Csv\Writer::createFromPath($outputFile, 'w+');
             $writer->insertAll($csvData);
-            $extra->response = response()->download($outputFile, sprintf('%s_%s.csv', Str::snake($model->namePlural), date('Ymd')))->deleteFileAfterSend(true);
+            $extra->response = response()->download($outputFile, sprintf('%s_%s.csv', Str::snake($model->getNamePlural()), date('Ymd')))->deleteFileAfterSend(true);
         }
     }
 
@@ -333,7 +333,7 @@ class LaramieListener
         $model = $event->model;
         $item = $event->item;
         $user = $event->user;
-        $type = $model->_type;
+        $type = $model->getType();
 
         $dataService = $this->getLaramieDataService();
         $dataService->clearCache();
@@ -374,7 +374,7 @@ class LaramieListener
                 $userRecord = DB::table('users')->where('id', $item->user_id)->first();
                 $jsonInfo = json_decode(data_get($userRecord, 'data'));
 
-                $modelFields = data_get($model, 'fields');
+                $modelFields = $model->getFields();
                 foreach ($modelFields as $fieldName => $field) {
                     // Don't store dummy info
                     if (
@@ -419,7 +419,7 @@ class LaramieListener
         $model = $event->model;
         $item = $event->item;
         $user = $event->user;
-        $type = $model->_type;
+        $type = $model->getType();
 
         $dataService = $this->getLaramieDataService();
         $dataService->clearCache();
@@ -463,7 +463,7 @@ class LaramieListener
             throw new Exception('You may not delete one of the core roles.');
         }
 
-        if (data_get($model, 'isDeletable') === false) {
+        if (!$model->isDeletable()) {
             throw new Exception('Items of this type may not be deleted');
         }
     }

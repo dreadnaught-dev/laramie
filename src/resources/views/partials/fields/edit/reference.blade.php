@@ -30,7 +30,7 @@
                 &nbsp;&nbsp;<a class="tag is-dark js-toggle-reference-search">Change</a>
             </blockquote>
         </div>
-        <div class="modal reference-search" data-type="{{ $model->_type }}" data-lookup-type="{{ $referencedModelKey }}" data-is-single-reference="{{ $isSingleReference ? 1 : 0 }}">
+        <div class="modal reference-search" data-type="{{ $model->getType() }}" data-lookup-type="{{ $referencedModelKey }}" data-is-single-reference="{{ $isSingleReference ? 1 : 0 }}">
             <div class="modal-background"></div>
             <div class="modal-card">
                 <header class="modal-card-head">

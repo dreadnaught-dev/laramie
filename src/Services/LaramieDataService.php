@@ -11,6 +11,7 @@ use Ramsey\Uuid\Uuid;
 use Storage;
 
 use Laramie\Hook;
+use Laramie\Lib\ModelSpec;
 use Laramie\Lib\FileInfo;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
@@ -42,15 +43,16 @@ class LaramieDataService
     public function getModelByKey(mixed $model)
     {
         if (is_string($model)) {
-            $modelToReturn = data_get($this->jsonConfig->models, $model, null);
-            if ($modelToReturn == null) {
+            $modelConfig = data_get($this->jsonConfig->models, $model, null);
+            if ($modelConfig == null) {
                 throw new Exception(sprintf('Model type does not exist: `%s`.', $model));
             }
 
-            return json_decode(json_encode($modelToReturn));
-        } elseif (data_get($model, '_type')) {
+            return new ModelSpec(json_decode(json_encode($modelConfig)));
+        } elseif ($model instanceof ModelSpec) {
             return $model;
         }
+
         throw new Exception(sprintf('Model type does not exist: `%s`.', $model));
     }
 
@@ -88,7 +90,7 @@ class LaramieDataService
         $query = $this->augmentListQuery($query, $model, $options, $queryCallback);
         $resultsPerPage = data_get($options, 'resultsPerPage', config('laramie.results_per_page', 20));
 
-        $factory = data_get($options, 'factory', data_get($model, 'factory', LaramieModel::class));
+        $factory = data_get($options, 'factory', $model->getFactory());
 
         $laramieModels = $factory::load($resultsPerPage === 0 ? $query->get() : $query->paginate($resultsPerPage));
 
@@ -133,7 +135,7 @@ class LaramieDataService
         $model = $this->getModelByKey($model);
 
         $query = DB::table('laramie_data')
-            ->where('type', $model->_type)
+            ->where('type', $model->getType())
             ->addSelect('id')
             ->orderBy('created_at', 'asc')
             ->limit(1);
@@ -146,7 +148,7 @@ class LaramieDataService
         $modelData = [
             'id' => Uuid::uuid1()->toString(),
             'user_id' => $this->getUserId(),
-            'type' => $model->_type,
+            'type' => $model->getType(),
             'created_at' => $this->getDbNow(),
             'updated_at' => $this->getDbNow(),
         ];
@@ -172,7 +174,7 @@ class LaramieDataService
 
         $options = (array) $options;
 
-        $fieldCollection = collect($model->fields);
+        $fieldCollection = collect($model->getFields());
 
         $computedFields = $fieldCollection
             ->filter(function ($field) {
@@ -204,8 +206,8 @@ class LaramieDataService
             })
             ->all();
 
-        $sort = data_get($options, 'sort') ?: $model->defaultSort;
-        $sortDirection = data_get($options, 'sortDirection') ?: $model->defaultSortDirection;
+        $sort = data_get($options, 'sort') ?: $model->getDefaultSort();
+        $sortDirection = data_get($options, 'sortDirection') ?: $model->getDefaultSortDirection();
 
         if ($sort) {
             $field = data_get($fieldCollection, $sort);
@@ -233,7 +235,7 @@ class LaramieDataService
                 $query->orderBy(DB::raw('(select '.$fieldSql.' from laramie_data as n2 where (laramie_data.data->>\''.$field->_fieldName.'\')::uuid = n2.id)'), data_get($options, 'sortDirection', 'asc'));
             } elseif (in_array($sort, array_keys($numericFields))) {
                 $query->orderBy(DB::raw('(data #>> \'{"'.$sort.'"}\')::float'), data_get($options, 'sortDirection', 'asc'));
-            } elseif (data_get($model->fields, $sort)) {
+            } elseif (data_get($model->getFields(), $sort)) {
                 // Otherwise, check to see if the sort is part one of the model's dynamic fields:
                 $query->orderBy(DB::raw('data #>> \'{"'.$sort.'"}\''), data_get($options, 'sortDirection', 'asc'));
             }
@@ -261,7 +263,7 @@ class LaramieDataService
                     }
 
                     // Check to see if we need to manipulate `$value` for searching (currently limited to date fields):
-                    $modelField = data_get($model->fields, $filter->field);
+                    $modelField = data_get($model->getFields(), $filter->field);
                     if ($operation !== 'between-dates' && (in_array($filter->field, ['_created_at', '_updated_at'])
                         || in_array(data_get($modelField, 'dataType', object_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local'])))
                     {
@@ -330,7 +332,7 @@ class LaramieDataService
         }
 
         $quickSearch = data_get($options, 'quickSearch');
-        $quickSearchFields = data_get($model, 'quickSearch');
+        $quickSearchFields = $model->getQuickSearch();
         if ($quickSearch && $quickSearchFields) {
             $quickSearchFields = collect($quickSearchFields)
                 ->map(function ($item) use ($model) { return $this->getSearchSqlFromFieldName($model, $item); })
@@ -368,7 +370,7 @@ class LaramieDataService
             return $field;
         }
 
-        $modelField = data_get($model->fields, $field);
+        $modelField = data_get($model->getFields(), $field);
 
         $isComputedField = data_get($modelField, 'type') === 'computed';
         $modelFieldType = data_get($modelField, 'dataType', data_get($modelField, 'type'));
@@ -436,7 +438,7 @@ class LaramieDataService
     {
         $model = $this->getModelByKey($model);
 
-        $modelKey = $model->_type;
+        $modelKey = $model->getType();
         $userUuid = $this->getUserId();
 
         return $this->findByType($this->getModelByKey('laramieSavedReport'), ['source' => 'admin', 'resultsPerPage' => 0], function ($query) use ($modelKey, $userUuid) {
@@ -453,13 +455,13 @@ class LaramieDataService
     {
         // Set a convenience `_alias` attribute -- will be useful to save on logic where we'd otherwise be looking the alias up.
         foreach ($laramieModels as $laramieModel) {
-            $laramieModel->_alias = data_get($laramieModel, $model->alias);
+            $laramieModel->_alias = data_get($laramieModel, $model->getAlias());
         }
 
         if ($maxPrefetchDepth < 0 || $curDepth < $maxPrefetchDepth) {
             // Get a list of all references. We're breaking the references up by type so that we can run a find by type on them (so if an alias is a computed field, we'll have access to it).
             $referencedUuids = [];
-            $referenceFields = collect($model->fields)
+            $referenceFields = collect($model->getFields())
                 ->filter(function ($field) {
                     return in_array($field->type, ['reference', 'file']);
                 })
@@ -536,7 +538,7 @@ class LaramieDataService
 
         // Create the base query
         $query = DB::table('laramie_data')
-            ->where('type', $model->_type);
+            ->where('type', $model->getType());
 
         $this->augmentListQuery($query, $model, ['sort' => null]);
 
@@ -616,7 +618,7 @@ class LaramieDataService
             return null;
         }
 
-        $factory = data_get($model, 'factory', LaramieModel::class);
+        $factory = $model->getFactory();
 
         $item = Arr::first($this->prefetchRelationships($model, [$factory::load($dbItem)], $maxPrefetchDepth, 0));
 
@@ -637,7 +639,7 @@ class LaramieDataService
 
     private function spiderAggregates($model, $item, $maxPrefetchDepth)
     {
-        $aggregateFields = collect($model->fields)
+        $aggregateFields = collect($model->getFields())
             ->filter(function ($e) {
                 return $e->type == 'aggregate';
             })
@@ -801,10 +803,10 @@ class LaramieDataService
 
         // Create the base query
         $query = DB::table('laramie_data')
-            ->where('type', $model->_type)
+            ->where('type', $model->getType())
             ->addSelect('*');
 
-        $computedFields = collect($model->fields)
+        $computedFields = collect($model->getFields())
             ->filter(function ($field) {
                 return $field->type == 'computed';
             })
@@ -893,7 +895,7 @@ class LaramieDataService
 
             if (!$origId) {
                 // Insert
-                $data->type = $model->_type;
+                $data->type = $model->getType();
                 $data->created_at = data_get($data, 'created_at', $dbNow);
             } else if (array_key_exists($data->id, $this->cachedItems)) {
                 unset($this->cachedItems[$data->id]);
@@ -901,14 +903,14 @@ class LaramieDataService
 
             // Relation fields are transformed into the id(s) of the items they
             // represent before being persisted in the db.
-            $data = $this->flattenRelationships($model, $data);
+            $data = $this->flattenRelationships($model->toData(), $data); // @TODO -- create common interface for aggregate fields and ModelSpec (with getFields()) available to both.
 
             // Remove fields that aren't part of the the schema (old attributes
             // that may have been removed will still exist in archived versions of the
             // data). Basically what this means is that what gets saved in the db must
             // comply with the schema.
             $allowedFields = ['id', 'type', 'created_at', 'updated_at'];
-            foreach ($model->fields as $key => $field) {
+            foreach ($model->getFields() as $key => $field) {
                 if (!in_array($field->type, ['computed', 'html'])) {
                     // Don't save computed/html fields (these will be calculated every time the item is accessed).
                     $allowedFields[] = $key;
@@ -930,7 +932,7 @@ class LaramieDataService
                 // what's getting saved adheres to a particular schema.
                 $errors = [];
                 $validator = new Validator();
-                $validator->check($data, data_get($model, '_jsonValidator', ModelLoader::getValidationSchema($model)));
+                $validator->check($data, $model->getJsonValidator());
                 if (!$validator->isValid()) {
                     foreach ($validator->getErrors() as $error) {
                         $errors[] = sprintf('%s: %s', $error['property'], $error['message']);
@@ -954,7 +956,7 @@ class LaramieDataService
                 DB::statement('delete from laramie_data_archive where id = ? and data = (select data from laramie_data where id = ?)', [$archiveId, $data->id]);
             } else {
                 // Insert
-                $modelData['type'] = $model->_type;
+                $modelData['type'] = $model->getType();
                 DB::table('laramie_data')->insert($modelData);
             }
 

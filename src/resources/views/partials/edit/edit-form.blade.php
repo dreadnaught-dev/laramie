@@ -1,6 +1,6 @@
 @php
-    $canSave = ($item->isNew() && $user->hasAccessToLaramieModel($model->_type, 'create')) ||
-        ($item->isUpdating() && $user->hasAccessToLaramieModel($model->_type, 'update'));
+    $canSave = ($item->isNew() && $user->hasAccessToLaramieModel($model->getType(), 'create')) ||
+        ($item->isUpdating() && $user->hasAccessToLaramieModel($model->getType(), 'update'));
 @endphp
 
 <form id="edit-form" class="edit-container {{ $selectedTab !== '_main' ? 'has-tab-selected' : '' }}" action="{{ url()->full() }}" method="post" enctype="multipart/form-data" data-item-id="{{ $item->id ?: 'new' }}">
@@ -11,7 +11,7 @@
     <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;" tabindex="-1" />
 
     @php
-        $tabbedAggregates = collect(data_get($model, 'fields', []))->filter(function($item){ return $item->isEditable && $item->type == 'aggregate' && object_get($item, 'asTab', false); });
+        $tabbedAggregates = collect($model->getFields())->filter(function($item){ return $item->isEditable && $item->type == 'aggregate' && object_get($item, 'asTab', false); });
         $hasTabs = count($tabbedAggregates) > 0;
     @endphp
 
@@ -20,7 +20,7 @@
           <ul>
             <li {!! $selectedTab == '_main' ? 'class="is-active"' : '' !!}>
               <a data-tab="_main">
-                {{ data_get($model, 'mainTabLabel', 'Main') }}
+                {{ $model->getMainTabLabel() }}
               </a>
             </li>
             @foreach ($tabbedAggregates as $aggregate)
@@ -34,7 +34,7 @@
         </div>
     @endif
 
-    @foreach (data_get($model, 'fields') as $fieldKey => $field)
+    @foreach ($model->getFields() as $fieldKey => $field)
         @if ($field->isEditable)
             @php
                 $valueOrDefault = isset($item->{$field->id})

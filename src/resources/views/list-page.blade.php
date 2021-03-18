@@ -1,12 +1,12 @@
 @extends('laramie::layout')
 
 @php
-    $activeSort = request()->get('sort', $model->defaultSort);
-    $activeSortDirection = request()->get('sort-direction', $model->defaultSortDirection);
+    $activeSort = request()->get('sort', $model->getDefaultSort());
+    $activeSortDirection = request()->get('sort-direction', $model->getDefaultSortDirection());
     $invertActiveSortDirection = $activeSortDirection === 'desc' ? 'asc' : 'desc';
     $quickSearch = request()->get('quick-search');
 
-    $filterableFields = collect($model->fields)
+    $filterableFields = collect($model->getFields())
         ->filter(function($e){
             return data_get($e, 'isSearchable') === true
                 || (
@@ -17,7 +17,7 @@
         })
         ->sortBy('label');
 
-    $metaFields = collect($model->fields)
+    $metaFields = collect($model->getFields())
         ->filter(function($e){
             return data_get($e, 'isMetaField')
                 && data_get($e, 'isSearchable') !== false;
@@ -44,13 +44,13 @@
                             <select name="filter_@{{filterIndex}}_field">
                                 <optgroup label="Fields">
                                     @foreach ($filterableFields as $key => $field)
-                                        <option value="{{ $key }}" {{ data_get($model, 'alias') == $key ? 'selected' : '' }}>{{ $field->label }}</option>
+                                        <option value="{{ $key }}" {{ $model->getAlias() == $key ? 'selected' : '' }}>{{ $field->label }}</option>
                                     @endforeach
                                 </optgroup>
                                 @if ($metaFields->count() > 0)
                                     <optgroup label="Meta">
                                         @foreach ($metaFields as $key => $field)
-                                            <option value="{{ $key }}" {{ data_get($model, 'alias') == $key ? 'selected' : '' }}>{{ $field->label }}</option>
+                                            <option value="{{ $key }}" {{ $model->getAlias() == $key ? 'selected' : '' }}>{{ $field->label }}</option>
                                         @endforeach
                                     </optgroup>
                                 @endif
@@ -189,7 +189,7 @@
                 <p class="modal-card-title">View tags / comments</p>
                 <span class="delete js-meta"></span>
             </header>
-            <section class="modal-card-body meta-wrapper" data-load-meta-endpoint="{{ route('laramie::load-meta', ['modelKey' => $model->_type, 'id' => '_id_']) }}">
+            <section class="modal-card-body meta-wrapper" data-load-meta-endpoint="{{ route('laramie::load-meta', ['modelKey' => $model->getType(), 'id' => '_id_']) }}">
                 @include('laramie::partials.meta-form')
             </section>
             <footer class="modal-card-foot">
@@ -201,7 +201,7 @@
 
     @include('laramie::handlebars.meta-tags-comments')
 
-    {!! implode('', data_get($model, 'listJs', [])) !!}
+    {!! implode('', $model->getListJs()) !!}
 @endpush
 
 @section('content')
@@ -212,11 +212,11 @@
         <div class="level is-mobile is-spaced">
             <div class="level-left">
                 <div class="level-item">
-                    <h1 class="title">{{ $model->namePlural }}</h1>
+                    <h1 class="title">{{ $model->getNamePlural() }}</h1>
                 </div>
                 <div class="level-item">
-                    @if ($model->isEditable)
-                        <a href="{{ route('laramie::edit', ['modelKey' => $model->_type, 'id' => 'new']) }}" class="tag is-primary is-medium"><i class="fas fa-plus"></i>&nbsp;Add new</a>
+                    @if ($model->isEditable())
+                        <a href="{{ route('laramie::edit', ['modelKey' => $model->getType(), 'id' => 'new']) }}" class="tag is-primary is-medium"><i class="fas fa-plus"></i>&nbsp;Add new</a>
                     @else
                         <span class="subtitle">(items of this type may not be edited)</span>
                     @endif
@@ -229,7 +229,7 @@
             </div>
         </div>
 
-        <form id="list-form" method="get" action="{{ route('laramie::list', ['modelKey' => $model->_type]) }}" data-bulk-action="{{ route('laramie::bulk-action-handler', ['modelKey' => $model->_type]) }}" data-save-report-action="{{ route('laramie::save-report', ['modelKey' => $model->_type]) }}" data-save-list-prefs-action="{{ route('laramie::save-list-prefs', ['modelKey' => $model->_type]) }}">
+        <form id="list-form" method="get" action="{{ route('laramie::list', ['modelKey' => $model->getType()]) }}" data-bulk-action="{{ route('laramie::bulk-action-handler', ['modelKey' => $model->getType()]) }}" data-save-report-action="{{ route('laramie::save-report', ['modelKey' => $model->getType()]) }}" data-save-list-prefs-action="{{ route('laramie::save-list-prefs', ['modelKey' => $model->getType()]) }}">
             <input type="hidden" name="_token" class="post-only" value="{!! csrf_token() !!}">
             <input type="hidden" name="sort" value="{{ $activeSort }}">
             <input type="hidden" name="sort-direction" value="{{ $activeSortDirection }}">
@@ -245,7 +245,7 @@
                     </p>
                 @endif
                 <p class="control">
-                    <input class="input" type="text" name="quick-search" id="quick-search" placeholder="Quick Search" title="Quickly search by {{ implode(', ', data_get($model, 'quickSearch')) }}" value="{{ $quickSearch }}">
+                    <input class="input" type="text" name="quick-search" id="quick-search" placeholder="Quick Search" title="Quickly search by {{ implode(', ', $model->getQuickSearch()) }}" value="{{ $quickSearch }}">
                 </p>
                 <p class="control">
                     <button class="button is-light">Go</button>
@@ -270,11 +270,11 @@
 
             <div id="bulk-action-helper" class="is-spaced-sm notification is-warning" data-has-additional-pages="{{ $models->hasMorePages() ? '1' : '' }}">
                 <p class="selection-count">
-                    All {{ $models->count() }} {{ strtolower($model->namePlural) }} on this page are selected.
-                    <a class="js-bulk-select-all" href="javascript:void(0)">Select all {{ number_format($models->total()) }} {{ strtolower($model->namePlural) }}.</a>
+                    All {{ $models->count() }} {{ strtolower($model->getNamePlural()) }} on this page are selected.
+                    <a class="js-bulk-select-all" href="javascript:void(0)">Select all {{ number_format($models->total()) }} {{ strtolower($model->getNamePlural()) }}.</a>
                 </p>
                 <p class="selection-total">
-                    All {{ number_format($models->total()) }} {{ strtolower($model->namePlural) }} are selected.
+                    All {{ number_format($models->total()) }} {{ strtolower($model->getNamePlural()) }} are selected.
                     <a class="js-clear-bulk-selection" href="javascript:void(0)">Clear selection.</a>
                 </p>
             </div>
@@ -315,17 +315,17 @@
                                 <td{!! $loop->first ? ' class="first-td"' : '' !!}>
                                 @if ($loop->first)
                                     <strong>
-                                        @if ($model->isEditable)
-                                            <a href="{{ route('laramie::edit', ['modelKey' => $model->_type, 'id' => $m->id]) }}">{!! $displayValue !!}</a>
+                                        @if ($model->isEditable())
+                                            <a href="{{ route('laramie::edit', ['modelKey' => $model->getType(), 'id' => $m->id]) }}">{!! $displayValue !!}</a>
                                         @else
                                             {!! $displayValue !!}
                                         @endif
                                     </strong>
                                     <div class="is-invisible">
-                                        @if ($model->isEditable)
-                                            <span><a href="{{ route('laramie::edit', ['modelKey' => $model->_type, 'id' => $m->id]) }}">Edit</a> |</span>
+                                        @if ($model->isEditable())
+                                            <span><a href="{{ route('laramie::edit', ['modelKey' => $model->getType(), 'id' => $m->id]) }}">Edit</a> |</span>
                                         @endif
-                                        <span><a href="javascript:void(0);" class="js-delete" data-action="{{ route('laramie::delete-item', ['modelKey' => $model->_type, 'id' => $m->id]) }}">Trash</a></span>
+                                        <span><a href="javascript:void(0);" class="js-delete" data-action="{{ route('laramie::delete-item', ['modelKey' => $model->getType(), 'id' => $m->id]) }}">Trash</a></span>
                                     </div>
                                 @else
                                     {!! $displayValue !!}
@@ -338,7 +338,7 @@
                 </table>
             </div>
 
-            @if ($bulkActions = data_get($model, 'bulkActions', config('laramie.default_bulk_actions')))
+            @if ($bulkActions = $model->getBulkActions())
             <div class="level">
                 <div class="level-left">
                     <div class="field">

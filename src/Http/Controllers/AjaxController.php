@@ -50,7 +50,7 @@ class AjaxController extends Controller
         if ($transformItems) {
             // The name only needs to be unique per reference in case it's a radio select (this value isn't being submitted).
             $name = Str::random(10);
-            $alias = data_get($model, 'fields.'.$model->alias);
+            $alias = $model->getField($model->getAlias());
 
             $paginator->setCollection($paginator->getCollection()
                 ->map(function ($e) use ($alias, $name) {
@@ -157,12 +157,12 @@ class AjaxController extends Controller
                         // Search by the model's quickSearch array (will generally be the model's `alias` unless manually set).
                         foreach ($model->quickSearch as $searchFieldName) {
                             // for, we'll also search by id and tags
-                            $searchField = data_get($model, 'fields.'.$searchFieldName);
+                            $searchField = data_get($model->getFields(), $searchFieldName);
 
                             // Is the search field is set to an html field? search by whatever the field is pointing to for sorting
                             if ($searchField->type == 'html') {
-                                if (data_get($searchField, 'sortBy') && data_get($model, 'fields.'.data_get($searchField, 'sortBy'))) {
-                                    $searchField = data_get($model, 'fields.'.$searchField->sortBy);
+                                if (data_get($searchField, 'sortBy') && data_get($model->getFields(), data_get($searchField, 'sortBy'))) {
+                                    $searchField = data_get($model->getFields(), $searchField->sortBy);
                                 }
                             }
 

@@ -4,16 +4,16 @@
     <div class="column">
         <div class="columns">
             <div class="column">
-                <h1 class="title">{{ $model->isSingular ? $model->name : $model->namePlural }} <?php if (!$model->isSingular && $user->hasAccessToLaramieModel($model->_type, 'create')): ?><a href="{{ route('laramie::edit', ['modelKey' => $model->_type, 'id' => 'new']) }}" class="tag is-primary is-medium"><i class="fas fa-plus"></i>&nbsp;Add new</a><?php endif; ?></h1>
+                <h1 class="title">{{ $model->isSingular() ? $model->getName() : $model->getNamePlural() }} <?php if (!$model->isSingular() && $user->hasAccessToLaramieModel($model->getType(), 'create')): ?><a href="{{ route('laramie::edit', ['modelKey' => $model->getType(), 'id' => 'new']) }}" class="tag is-primary is-medium"><i class="fas fa-plus"></i>&nbsp;Add new</a><?php endif; ?></h1>
 
                 @include('laramie::partials.alert')
 
                 @include('laramie::partials.edit.edit-form')
 
-                @if (data_get($model, 'refs', null))
+                @if ($refs = $model->getRefs())
                 <hr class="hr">
-                @foreach (data_get($model, 'refs') as $ref)
-                    <div class="reference-panel" data-type="{{ $model->_type }}" data-lookup-type="{{ $ref->type }}" data-field="{{ $ref->field }}">
+                @foreach ($refs as $ref)
+                    <div class="reference-panel" data-type="{{ $model->getType() }}" data-lookup-type="{{ $ref->type }}" data-field="{{ $ref->field }}">
                         <h4 class="title is-4">{{ $ref->label }}</h4>
                         <p class="control">
                             <input class="input keywords" type="text" placeholder="Quick Search" title="Quickly search by {{ $ref->quickSearch }}">
@@ -22,9 +22,9 @@
                         <table class="table is-fullwidth is-hoverable">
                             <thead>
                                 <tr>
-                                    <th><a href="javascript:void(0);" class="js-sort" data-field="alias">{{ data_get($model, 'alias') }}</a></th>
+                                    <th><a href="javascript:void(0);" class="js-sort" data-field="alias">{{ $model->getAlias() }}</a></th>
                                     <th><a href="javascript:void(0);" class="js-sort" data-field="created_at">Created</a></th>
-                                    <th><a href="javascript:void(0);" class="js-sort" data-field="exists">Belongs to {{ $model->name }}?</a></th>
+                                    <th><a href="javascript:void(0);" class="js-sort" data-field="exists">Belongs to {{ $model->getName() }}?</a></th>
                                 </tr>
                             </thead>
                             <tbody>

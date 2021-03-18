@@ -8,7 +8,7 @@ namespace Laramie\Hooks;
  */
 class AugmentModelValidator
 {
-    public $model;
+    public $modelValidator;
 
     /**
      * Create a new AugmentModelValidator event instance.

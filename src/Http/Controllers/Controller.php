@@ -35,7 +35,7 @@ class Controller extends BaseController
     {
         $prefs = $prefs !== null ? $prefs : (object) [];
 
-        return collect(data_get($model, 'fields', (object) []))
+        return collect($model->getFields())
             ->filter(function ($item) use($prefs) {
                 return $item->isListable;
             })

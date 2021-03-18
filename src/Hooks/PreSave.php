@@ -2,8 +2,10 @@
 
 namespace Laramie\Hooks;
 
-use Laramie\Lib\LaramieModel;
 use Illuminate\Foundation\Auth\User;
+
+use Laramie\Lib\ModelSpec;
+use Laramie\Lib\LaramieModel;
 
 /*
  * Called before persisting an item. It can be used to perform extra
@@ -12,9 +14,9 @@ use Illuminate\Foundation\Auth\User;
  */
 class PreSave
 {
-    public $model;
+    public ModelSpec $model;
     public $item;
-    public $user;
+    public ?User $user;
 
     /**
      * Create a new PreSave hook.
@@ -23,7 +25,7 @@ class PreSave
      * @param Laramie\Lib\LaramieModel $item the db item that was edited
      * @param Laramie\Lib\LaramieModel $user laramie's version of the logged in user
      */
-    public function __construct($model, LaramieModel $item, User $user = null)
+    public function __construct(ModelSpec $model, LaramieModel $item, User $user = null)
     {
         $this->model = $model;
         $this->item = $item;

@@ -2,9 +2,10 @@
 
 namespace Laramie\Hooks;
 
-use Laramie\Lib\LaramieModel;
-
 use Illuminate\Foundation\Auth\User;
+
+use Laramie\Lib\LaramieModel;
+use Laramie\Lib\ModelSpec;
 
 /*
  * Do some work _after_ saving an item. Exceptions thrown in this hook will be
@@ -17,9 +18,9 @@ use Illuminate\Foundation\Auth\User;
  */
 class PostSave
 {
-    public $model;
+    public ModelSpec $model;
     public $item;
-    public $user;
+    public ?User $user;
 
     /**
      * Create a PostSave hook.
@@ -28,7 +29,7 @@ class PostSave
      * @param Laramie\Lib\LaramieModel $item the db item that was edited
      * @param Laramie\Lib\LaramieModel $user laramie's version of the logged in user
      */
-    public function __construct($model, LaramieModel $item, User $user = null)
+    public function __construct(ModelSpec $model, LaramieModel $item, User $user = null)
     {
         $this->model = $model;
         $this->item = $item;

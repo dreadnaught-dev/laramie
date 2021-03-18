@@ -15,7 +15,7 @@
         <div class="revision-item">
             <span title="by: {{ data_get($lastUserToUpdate, config('laramie.username'), '--') }}">Current <em><small>({{ \Carbon\Carbon::parse($item->updated_at)->toDayDateTimeString() }})</small></em></span>
             <div>
-                <a href="{{ route('laramie::compare-revisions', ['modelKey' => $model->_type, 'revisionId' => $item->id, 'is-child' => 1]) }}" target="_blank" class="js-compare-revisions">View changes</a>
+                <a href="{{ route('laramie::compare-revisions', ['modelKey' => $model->getType(), 'revisionId' => $item->id, 'is-child' => 1]) }}" target="_blank" class="js-compare-revisions">View changes</a>
             </div>
         </div>
         @foreach ($revisions as $revision)
@@ -23,11 +23,11 @@
                 <hr style="margin: .5rem 0;">
                 <i class="fas fa-book" style="line-height: inherit; font-size: inherit"></i>&nbsp;<span title="by: {{ $revision->user }}">{{ \Carbon\Carbon::parse($revision->updated_at)->toDayDateTimeString() }}</span>
                 <div>
-                    <a href="{{ route('laramie::compare-revisions', ['modelKey' => $model->_type, 'revisionId' => $revision->id, 'is-child' => 1]) }}" target="_blank" class="js-compare-revisions">View changes</a> |
+                    <a href="{{ route('laramie::compare-revisions', ['modelKey' => $model->getType(), 'revisionId' => $revision->id, 'is-child' => 1]) }}" target="_blank" class="js-compare-revisions">View changes</a> |
                     <a href="javascript:void(0);" class="js-restore-revision">Restore</a> |
-                    <a href="{{ route('laramie::trash-revision', ['modelKey' => $model->_type, 'revisionId' => $revision->id]) }}" class="js-delete-revision" onclick="return false;">Trash</a>
+                    <a href="{{ route('laramie::trash-revision', ['modelKey' => $model->getType(), 'revisionId' => $revision->id]) }}" class="js-delete-revision" onclick="return false;">Trash</a>
                 </div>
-                <form class="restore-revision-form" action="{{ route('laramie::restore-revision', ['modelKey' => $model->_type, 'revisionId' => $revision->id]) }}" method="post">
+                <form class="restore-revision-form" action="{{ route('laramie::restore-revision', ['modelKey' => $model->getType(), 'revisionId' => $revision->id]) }}" method="post">
                     {{ csrf_field() }}
                 </form>
             </div>

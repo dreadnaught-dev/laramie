@@ -23,7 +23,7 @@
                 @endif
             </div>
         </div>
-        <div class="modal reference-search" data-field="{{ data_get($field, '_fieldName') }}" data-type="{{ $model->_type }}" data-lookup-type="laramieUpload" data-lookup-subtype="{{ $uploadType }}" data-is-single-reference="1">
+        <div class="modal reference-search" data-field="{{ data_get($field, '_fieldName') }}" data-type="{{ $model->getType() }}" data-lookup-type="laramieUpload" data-lookup-subtype="{{ $uploadType }}" data-is-single-reference="1">
             <div class="modal-background"></div>
             <div class="modal-card">
                 <header class="modal-card-head">
