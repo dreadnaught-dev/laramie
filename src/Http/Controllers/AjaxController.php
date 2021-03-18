@@ -10,6 +10,7 @@ use Laramie\AdminModels\LaramieAlert;
 use Laramie\AdminModels\LaramieComment;
 use Laramie\AdminModels\LaramieTag;
 use Laramie\Lib\LaramieHelpers;
+use Laramie\Lib\ModelSpec;
 use Laramie\Services\LaramieDataService;
 
 /**
@@ -69,7 +70,7 @@ class AjaxController extends Controller
         return $paginator;
     }
 
-    protected function doSearch($outerModel, $model, Request $request)
+    protected function doSearch(ModelSpec $outerModel, $model, Request $request)
     {
         // Ensure that if items are selected, they're valid uuids
         $uuidCollection = collect(preg_split('/\s*[,|]\s*/', $request->get('selectedItems')))
@@ -104,13 +105,13 @@ class AjaxController extends Controller
             : $resultsPerPage;
 
         $fieldInvokingRequest = $request->get('field');
-        $isTypeSpecific = data_get($outerModel, sprintf('fields.%s.isTypeSpecific', $fieldInvokingRequest)) === true;
+        $isTypeSpecific = data_get($outerModel->getField($fieldInvokingRequest), 'isTypeSpecific') === true;
         return $this->dataService->findByType(
             $model,
             [
                 'source' => 'admin-ajax',
-                'outerModelType' => $outerModel->_type,
-                'innerModelType' => $model->_type,
+                'outerModelType' => $outerModel->getType(),
+                'innerModelType' => $model->getType(),
                 'outerItemId' => $outerItemId,
                 'resultsPerPage' => $resultsPerPage,
                 'isFromAjaxController' => true,
@@ -191,7 +192,7 @@ class AjaxController extends Controller
                 });
                 // Limit by model type / field.
                 if ($isTypeSpecific) {
-                    $query->where(\DB::raw('data->>\'source\''), 'ilike', sprintf('%s.%s', $outerModel->_type, $fieldInvokingRequest));
+                    $query->where(\DB::raw('data->>\'source\''), 'ilike', sprintf('%s.%s', $outerModel->getType(), $fieldInvokingRequest));
                 }
             }
         );
@@ -321,8 +322,8 @@ class AjaxController extends Controller
         $field = $request->get('field');
 
         $model = $this->dataService->getModelByKey($modelKey);
-        $referenceField = data_get($model, sprintf( 'fields.%s', $field));
-        $referenceFieldName = data_get($model, sprintf( 'fields.%s._fieldName', $field));
+        $referenceField = $model->getField($field);
+        $referenceFieldName = data_get($model->getField($field), '_fieldName');
         $isSelected = $request->get('selected') === '1';
 
         $item = $this->dataService->findByIdSuperficial($model, $itemId);
