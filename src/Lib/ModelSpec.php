@@ -63,13 +63,15 @@ class ModelSpec
 
     public function getEditJs() : array { return $this->get('editJs', []); }
 
-    public function getRefs() : array { return $this->get('refs', []); }
+    public function getRefs() : array { return collect($this->get('refs', []))->map(function($item) { return new RefSpec($item); })->toArray(); }
 
     // Fields
     public function getFields() { return $this->get('fields', (object) []); }
     public function getField($fieldName) { return $this->get('fields.' . $fieldName); }
     public function addField(string $key, object $fieldInfo) { $this->getFields()->{$key} = ModelLoader::processField($key, $fieldInfo); }
     // End fields
+
+    public function getAddNewText() : string { return $this->get('addNewText', 'Add New'); } /* @TODO preston -- update to use laravel translation */
 
     public function getFactory() : string { return $this->get('factory', LaramieModel::class); }
 

@@ -44,7 +44,7 @@
             name="{{ $field->id }}"
             value="{{ $valueOrDefault }}"
             {!! $field->extra !!}
-            {{ $field->required ? 'required' : '' }}
+            {{ $field->isRequired ? 'required' : '' }}
         >
     @else
         Input type is is not yet implemented ({{ $field->type }})

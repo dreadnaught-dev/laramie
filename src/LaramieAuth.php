@@ -83,7 +83,6 @@ trait LaramieAuth
 
         foreach ($this->getLaramieRoles() as $role) {
             foreach ($types as $type) {
-                // @preston stopped here
                 $abilitiesForRoleForType = data_get($role, $type, []);
                 data_set($abilities, $type, array_unique(array_merge(data_get($abilities, $type, []), $abilitiesForRoleForType)));
             }

@@ -6,8 +6,14 @@
             "defaultSort": "_created_at",
             "defaultSortDirection": "asc",
             "fields": {
-                "name": { "type": "text", "required": true }
-            }
+                "name": { "type": "text", "isRequired": true }
+            },
+            "refs": [
+                {
+                    "model": "laramieUser",
+                    "throughField": "roles"
+                }
+            ]
         },
         "laramieUpload": {
             "name": "Upload",
@@ -20,16 +26,16 @@
             "editJs": "<script>if ($('#uploadKey').val() && /^(png|gif|jpg)$/i.test($('#extension').val())) { $('h1 .tag').after('&nbsp;<em class=\"is-size-6 has-text-grey\">To crop or resize the image, <a href=\"javascript:void(0);\" onclick=\"location.href=(globals.cropperBase + $(\\'#uploadKey\\').val())\">click here</a></em>') }</script>",
             "fields": {
                 "preview": { "type": "computed", "sql": "(concat('<img class=\"filetype-icon\" src=\"_admin_url_/assets/icon/', data->>'uploadKey', '_50\">', data->>'name'))", "sortBy": "name" },
-                "uploadKey": { "type": "text", "required": true, "listByDefault": true },
-                "name": { "type": "text", "required": true, "listByDefault": false },
-                "alt": { "type": "text", "required": false, "helpText": "Useful for specifying alt text for images / videos", "listByDefault": true },
-                "path": { "type": "text", "@note": "remove or rename to fullPath and refactor", "required": true, "listByDefault": false },
-                "fullPath": { "type": "text", "@note": "full path to private asset if local or full path to s3 asset", "required": false, "listByDefault": false },
-                "publicPath": { "type": "text", "@note": "relative path to asset (from public directory) if local, or full path to s3 asset", "required": false, "listByDefault": false },
-                "mimeType": { "type": "text", "required": false, "listByDefault": false },
-                "extension": { "type": "text", "required": false, "listByDefault": false },
-                "isPublic": { "type": "boolean", "listByDefault": false },
-                "source": { "type": "hidden", "isVisibleOnEdit": false, "required": false, "listByDefault": false }
+                "uploadKey": { "type": "text", "isRequired": true, "isListByDefault": true },
+                "name": { "type": "text", "isRequired": true, "isListByDefault": false },
+                "alt": { "type": "text", "isRequired": false, "helpText": "Useful for specifying alt text for images / videos", "isListByDefault": true },
+                "path": { "type": "text", "@note": "remove or rename to fullPath and refactor", "isRequired": true, "isListByDefault": false },
+                "fullPath": { "type": "text", "@note": "full path to private asset if local or full path to s3 asset", "isRequired": false, "isListByDefault": false },
+                "publicPath": { "type": "text", "@note": "relative path to asset (from public directory) if local, or full path to s3 asset", "isRequired": false, "isListByDefault": false },
+                "mimeType": { "type": "text", "isRequired": false, "isListByDefault": false },
+                "extension": { "type": "text", "isRequired": false, "isListByDefault": false },
+                "isPublic": { "type": "boolean", "isListByDefault": false },
+                "source": { "type": "hidden", "isVisibleOnEdit": false, "isRequired": false, "isListByDefault": false }
             }
         },
         "profile": {
@@ -38,8 +44,8 @@
             "isDisableMeta": true,
             "name": "Profile Information",
             "fields": {
-                "user": { "type": "text", "label": "Email", "required": true },
-                "password": { "type": "password", "required": true }
+                "user": { "type": "text", "label": "Email", "isRequired": true },
+                "password": { "type": "password", "isRequired": true }
             }
         },
         "laramieUser": {
@@ -49,8 +55,8 @@
             "defaultSortDirection": "asc",
             "isDisableMeta": true,
             "fields": {
-                "user": { "type": "text", "required": true },
-                "password": { "type": "password", "label": "password", "required": true },
+                "user": { "type": "text", "isRequired": true },
+                "password": { "type": "password", "label": "password", "isRequired": true },
                 "roles": {
                     "isSearchable": false,
                     "type": "reference-many",
@@ -90,7 +96,7 @@
             "isEditable": false,
             "fields": {
                 "relatedItemId": { "type": "hidden" },
-                "comment": { "type": "markdown", "required": true }
+                "comment": { "type": "markdown", "isRequired": true }
             }
         },
         "laramieTag": {
@@ -99,7 +105,7 @@
             "isEditable": false,
             "fields": {
                 "relatedItemId": { "type": "hidden" },
-                "tag": { "type": "text", "required": true }
+                "tag": { "type": "text", "isRequired": true }
             }
         },
         "laramieAlert": {
@@ -117,7 +123,7 @@
                 "recipient_id": { "type": "hidden", "isListable": false, "isEditable": false },
                 "metaItemId": { "type": "hidden", "_NOTES": "this is the id of the original comment. we'll use the comment's relatedItemId relationship to determine context of where it was made.", "isListable": false, "isEditable": false },
                 "authorName": { "type": "computed", "label": "From", "sql": "(select data->>'user' from laramie_data as ld2 where ld2.type = 'laramieUser' and ld2.id::text = laramie_data.data->>'author' limit 1)" },
-                "message": { "type": "markdown", "required": true },
+                "message": { "type": "markdown", "isRequired": true },
                 "status": {
                     "type": "select",
                     "options": [
@@ -133,10 +139,10 @@
             "isEditable": false,
             "fields": {
                 "user": { "type": "reference-single", "relatedModel": "laramieUser" },
-                "relatedModel": { "type": "text", "required": true },
-                "name": { "type": "text", "required": true },
-                "key": { "type": "text", "required": true },
-                "filterString": { "type": "text", "required": true }
+                "relatedModel": { "type": "text", "isRequired": true },
+                "name": { "type": "text", "isRequired": true },
+                "key": { "type": "text", "isRequired": true },
+                "filterString": { "type": "text", "isRequired": true }
             }
         }
     }

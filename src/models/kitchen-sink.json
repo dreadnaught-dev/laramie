@@ -12,35 +12,35 @@
             "alias": "excerpt",
             "fields": {
                 "content": {
-                    "listByDefault": true,
+                    "isListByDefault": true,
                     "type": "markdown"
                 },
                 "email": {
-                    "listByDefault": true,
-                    "required": true,
+                    "isListByDefault": true,
+                    "isRequired": true,
                     "type": "email"
                 },
                 "excerpt": {
-                    "listByDefault": true,
+                    "isListByDefault": true,
                     "sql": "(substring(data->'content'->>'markdown', 0, 5))",
                     "type": "computed",
                     "weight": 5
                 },
                 "ipAddress": {
-                    "listByDefault": false,
+                    "isListByDefault": false,
                     "type": "text"
                 },
                 "karma": {
-                    "listByDefault": false,
+                    "isListByDefault": false,
                     "type": "number"
                 },
                 "post": {
-                    "listByDefault": true,
+                    "isListByDefault": true,
                     "relatedModel": "Post",
                     "type": "reference-single"
                 },
                 "status": {
-                    "listByDefault": true,
+                    "isListByDefault": true,
                     "options": [
                         "Active",
                         "Inactive"
@@ -48,7 +48,7 @@
                     "type": "select"
                 },
                 "url": {
-                    "listByDefault": false,
+                    "isListByDefault": false,
                     "type": "text"
                 }
             }
@@ -57,16 +57,16 @@
             "alias": "message",
             "fields": {
                 "email": {
-                    "listByDefault": true,
-                    "required": true,
+                    "isListByDefault": true,
+                    "isRequired": true,
                     "type": "email"
                 },
                 "message": {
-                    "listByDefault": true,
+                    "isListByDefault": true,
                     "type": "markdown"
                 },
                 "name": {
-                    "listByDefault": true,
+                    "isListByDefault": true,
                     "type": "text"
                 }
             }
@@ -75,7 +75,7 @@
             "fields": {
                 "featuredImage": {
                     "label": "Featured Image/Video",
-                    "listByDefault": false,
+                    "isListByDefault": false,
                     "type": "file",
                     "weight": 3
                 },
@@ -86,7 +86,7 @@
                                 "light",
                                 "dark"
                             ],
-                            "required": true,
+                            "isRequired": true,
                             "type": "select"
                         },
                         "content": {
@@ -103,8 +103,8 @@
                     "type": "aggregate"
                 },
                 "title": {
-                    "listByDefault": true,
-                    "required": true,
+                    "isListByDefault": true,
+                    "isRequired": true,
                     "type": "text",
                     "weight": 1
                 }
@@ -115,33 +115,33 @@
             "alias": "title",
             "fields": {
                 "allowComments": {
-                    "listByDefault": true,
+                    "isListByDefault": true,
                     "type": "boolean",
                     "weight": 4
                 },
                 "content": {
-                    "listByDefault": true,
+                    "isListByDefault": true,
                     "type": "markdown",
                     "weight": 2
                 },
                 "featuredImage": {
-                    "listByDefault": false,
+                    "isListByDefault": false,
                     "type": "file",
                     "weight": 3
                 },
                 "numComments": {
-                    "listByDefault": true,
+                    "isListByDefault": true,
                     "sql": "(select count(*) from laramie_data as nd where type = 'Comment' and nd.data->>'post' = laramie_data.id::text)",
                     "type": "computed",
                     "weight": 5
                 },
                 "slug": {
-                    "listByDefault": false,
-                    "required": true,
+                    "isListByDefault": false,
+                    "isRequired": true,
                     "type": "text"
                 },
                 "status": {
-                    "listByDefault": true,
+                    "isListByDefault": true,
                     "options": [
                         "Active",
                         "Inactive"
@@ -150,8 +150,8 @@
                     "weight": 6
                 },
                 "title": {
-                    "listByDefault": true,
-                    "required": false,
+                    "isListByDefault": true,
+                    "isRequired": false,
                     "type": "text",
                     "weight": 1
                 }

@@ -6,6 +6,6 @@
         id="{{ $field->id }}"
         name="{{ $field->id }}"
         {!! $field->extra !!}
-        {{ $field->required ? 'required' : '' }}
+        {{ $field->isRequired ? 'required' : '' }}
     >{{ $valueOrDefault }}</textarea>
 @overwrite

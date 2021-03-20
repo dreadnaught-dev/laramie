@@ -76,9 +76,9 @@ class LaramieListener
                 if ($model->isDisableMeta()) {
                     continue;
                 }
-                $model->addField('_tags', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieTag\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'listByDefault' => false, 'isSearchable' => false]);
-                $model->addField('_comments', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieComment\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'listByDefault' => false, 'isSearchable' => false]);
-                $model->addField('_versions', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data_archive as lda where laramie_data.id = lda.laramie_data_id)', 'listByDefault' => false, 'isSearchable' => false]);
+                $model->addField('_tags', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieTag\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'isListByDefault' => false, 'isSearchable' => false]);
+                $model->addField('_comments', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieComment\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'isListByDefault' => false, 'isSearchable' => false]);
+                $model->addField('_versions', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data_archive as lda where laramie_data.id = lda.laramie_data_id)', 'isListByDefault' => false, 'isSearchable' => false]);
             }
         }
     }
@@ -95,6 +95,7 @@ class LaramieListener
         $model = $event->model;
         $query = $event->query;
         $user = $event->user;
+        $extra = $event->extra;
         $type = $model->getType();
 
         switch ($type) {
@@ -116,19 +117,28 @@ class LaramieListener
             case 'profile':
             case 'laramieUser':
                 // `laramieUser` is a stand-in, there shouldn't' be any `laramieUser` records in the db. Union information from the user's table so we can make it work.
-                // @todo -- we may be able to make this less fragile. inspect output from dd($query).columns, etc
                 $userQuery = DB::table('users')
                     ->addSelect(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text) as id'))
                     ->addSelect(DB::raw('id as user_id'))
                     ->addSelect(DB::raw('\'' . $type . '\' as type'))
                     ->addSelect(DB::raw('data || concat(\'{"user":"\','.config('laramie.username').',\'"}\')::jsonb as data'))
                     ->addSelect('created_at')
-                    ->addSelect('updated_at')
-                    ->addSelect(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text as _id'))
-                    ->addSelect(DB::raw('created_at as _created_at'))
-                    ->addSelect(DB::raw('updated_at as _updated_at'));
+                    ->addSelect('updated_at');
 
-                // Where conditions and order bys added to the laramieUser query have to be copied and translated to work with the users table:
+                $additionalSelects = collect($query->columns)
+                    ->filter(function($item) {
+                        return $item instanceof \Illuminate\Database\Query\Expression;
+                    });
+
+                foreach ($additionalSelects as $item) {
+                    $condition = $item->getValue();
+                    if (strpos($condition, 'as "_id"') !== false) {
+                        $userQuery->addSelect(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text as _id'));
+                    }
+                    else {
+                        $userQuery->addSelect($item);
+                    }
+                }
 
                 // Copy the order bys
                 foreach (data_get($query, 'orders', []) as $order) {
@@ -148,7 +158,7 @@ class LaramieListener
                     if (data_get($queryWheres, $i . '.column')) {
                         continue;
                     }
-                    if (optional(data_get($queryWheres, $i . '.query.wheres.0.column'))->getValue() === 'data->>\'user\'') {
+                    if (strpos(optional(data_get($queryWheres, $i . '.query.wheres.0.column'))->getValue(), 'data->>\'user\'') !== false) {
                         $userQuery->where(config('laramie.username'), data_get($queryWheres, $i . '.query.wheres.0.operator'), $queryBindings[$i]);
                     }
                     else {
@@ -159,9 +169,11 @@ class LaramieListener
                 $userQuery->mergeWheres($wheres, $bindings);
 
                 // If filtering by id, translate it to work for the users table
-                $whereId = collect($queryWheres)->filter(function($item) { return data_get($item, 'column') === 'id'; })->first();
-                if ($whereId) {
-                    $userQuery->where(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text'), data_get($whereId, 'value'));
+                if (!(data_get($extra, 'isFromAjaxController') && data_get($extra, 'isInvertedSearch'))) {
+                    $whereId = collect($queryWheres)->filter(function($item) { return data_get($item, 'column') === 'id'; })->first();
+                    if ($whereId) {
+                        $userQuery->where(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text'), data_get($whereId, 'value'));
+                    }
                 }
 
                 $query->unionAll($userQuery);
@@ -239,22 +251,6 @@ class LaramieListener
                 $laravelUser = DB::table('users')->find($item->user_id);
                 $item->password = LaramieHelpers::getLaramiePasswordObjectFromPasswordText('password');
                 break;
-        }
-
-        $dataService = $this->getLaramieDataService();
-        $refs = $model->getRefs();
-        if ($refs) {
-            $model->refs = collect($refs)
-                ->map(function($item) use($dataService) {
-                    $relatedModel = $dataService->getModelByKey($item->model);
-                    return (object) [
-                        'label' => data_get($item, 'label', data_get($relatedModel, 'namePlural')),
-                        'type' => data_get($relatedModel, '_type'),
-                        'alias' => data_get($relatedModel, 'alias'),
-                        'field' => data_get($item, 'throughField'),
-                        'quickSearch' => implode(', ', data_get($relatedModel, 'quickSearch')),
-                    ];
-                });
         }
     }
 

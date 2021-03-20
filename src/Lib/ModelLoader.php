@@ -48,7 +48,7 @@ class ModelLoader
             ->all();
 
         // Cache the "loaded" config by saving a hydrated version of it to storage
-        if ($configCachedTime < $configModifiedTime) {
+        if (true || $configCachedTime < $configModifiedTime) {
             $models = (object) [];
             $menu = (object) [];
 
@@ -140,7 +140,7 @@ class ModelLoader
                 }
 
                 $defaultBulkActions = config('laramie.default_bulk_actions');
-                $modelBulkActions = array_merge(data_get($model, 'bulkActions', $defaultBulkActions), object_get($model, 'additionalBulkActions', []));
+                $modelBulkActions = array_merge(data_get($model, 'bulkActions', $defaultBulkActions), data_get($model, 'additionalBulkActions', []));
                 if ($modelBulkActions != $defaultBulkActions) {
                     $model->bulkActions = $modelBulkActions;
                 }
@@ -169,9 +169,9 @@ class ModelLoader
                 }
 
                 // Add some utility computed fields
-                $fields->_id = data_get($fields, '_id', (object) ['type' => 'computed', 'dataType' => 'string', 'label' => 'Id', 'sql' => '(id::text)', 'listByDefault' => false, 'weight' => 900]);
-                $fields->_created_at = data_get($fields, '_created_at', (object) ['type' => 'computed', 'dataType' => 'dbtimestamp', 'label' => 'Created at', 'sql' => '(created_at)', 'listByDefault' => false, 'weight' => 910]);
-                $fields->_updated_at = data_get($fields, '_updated_at', (object) ['type' => 'computed', 'dataType' => 'dbtimestamp', 'label' => 'Updated at', 'sql' => '(updated_at)', 'listByDefault' => false, 'weight' => 920]);
+                $fields->_id = data_get($fields, '_id', (object) ['type' => 'computed', 'dataType' => 'string', 'label' => 'Id', 'sql' => '(id::text)', 'isListByDefault' => false, 'weight' => 900]);
+                $fields->_created_at = data_get($fields, '_created_at', (object) ['type' => 'computed', 'dataType' => 'dbtimestamp', 'label' => 'Created at', 'sql' => '(created_at)', 'isListByDefault' => false, 'weight' => 910]);
+                $fields->_updated_at = data_get($fields, '_updated_at', (object) ['type' => 'computed', 'dataType' => 'dbtimestamp', 'label' => 'Updated at', 'sql' => '(updated_at)', 'isListByDefault' => false, 'weight' => 920]);
 
                 // Ensure certain attributes are set for each field (set them if they aren't already)
                 foreach ($fields as $fieldName => $field) {
@@ -186,8 +186,9 @@ class ModelLoader
                 $models->{$key} = $model;
             }
 
-            // Save the processed menu and models to the config
-            $models = collect($models)->map(function($item) { return new ModelSpec($item); });
+            $models = collect($models)->map(function($item) {
+                return new ModelSpec($item);
+            });
 
             $validator = new Validator();
             $modelValidator = json_decode(file_get_contents(__DIR__.'/../model-validator.json'));
@@ -206,7 +207,7 @@ class ModelLoader
                 }
                 // recursively validate fields -- recursion only needed for aggregate fields
                 foreach ($m->getFields() as $fieldName => $field) {
-                    self::dfValidateField($m, $field, $modelValidator, $validator, $errors); // @TODO preston -- common interface for aggregates and models (FieldContainer)?
+                    self::dfValidateField($m, $field, $modelValidator, $validator, $errors);
                 }
             }
 
@@ -256,7 +257,7 @@ class ModelLoader
                 self::dfValidateField($model, $aggregateField, $schema, $validator, $errors);
             }
         }
-        $fieldValidator = self::extend(data_get($schema, 'fields._base'), object_get($schema, 'fields.'.$type));
+        $fieldValidator = self::extend(data_get($schema, 'fields._base'), data_get($schema, 'fields.'.$type));
         $validator->reset();
         $validator->check($field, $fieldValidator);
         if (!$validator->isValid()) {
@@ -276,8 +277,8 @@ class ModelLoader
         $validator = clone $a;
         foreach ($b as $key => $value) {
             switch ($key) {
-                case 'required':
-                    $validator->required = array_merge($b->required, $value);
+                case 'isRequired':
+                    $validator->isRequired = array_merge($b->isRequired, $value);
                     break;
                 case 'properties':
                     foreach ($value as $propName => $prop) {
@@ -313,20 +314,20 @@ class ModelLoader
         $label = data_get($field, 'label', static::getNameFromKey($fieldName));
         $field->label = $label;
         $field->labelPlural = data_get($field, 'labelPlural', Str::plural($label)); // Used in relationships
-        $field->listByDefault = data_get($field, 'listByDefault', $field->type !== 'password');
+        $field->isListByDefault = data_get($field, 'isListByDefault', $field->type !== 'password');
 
         $weight = $fieldName == $modelAlias ? -1 : data_get($field, 'weight', 100);
         $field->weight = is_int($weight) ? $weight : 100; // Weight determines where the field is diplayed -- provides a default ordering to the sort page and the order on the edit page
         $field->extra = data_get($field, 'extra', '');
         $field->helpText = data_get($field, 'helpText', '');
-        $field->required = data_get($field, 'required', false) == true;
+        $field->isRequired = data_get($field, 'isRequired', false) == true;
 
         $validationString = data_get($field, 'validation', '');
         $validationRules = explode('|', $validationString);
-        if ($field->required && !in_array('required', $validationRules)) {
+        if ($field->isRequired && !in_array('isRequired', $validationRules)) {
             $validationRules[] = 'required';
         }
-        if (!$field->required && !in_array('required', $validationRules)) {
+        if (!$field->isRequired && !in_array('isRequired', $validationRules)) {
             $validationRules[] = 'nullable';
         }
         if (!$validationString) {
@@ -343,7 +344,7 @@ class ModelLoader
                     if (!preg_match('/^[(].*[)]$/', $sql)) {
                         throw new Exception('Computed field `sql` content MUST be enclosed in parenthesis');
                     }
-                    $field->required = false; // Computed fields can't be required -- they are not actually part of the model being saved.
+                    $field->isRequired = false; // Computed fields can't be required -- they are not actually part of the model being saved.
                     break;
                 case 'email':
                     $validationRules[] = 'email';
@@ -419,7 +420,7 @@ class ModelLoader
                 $field->_template = preg_replace('/(^_+|_+$)/', '', preg_replace('/_+/', '_', preg_replace('/\{\{[^}]+\}\}/', '', $field->id)));
                 $field->isRepeatable = data_get($field, 'isRepeatable', false);
                 if ($field->isRepeatable) {
-                    $field->minItems = max(data_get($field, 'minItems', 0), ($field->required ? 1 : 0));
+                    $field->minItems = max(data_get($field, 'minItems', 0), ($field->isRequired ? 1 : 0));
                     $field->maxItems = data_get($field, 'maxItems', 0);
 
                     if ($field->minItems === 1 && $field->maxItems === 1) {
@@ -438,7 +439,7 @@ class ModelLoader
                         return (object) ['text' => $item, 'value' => $item];
                     } elseif ($type == 'object' || ($type == 'array' && static::isAssoc($item))) {
                         $tmp = (object) $item;
-                        $text = data_get($tmp, 'text', object_get($tmp, 'key'));
+                        $text = data_get($tmp, 'text', data_get($tmp, 'key'));
                         $value = data_get($tmp, 'value') ?: $text;
                         if (!$text || !$value) {
                             throw new Exception('Select / radio `options` must be a valid array.');
@@ -524,11 +525,11 @@ class ModelLoader
         $fieldCollection = collect($model->getFields());
 
         $requiredFields = $fieldCollection
-            ->filter(function ($e) {
-                return $e->required;
+            ->filter(function ($item) {
+                return $item->isRequired;
             })
-            ->map(function ($e) {
-                return $e->id;
+            ->map(function ($item) {
+                return $item->id;
             })
             ->values()
             ->all();
@@ -663,7 +664,7 @@ class ModelLoader
                 break;
         }
 
-        if ($field->required) {
+        if ($field->isRequired) {
             // Is the item required?
             return $validationType;
         } else {

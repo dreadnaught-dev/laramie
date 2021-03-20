@@ -18,8 +18,8 @@
         @endforeach
     @else
         <div class="select {{$isMultiple ? 'is-multiple is-fullwidth' : ''}}">
-            <select id="{{ $field->id }}" name="{{ $field->id . ($isMultiple ? '[]' : '') }}" {!! $isSelect2 ? 'class="select2"' : '' !!} {!! $field->extra !!} {{ $field->required ? 'required' : '' }} {{ $isMultiple ? 'multiple' : '' }}>
-                @if (!$isMultiple && !$field->required)
+            <select id="{{ $field->id }}" name="{{ $field->id . ($isMultiple ? '[]' : '') }}" {!! $isSelect2 ? 'class="select2"' : '' !!} {!! $field->extra !!} {{ $field->isRequired ? 'required' : '' }} {{ $isMultiple ? 'multiple' : '' }}>
+                @if (!$isMultiple && !$field->isRequired)
                     <option value="">Select {{ strtolower($field->label) }}...</option>
                 @endif
                 @foreach (data_get($field, 'options') as $option)

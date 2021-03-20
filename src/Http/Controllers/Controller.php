@@ -41,7 +41,7 @@ class Controller extends BaseController
             })
             ->each(function ($item) use ($prefs) {
                 $item->weight = data_get($prefs, $item->id.'.weight', $item->weight);
-                $item->listed = data_get($prefs, $item->id.'.listed', $item->listByDefault);
+                $item->listed = data_get($prefs, $item->id.'.listed', $item->isListByDefault);
             })
             ->sortBy(function ($item) {
                 return $item->weight;

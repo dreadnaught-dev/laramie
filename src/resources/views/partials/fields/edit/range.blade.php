@@ -9,7 +9,7 @@
 @section('input')
     <div class="columns">
         <div class="column is-5">
-            <input type="{{ $field->type }}" oninput="$(this).closest('.field').find('.value-display').text($(this).val())" onchange="$(this).closest('.field').find('.value-display').text($(this).val())" min="{{ $min }}" max="{{ $max }}" step="{{ $step }}" class="is-fullwidth input is-{{ $field->type }}" id="{{ $field->id }}" name="{{ $field->id }}" value="{{ data_get($item, $fieldKey) }}" {!! $field->extra !!} {{ $field->required ? 'required' : '' }}>
+            <input type="{{ $field->type }}" oninput="$(this).closest('.field').find('.value-display').text($(this).val())" onchange="$(this).closest('.field').find('.value-display').text($(this).val())" min="{{ $min }}" max="{{ $max }}" step="{{ $step }}" class="is-fullwidth input is-{{ $field->type }}" id="{{ $field->id }}" name="{{ $field->id }}" value="{{ data_get($item, $fieldKey) }}" {!! $field->extra !!} {{ $field->isRequired ? 'required' : '' }}>
         </div>
         <div class="column is-1">
             <span class="value-display tag is-medium is-light">{{ data_get($item, $fieldKey, '--') }}</span>

@@ -28,13 +28,13 @@
             "isSingular": { "type": "boolean" },
             "isSystemModel": { "type": "boolean" },
             "isDisableMeta": { "type": "boolean" },
-            "disableRevisions": { "type": "boolean" },
-            "editView": { "type": "string" },
-            "listView": { "type": "string" },
-            "editJs": { "type": ["string", "array"] },
-            "editCss": { "type": ["string", "array"] },
-            "listJs": { "type": ["string", "array"] },
+            "isDisableRevisions": { "type": "boolean" },
             "listCss": { "type": ["string", "array"] },
+            "listJs": { "type": ["string", "array"] },
+            "listView": { "type": "string" },
+            "editCss": { "type": ["string", "array"] },
+            "editJs": { "type": ["string", "array"] },
+            "editView": { "type": "string" },
             "addNewText": { "type": "string" },
             "factory": { "type": "string" },
             "fields": {
@@ -46,7 +46,21 @@
             "refs": {
                 "type": "array",
                 "items": {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "model",
+                        "throughField"
+                    ],
+                    "properties": {
+                        "label": { "type": "string" },
+                        "model": { "type": "string" },
+                        "throughField": { "type": "string" }
+                    },
+                    "patternProperties": {
+                        "^_" : [ ],
+                        "^@" : [ ]
+                    }
                 }
             }
         },
@@ -67,11 +81,10 @@
                 "type"
             ],
             "properties": {
-                "type": { "type": "string" },
-                "listByDefault": { "type": "boolean" },
-                "isRequired": { "type": "boolean" },
-                "required": { "type": "boolean" },
                 "id": { "type": "string" },
+                "type": { "type": "string" },
+                "isListByDefault": { "type": "boolean" },
+                "isRequired": { "type": "boolean" },
                 "label": { "type": "string" },
                 "labelPlural": { "type": "string" },
                 "weight": { "type": "integer" },

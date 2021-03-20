@@ -6,7 +6,7 @@
     <p class="control {{ $hasError ? 'has-icons-right' : '' }}">
         <label class="checkbox">
             <input type="hidden" name="{{ $field->id }}" value="0">
-            <input type="checkbox" class="is-{{ $field->type }}" id="{{ $field->id }}" name="{{ $field->id }}" value="1" {{ data_get($item, $fieldKey) ? 'checked' : '' }} {!! $field->extra !!} {{ $field->required ? 'required' : '' }}>
+            <input type="checkbox" class="is-{{ $field->type }}" id="{{ $field->id }}" name="{{ $field->id }}" value="1" {{ data_get($item, $fieldKey) ? 'checked' : '' }} {!! $field->extra !!} {{ $field->isRequired ? 'required' : '' }}>
             {{ $field->label }}
             @if ($hasError)
             <span class="icon is-small is-right">

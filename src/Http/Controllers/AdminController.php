@@ -130,7 +130,7 @@ class AdminController extends Controller
         $model = $this->dataService->getModelByKey($modelKey);
 
         if (!$model->isListable()) {
-            throw new Exception('Items of this type may not be listed');
+            abort(403, 'Items of this type may not be listed');
         }
 
         // Check to see if this is a 'singular' model -- meaning there should only ever be one of them (like settings, etc).
@@ -324,7 +324,7 @@ class AdminController extends Controller
 
         foreach ($fieldsFromRequest as $key => $value) {
             $key = preg_replace('/^_lf_/', '', $key);
-            if (data_get($model->getFields(), $key)) {
+            if ($model->getField($key)) {
                 $listFields[$key] = (object) ['weight' => $weight, 'listed' => $value == 1];
                 $weight += 10;
             }
@@ -489,7 +489,7 @@ class AdminController extends Controller
         $user = $this->dataService->getUser();
 
         if (!$model->isEditable()) {
-            throw new Exception('Items of this type may not be edited');
+            abort(403, 'Items of this type may not be edited');
         }
 
         $this->dataService->removeFromCache($id);
@@ -931,7 +931,7 @@ class AdminController extends Controller
         $model = $this->dataService->getModelByKey($item->type);
 
         if (config('laramie.disable_revisions') || $model->isDisableRevisions()) {
-            abort(403, 'Forbidden');
+            abort(403);
         }
 
         $this->dataService->deleteRevision($revisionId);
@@ -951,7 +951,7 @@ class AdminController extends Controller
         $model = $this->dataService->getModelByKey($item->type);
 
         if (config('laramie.disable_revisions') || $model->issDisableRevisions()) {
-            abort(403, 'Forbidden');
+            abort(403);
         }
 
         $alert = (object) ['class' => 'is-warning', 'title' => 'Revision loaded', 'alert' => sprintf('The revision from %s has been loaded successfully.', \Carbon\Carbon::parse($item->updated_at)->toDayDateTimeString())];
@@ -974,7 +974,7 @@ class AdminController extends Controller
         $model = $this->dataService->getModelByKey($modelKey);
 
         if (config('laramie.disable_revisions') || $model->isDisableRevisions()) {
-            abort(403, 'Forbidden');
+            abort(403);
         }
 
         $itemId = data_get($item, 'laramie_data_id');
@@ -1003,7 +1003,7 @@ class AdminController extends Controller
                     break;
                 case 'aggregate': // Aggregates pose a bit of a challenge -- we could recurse into them... but doing a diff on their json encoded data is easier. I'm fine with that for now.
                 case 'hidden': // Hidden fields can literally be anything (including objects, etc), so we're going to handle the same way we handle aggregates for now.
-                    $diff = $differ->render(json_encode(data_get($previousItem, $key, '{}'), JSON_PRETTY_PRINT), json_encode(object_get($item, $key, '{}'), JSON_PRETTY_PRINT));
+                    $diff = $differ->render(json_encode(data_get($previousItem, $key, '{}'), JSON_PRETTY_PRINT), json_encode(data_get($item, $key, '{}'), JSON_PRETTY_PRINT));
                     break;
                 case 'file':
                 case 'image':
@@ -1036,15 +1036,15 @@ class AdminController extends Controller
                     $diff = $differ->render(implode(', ', $bAliases), implode('', $aAliases));
                     break;
                 case 'markdown':
-                    $diff = $differ->render(data_get($previousItem, "$key.markdown", ''), object_get($item, "$key.markdown", ''));
+                    $diff = $differ->render(data_get($previousItem, "$key.markdown", ''), data_get($item, "$key.markdown", ''));
                     break;
                 case 'timestamp':
-                    $previous = sprintf('%s %s %s', data_get($previousItem, "$key.date", ''), object_get($previousItem, "$key.time", ''), object_get($previousItem, "$key.timezone", ''));
-                    $current = sprintf('%s %s %s', data_get($item, "$key.date", ''), object_get($item, "$key.time", ''), object_get($item, "$key.timezone", ''));
+                    $previous = sprintf('%s %s %s', data_get($previousItem, "$key.date", ''), data_get($previousItem, "$key.time", ''), data_get($previousItem, "$key.timezone", ''));
+                    $current = sprintf('%s %s %s', data_get($item, "$key.date", ''), data_get($item, "$key.time", ''), data_get($item, "$key.timezone", ''));
                     $diff = $differ->render($previous, $current);
                     break;
                 default:
-                    $diff = $differ->render(data_get($previousItem, $key, ''), object_get($item, $key, ''));
+                    $diff = $differ->render(data_get($previousItem, $key, ''), data_get($item, $key, ''));
                     break;
             }
 

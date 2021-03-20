@@ -115,6 +115,7 @@ class AjaxController extends Controller
                 'outerItemId' => $outerItemId,
                 'resultsPerPage' => $resultsPerPage,
                 'isFromAjaxController' => true,
+                'isInvertedSearch' => $invertSearch,
             ],
             function ($query) use ($uuidCollection, $keywords, $model, $lookupSubtype, $outerItemId, $outerModel, $fieldInvokingRequest, $isTypeSpecific, $invertSearch, $tag) {
                 // Never show the item being edited.
@@ -158,28 +159,30 @@ class AjaxController extends Controller
                         // Search by the model's quickSearch array (will generally be the model's `alias` unless manually set).
                         foreach ($model->getQuickSearch() as $searchFieldName) {
                             // for, we'll also search by id and tags
-                            $searchField = data_get($model->getFields(), $searchFieldName);
+                            $searchField = $model->getField($searchFieldName);
 
                             // Is the search field is set to an html field? search by whatever the field is pointing to for sorting
                             if ($searchField->type == 'html') {
-                                if (data_get($searchField, 'sortBy') && data_get($model->getFields(), data_get($searchField, 'sortBy'))) {
-                                    $searchField = data_get($model->getFields(), $searchField->sortBy);
+                                if (data_get($searchField, 'sortBy') && $model->getField(data_get($searchField, 'sortBy'))) {
+                                    $searchField = $model->getField($searchField->sortBy);
                                 }
                             }
 
                             if ($searchField->type == 'computed') {
                                 $query->orWhere(\DB::raw($searchField->sql), 'ilike', '%'.$keywords.'%');
                             } elseif ($searchField->type == 'markdown') {
-                                $query->orWhere(\DB::raw('data#>>\'{'.$searchField->_fieldName.',markdown}\''), 'ilike', '%'.$keywords.'%');
+                                $query->orWhere(\DB::raw('(data#>>\'{'.$searchField->_fieldName.',markdown}\')'), 'ilike', '%'.$keywords.'%');
                             } elseif (in_array($searchField->type, ['id', 'created_at', 'updated_at'])) {
                                 $query->orWhere(\DB::raw($searchField->id), 'ilike', '%'.$keywords.'%');
                             } else {
-                                $query->orWhere(\DB::raw('data->>\''.$searchField->_fieldName.'\''), 'ilike', '%'.$keywords.'%');
+                                $query->orWhere(\DB::raw('(data->>\''.$searchField->_fieldName.'\')'), 'ilike', '%'.$keywords.'%');
                             }
                         }
 
                         // Also search id just in case an item can't be found by its alias (multiple 'James Smiths' for example)
-                        $query->orWhere(\DB::raw('id::text'), 'ilike', '%'.$keywords.'%');
+                        if (LaramieHelpers::isValidUuid($keywords)) {
+                            $query->orWhere('id', $keywords);
+                        }
 
                         // Lastly search tags
                         $query->orWhereIn('id', function ($query) use ($keywords) {
@@ -309,13 +312,18 @@ class AjaxController extends Controller
         if (!LaramieHelpers::isValidUuid($itemId)) {
             $itemId = null;
         }
+        $item = $this->dataService->findByType($modelKey, null, function($query) use ($itemId) {
+                $query->where('id', $itemId)
+                    ->limit(1);
+            })
+            ->first();
 
         $referenceItemId = $request->get('referenceId');
         if (!LaramieHelpers::isValidUuid($referenceItemId)) {
             $referenceItemId = null;
         }
 
-        if (!$itemId || !$referenceItemId) {
+        if (!$item || !$referenceItemId) {
             abort(403);
         }
 
@@ -326,7 +334,6 @@ class AjaxController extends Controller
         $referenceFieldName = data_get($model->getField($field), '_fieldName');
         $isSelected = $request->get('selected') === '1';
 
-        $item = $this->dataService->findByIdSuperficial($model, $itemId);
         // TODO -- validate referenceItemId is NOT in the db (new item) or belongs to type: `data_get($referenceField, 'relatedModel')`
 
         $data = json_decode($item->origData() ?: '{}');
@@ -350,8 +357,14 @@ class AjaxController extends Controller
                 ->toArray();
         }
 
-        DB::table('laramie_data')
-            ->where('id', $item->id)
+        // laramieUsers are a unique case in that they're a proxy for editing
+        // data in the `users` table. If we're updating a reference to a
+        // laramieUser, we need to remap what we're actually updating.
+        $table = $item->type === 'laramieUser' ? 'users' : 'laramie_data';
+        $id = $item->type === 'laramieUser' ? $item->user_id : $item->id;
+
+        DB::table($table)
+            ->where('id', $id)
             ->update([
                 'updated_at' => \Carbon\Carbon::now(config('laramie.timezone'))->toDateTimeString(),
                 'data' => json_encode($data),

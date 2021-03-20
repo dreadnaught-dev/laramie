@@ -11,7 +11,7 @@
     <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;" tabindex="-1" />
 
     @php
-        $tabbedAggregates = collect($model->getFields())->filter(function($item){ return $item->isEditable && $item->type == 'aggregate' && object_get($item, 'asTab', false); });
+        $tabbedAggregates = collect($model->getFields())->filter(function($item){ return $item->isEditable && $item->type == 'aggregate' && data_get($item, 'asTab', false); });
         $hasTabs = count($tabbedAggregates) > 0;
     @endphp
 

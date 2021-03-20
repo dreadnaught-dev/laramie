@@ -108,7 +108,7 @@ class LaramieDataService
 
         if ($isSpiderAggregates) {
             $laramieModels->each(function($item) use($model, $maxPrefetchDepth) {
-                $this->spiderAggregates($model, $item, $maxPrefetchDepth);
+                $this->spiderAggregates($model->toData(), $item, $maxPrefetchDepth); // @TODO preston -- create common interface for aggregate fields and ModelSpec (FieldContainer)?
             });
         }
 
@@ -265,7 +265,7 @@ class LaramieDataService
                     // Check to see if we need to manipulate `$value` for searching (currently limited to date fields):
                     $modelField = data_get($model->getFields(), $filter->field);
                     if ($operation !== 'between-dates' && (in_array($filter->field, ['_created_at', '_updated_at'])
-                        || in_array(data_get($modelField, 'dataType', object_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local'])))
+                        || in_array(data_get($modelField, 'dataType', data_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local'])))
                     {
                         try {
                             $value = Carbon::parse($value)->timestamp;
@@ -625,7 +625,7 @@ class LaramieDataService
         // NOTE: we're only diving into aggregate relationships for single item
         // selection. What this means is that reference fields within deeply
         // nested aggregates won't be returned by `findByType`.
-        $this->spiderAggregates($model, $item, $maxPrefetchDepth);
+        $this->spiderAggregates($model->toData(), $item, $maxPrefetchDepth); // @TODO preston -- create common interface for aggregate fields and ModelSpec (FieldContainer)?
 
         $this->cachedItems[$item->id] = $item;
 
@@ -637,9 +637,10 @@ class LaramieDataService
         return $item;
     }
 
-    private function spiderAggregates($model, $item, $maxPrefetchDepth)
+    private function spiderAggregates($model, $item, $maxPrefetchDepth) // @TODO preston -- create common interface for aggregate fields and ModelSpec (FieldContainer)?
     {
-        $aggregateFields = collect($model->getFields())
+        //$aggregateFields = collect($model->getFields())
+        $aggregateFields = collect(data_get($model, 'fields'))
             ->filter(function ($e) {
                 return $e->type == 'aggregate';
             })
@@ -903,7 +904,7 @@ class LaramieDataService
 
             // Relation fields are transformed into the id(s) of the items they
             // represent before being persisted in the db.
-            $data = $this->flattenRelationships($model->toData(), $data); // @TODO -- create common interface for aggregate fields and ModelSpec (with getFields()) available to both.
+            $data = $this->flattenRelationships($model->toData(), $data); // @TODO preston -- create common interface for aggregate fields and ModelSpec (FieldContainer)?
 
             // Remove fields that aren't part of the the schema (old attributes
             // that may have been removed will still exist in archived versions of the

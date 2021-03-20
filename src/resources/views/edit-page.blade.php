@@ -13,10 +13,10 @@
                 @if ($refs = $model->getRefs())
                 <hr class="hr">
                 @foreach ($refs as $ref)
-                    <div class="reference-panel" data-type="{{ $model->getType() }}" data-lookup-type="{{ $ref->type }}" data-field="{{ $ref->field }}">
-                        <h4 class="title is-4">{{ $ref->label }}</h4>
+                    <div class="reference-panel" data-type="{{ $model->getType() }}" data-lookup-type="{{ $ref->getType() }}" data-field="{{ $ref->getField() }}">
+                        <h4 class="title is-4">{{ $ref->getLabel() }}</h4>
                         <p class="control">
-                            <input class="input keywords" type="text" placeholder="Quick Search" title="Quickly search by {{ $ref->quickSearch }}">
+                            <input class="input keywords" type="text" placeholder="Quick Search" title="Quickly search by {{ implode(', ', $ref->getQuickSearch()) }}">
                         </p>
                         <br>
                         <table class="table is-fullwidth is-hoverable">
