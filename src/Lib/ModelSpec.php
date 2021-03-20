@@ -2,25 +2,8 @@
 
 namespace Laramie\Lib;
 
-class ModelSpec
+class ModelSpec extends JsonBackedObject
 {
-    private object $data;
-
-    public function __construct($jsonObject)
-    {
-        $this->data = $jsonObject;
-    }
-
-    public function toData()
-    {
-        return $this->data;
-    }
-
-    private function get($key, $fallback = null)
-    {
-        return data_get($this->data, $key, $fallback);
-    }
-
     public function getType() : string { return $this->get('_type'); }
 
     public function getAlias() : string { return $this->get('alias'); }

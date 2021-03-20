@@ -208,8 +208,8 @@
                 "isRepeatable": { "type": "boolean" },
                 "minItems": { "type": "integer" },
                 "maxItems": { "type": "integer" },
-                "unwrap": { "type": "boolean" },
-                "hideLabel": { "type": "boolean" }
+                "isUnwrap": { "type": "boolean" },
+                "isHideLabel": { "type": "boolean" }
             }
         }
     }

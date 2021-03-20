@@ -17,7 +17,7 @@
 <div class="aggregate-outer-wrapper has-margin-bottom {{ data_get($aggregateField, 'asTab') ? 'is-tab tab-'.\Str::slug($aggregateField->label) . ($selectedTab == \Str::slug($aggregateField->label) ? ' is-active' : '') : '' }}"
     {!! $showWhen ? 'data-show-when="'.$showWhen.'"' : '' !!}
 >
-    @if (data_get($aggregateField, 'hideLabel') !== true)
+    @if (data_get($aggregateField, 'isHideLabel') !== true)
         <h4 class="title is-4" style="margin: 1.5rem 0 .75rem">
             {{ $aggregateField->isRepeatable ? $aggregateField->labelPlural : $aggregateField->label }}
             @if ($isRepeatable)
@@ -26,7 +26,7 @@
         </h4>
     @endif
 
-    <div class="aggregate-holder padded content {{ data_get($aggregateField, 'unwrap') === true ? 'unwrapped' : 'wrapped' }}" data-type="{{ $field->_fieldName }}" data-template="{{ $metaId . $field->_template }}" data-is-repeatable="{{ $field->isRepeatable ? '1' : '0' }}" data-min-items="{{ data_get($field, 'minItems') }}" data-max-items="{{ data_get($field, 'maxItems') }}" data-empty-message="No {{ $aggregateField->labelPlural }} added yet">
+    <div class="aggregate-holder padded content {{ data_get($aggregateField, 'isUnwrap') === true ? 'unwrapped' : 'wrapped' }}" data-type="{{ $field->_fieldName }}" data-template="{{ $metaId . $field->_template }}" data-is-repeatable="{{ $field->isRepeatable ? '1' : '0' }}" data-min-items="{{ data_get($field, 'minItems') }}" data-max-items="{{ data_get($field, 'maxItems') }}" data-empty-message="No {{ $aggregateField->labelPlural }} added yet">
         @if ($isRepeatable)
             <?php /*<p>No {{ $aggregateField->labelPlural }} added yet</p>*/ ?>
         @endif
