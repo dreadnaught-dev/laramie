@@ -35,16 +35,16 @@ class Controller extends BaseController
     {
         $prefs = $prefs !== null ? $prefs : (object) [];
 
-        return collect($model->getFields())
+        return collect($model->getFieldsSpecs())
             ->filter(function ($item) use($prefs) {
-                return $item->isListable;
+                return $item->isListable();
             })
             ->each(function ($item) use ($prefs) {
-                $item->weight = data_get($prefs, $item->id.'.weight', $item->weight);
-                $item->listed = data_get($prefs, $item->id.'.listed', $item->isListByDefault);
+                $item->weight = data_get($prefs, $item->getId().'.weight', $item->getWeight());
+                $item->listed = data_get($prefs, $item->getId().'.listed', $item->isListByDefault());
             })
             ->sortBy(function ($item) {
-                return $item->weight;
+                return $item->getWeight();
             });
     }
 

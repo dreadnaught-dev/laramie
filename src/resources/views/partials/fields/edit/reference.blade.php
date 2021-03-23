@@ -1,11 +1,11 @@
 @extends('laramie::partials.fields.edit._base')
 
 @php
-    $referencedModelKey = $field->relatedModel;
-    $referencedModelNamePlural = $field->labelPlural;
-    $isSingleReference = $field->subtype == 'single';
+    $referencedModelKey = $field->getRelatedModel();
+    $referencedModelNamePlural = $field->getLabelPlural();
+    $isSingleReference = $field->getSubtype() === 'single';
 
-    $references = data_get($item, $field->id, []);
+    $references = data_get($item, $field->getId(), []);
     if ($isSingleReference) {
         $references = [$references];
     }
@@ -18,7 +18,7 @@
 @section('input')
     <div class="reference-wrapper">
         <div class="content">
-            <input type="hidden" class="reference-ids" name="{{ $field->id }}" value="{{ $hasReferences ? $references->map(function($e){ return $e->id; })->implode('|') : '' }}">
+            <input type="hidden" class="reference-ids" name="{{ $field->getId() }}" value="{{ $hasReferences ? $references->map(function($e){ return $e->id; })->implode('|') : '' }}">
             <blockquote>
                 <div class="selection-info is-pulled-left" data-base-url="{{ route('laramie::edit', ['modelKey' => $referencedModelKey, 'id' => 'new'])  }}">
                     @forelse ($references as $reference)

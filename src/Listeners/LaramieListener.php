@@ -64,7 +64,7 @@ class LaramieListener
 
         // Tweak laramie upload preview to reference appropriate admin url:
         $laramieUpload = data_get($models, 'laramieUpload');
-        $laramieUpload->getField('preview')->sql = str_replace('_admin_url_', config('laramie.admin_url'), $laramieUpload->getField('preview')->sql);
+        $laramieUpload->getFieldSpec('preview')->set('sql', str_replace('_admin_url_', config('laramie.admin_url'), $laramieUpload->getFieldSpec('preview')->getSql()));
 
         foreach ($nonSystemModels as $nonSystemModel) {
             $showName = data_get($nonSystemModel, 'isSingular', false) ? $nonSystemModel->getName() : $nonSystemModel->getNamePlural();
@@ -183,11 +183,9 @@ class LaramieListener
     }
 
     /**
-     * Handle pre-list event.
+     * Handle PostFetch event.
      *
-     * Only show system roles to admins on list page.
-     *
-     * @param $event Laramie\Hooks\preList
+     * @param $event Laramie\Hooks\PostFetch
      */
     public function postFetch($event)
     {
@@ -200,7 +198,7 @@ class LaramieListener
             return;
         }
 
-        $deferredFields = collect($model->getFields())
+        $deferredFields = collect($model->getFieldsSpecs())
             ->filter(function($item) {
                 return data_get($item, 'type') === 'computed' && data_get($item, 'isDeferred');
             });
@@ -211,7 +209,7 @@ class LaramieListener
                 ->whereIn('id', $items->pluck('id'));
 
             foreach ($deferredFields as $deferredFieldKey => $deferredField) {
-                $valuesQuery->addSelect(DB::raw($deferredField->sql . ' as "' . $deferredFieldKey . '"'));
+                $valuesQuery->addSelect(DB::raw($deferredField->getSql() . ' as "' . $deferredFieldKey . '"'));
             }
 
             $deferredValues = $valuesQuery->get()->keyBy('id');
@@ -370,7 +368,7 @@ class LaramieListener
                 $userRecord = DB::table('users')->where('id', $item->user_id)->first();
                 $jsonInfo = json_decode(data_get($userRecord, 'data'));
 
-                $modelFields = $model->getFields();
+                $modelFields = $model->getFieldsSpecs();
                 foreach ($modelFields as $fieldName => $field) {
                     // Don't store dummy info
                     if (
@@ -380,8 +378,8 @@ class LaramieListener
                         continue;
                     }
                     // We're not going through the main service for saving, so we need to do some finagling here:
-                    if ($field->type === 'reference') {
-                        if ($field->subtype === 'many') {
+                    if ($field->getType() === 'reference') {
+                        if ($field->getSubtype() === 'many') {
                             $jsonInfo->{$fieldName} = collect(data_get($item, $fieldName))
                                 ->map(function($item) { return data_get($item, 'id'); })
                                 ->toArray();

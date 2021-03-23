@@ -6,21 +6,21 @@
     $invertActiveSortDirection = $activeSortDirection === 'desc' ? 'asc' : 'desc';
     $quickSearch = request()->get('quick-search');
 
-    $filterableFields = collect($model->getFields())
-        ->filter(function($e){
-            return data_get($e, 'isSearchable') === true
+    $filterableFields = collect($model->getFieldsSpecs())
+        ->filter(function($item){
+            return $item->isSearchable()
                 || (
-                    $e->isListable
-                    && !data_get($e, 'isMetaField', false)
-                    && data_get($e, 'isSearchable') !== false
+                    $item->isListable()
+                    && $item->isMetaField() !== true
+                    && $item->isSearchable()
                 );
         })
         ->sortBy('label');
 
-    $metaFields = collect($model->getFields())
-        ->filter(function($e){
-            return data_get($e, 'isMetaField')
-                && data_get($e, 'isSearchable') !== false;
+    $metaFields = collect($model->getFieldsSpecs())
+        ->filter(function($item){
+            return $item->isMetaField()
+                && $item->isSearchable();
         })
         ->sortBy('label');
 @endphp
@@ -44,13 +44,13 @@
                             <select name="filter_@{{filterIndex}}_field">
                                 <optgroup label="Fields">
                                     @foreach ($filterableFields as $key => $field)
-                                        <option value="{{ $key }}" {{ $model->getAlias() == $key ? 'selected' : '' }}>{{ $field->label }}</option>
+                                        <option value="{{ $key }}" {{ $model->getAlias() == $key ? 'selected' : '' }}>{{ $field->getLabel() }}</option>
                                     @endforeach
                                 </optgroup>
                                 @if ($metaFields->count() > 0)
                                     <optgroup label="Meta">
                                         @foreach ($metaFields as $key => $field)
-                                            <option value="{{ $key }}" {{ $model->getAlias() == $key ? 'selected' : '' }}>{{ $field->label }}</option>
+                                            <option value="{{ $key }}" {{ $model->getAlias() == $key ? 'selected' : '' }}>{{ $field->getLabel() }}</option>
                                         @endforeach
                                     </optgroup>
                                 @endif
@@ -117,7 +117,7 @@
                                             <i class="fas fa-grip-vertical"></i>&nbsp;
                                             <input type="hidden" name="_lf_{{ $fieldKey }}" value="0">
                                             <input type="checkbox" name="_lf_{{ $fieldKey }}" value="1" {{ array_key_exists($fieldKey, $listFields) ? 'checked' : '' }}>
-                                            {{ $field->label }}
+                                            {{ $field->getLabel() }}
                                         </label>
                                     </p>
                                 </div>
@@ -286,13 +286,13 @@
                             <td><input type="checkbox" aria-label="Select All" class="js-select-all"></td>
                             @foreach ($listFields as $fieldKey => $field)
                                 <th>
-                                    @if ($field->isSortable)
-                                        <div class="is-pulled-left" title="Click to sort by {{ strtolower($field->label) }}">
-                                            <a href="{{ $viewHelper->getCurrentUrlWithModifiedQS(['sort' => $field->sortBy, 'sort-direction' => ($field->sortBy == $activeSort ? $invertActiveSortDirection : 'asc'), 'page' => 1]) }}">{{ $field->label }}</a>
+                                    @if ($field->isSortable())
+                                        <div class="is-pulled-left" title="Click to sort by {{ strtolower($field->getLabel()) }}">
+                                            <a href="{{ $viewHelper->getCurrentUrlWithModifiedQS(['sort' => $field->getSortBy(), 'sort-direction' => ($field->getSortBy() == $activeSort ? $invertActiveSortDirection : 'asc'), 'page' => 1]) }}">{{ $field->getLabel() }}</a>
                                         </div>
                                         <div class="is-pulled-right">
-                                            @if ($field->sortBy == $activeSort)
-                                                <a href="{{ $viewHelper->getCurrentUrlWithModifiedQS(['sort' => $field->sortBy, 'sort-direction' => ($field->sortBy == $activeSort ? $invertActiveSortDirection : 'asc'), 'page' => 1]) }}">
+                                            @if ($field->getSortBy() == $activeSort)
+                                                <a href="{{ $viewHelper->getCurrentUrlWithModifiedQS(['sort' => $field->getSortBy(), 'sort-direction' => ($field->getSortBy() == $activeSort ? $invertActiveSortDirection : 'asc'), 'page' => 1]) }}">
                                                     <span class="icon">
                                                         <i class="fas fa-sort-{{ $activeSortDirection == 'desc' ? 'down' : 'up' }}" title="Sorting {{ $activeSortDirection == 'desc' ? 'descending' : 'ascending' }}. Click to toggle"></i>
                                                     </span>
@@ -300,7 +300,7 @@
                                             @endif
                                         </div>
                                     @else
-                                        <label>{{ $field->label }}</label>
+                                        <label>{{ $field->getLabel() }}</label>
                                     @endif
                                 </th>
                             @endforeach

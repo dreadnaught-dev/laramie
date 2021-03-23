@@ -6,6 +6,6 @@
         the `name`). So that we don't run id collision issues with the trix
         editor (e.g., with side-by-side panel editing).
     */ ?>
-    <input type="hidden" id="{{ $metaId . $field->id }}" name="{{ $field->id }}" value="{{ $valueOrDefault }}">
-    <trix-editor input="{{ $metaId . $field->id }}" class="trix-content"></trix-editor>
+    <input type="hidden" id="{{ $metaId . $field->getId() }}" name="{{ $field->getId() }}" value="{{ $valueOrDefault }}">
+    <trix-editor input="{{ $metaId . $field->getId() }}" class="trix-content"></trix-editor>
 @overwrite

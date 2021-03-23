@@ -206,7 +206,7 @@ class ModelLoader
                     }
                 }
                 // recursively validate fields -- recursion only needed for aggregate fields
-                foreach ($m->getFields() as $fieldName => $field) {
+                foreach ($m->getFieldsSpecs() as $fieldName => $field) {
                     self::dfValidateField($m, $field, $modelValidator, $validator, $errors);
                 }
             }
@@ -249,20 +249,20 @@ class ModelLoader
         return array_filter(is_array($value) ? $value : [$value]);
     }
 
-    private static function dfValidateField(ModelSpec $model, $field, $schema, $validator, &$errors)
+    private static function dfValidateField(ModelSpec $model, FieldSpec $field, $schema, $validator, &$errors)
     {
-        $type = $field->type;
+        $type = $field->getType();
         if ($type == 'aggregate') {
-            foreach ($field->fields as $aggregateFieldName => $aggregateField) {
+            foreach ($field->getFieldsSpecs() as $aggregateFieldName => $aggregateField) {
                 self::dfValidateField($model, $aggregateField, $schema, $validator, $errors);
             }
         }
         $fieldValidator = self::extend(data_get($schema, 'fields._base'), data_get($schema, 'fields.'.$type));
         $validator->reset();
-        $validator->check($field, $fieldValidator);
+        $validator->check($field->toData(), $fieldValidator);
         if (!$validator->isValid()) {
             foreach ($validator->getErrors() as $error) {
-                $errors[] = sprintf('%s -> %s -> %s %s: %s', $model->getName(), $field->{'_fieldName'}, $field->type, $error['property'], $error['message']);
+                $errors[] = sprintf('%s -> %s -> %s %s: %s', $model->getName(), $field->getFieldName(), $field->getType(), $error['property'], $error['message']);
             }
         }
     }
@@ -522,14 +522,14 @@ class ModelLoader
             ],
         ];
 
-        $fieldCollection = collect($model->getFields());
+        $fieldCollection = collect($model->getFieldsSpecs());
 
         $requiredFields = $fieldCollection
             ->filter(function ($item) {
-                return $item->isRequired;
+                return $item->isRequired();
             })
             ->map(function ($item) {
-                return $item->id;
+                return $item->getId();
             })
             ->values()
             ->all();
@@ -537,20 +537,20 @@ class ModelLoader
         $schema->required = array_merge($schema->required, $requiredFields);
 
         $fieldCollection
-            ->filter(function ($e, $k) {
+            ->filter(function ($item, $key) {
                 // Don't try to validate computed fields
                 // Don't try to validate hidden fields -- they can be any type (including objects, etc (useful for allowing modules to create dynamic fields as necessary)).
-                if (in_array($e->type, ['computed', 'hidden'])) {
+                if (in_array($item->getType(), ['computed', 'hidden'])) {
                     return false;
                 }
 
-                return !preg_match('/^_/', $k);
+                return !preg_match('/^_/', $key);
             })
-            ->map(function ($e) {
-                return static::getValidationSchemaHelper($e);
+            ->map(function ($item) {
+                return static::getValidationSchemaHelper($item);
             })
-            ->each(function ($e, $k) use ($schema) {
-                $schema->properties->{$k} = $e;
+            ->each(function ($item, $key) use ($schema) {
+                $schema->properties->{$key} = $item;
             });
 
         return $schema;
@@ -563,9 +563,9 @@ class ModelLoader
      *
      * @return mixed Object representing this field's json-validation schema
      */
-    private static function getValidationSchemaHelper($field)
+    private static function getValidationSchemaHelper(FieldSpec $field)
     {
-        switch ($field->type) {
+        switch ($field->getType()) {
             case 'boolean':
             case 'checkbox':
                 $validationType = (object) ['type' => 'boolean'];
@@ -664,7 +664,7 @@ class ModelLoader
                 break;
         }
 
-        if ($field->isRequired) {
+        if ($field->isRequired()) {
             // Is the item required?
             return $validationType;
         } else {

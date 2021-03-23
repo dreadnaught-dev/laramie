@@ -1,18 +1,18 @@
 @php
-    $hasError = $errors->has($field->id);
+    $hasError = $errors->has($field->getId());
 
-    $isIntegerOnly = data_get($field, 'isIntegerOnly', false);
-    $min = data_get($field, 'min', null);
-    $max = data_get($field, 'max', null);
-    $step = $isIntegerOnly ? 1 : data_get($field, 'step', null);
+    $isIntegerOnly = $field->isIntegerOnly();
+    $min = $field->getMin();
+    $max = $field->getMax();
+    $step = $isIntegerOnly ? 1 : $field->getStep();
 
-    $sign = data_get($field, 'sign', 'dollar');
+    $sign = $field->getSign() ?: 'dollar';
 @endphp
 
-<div class="field {{ $hasError ? 'is-danger' : '' }}" data-field-key="{{ $fieldKey }}" data-field-type="{{ $field->type }}">
-    <label class="label" for="{{ $fieldKey }}">{!! $field->label !!}</label>
+<div class="field {{ $hasError ? 'is-danger' : '' }}" data-field-key="{{ $fieldKey }}" data-field-type="{{ $field->getType() }}">
+    <label class="label" for="{{ $fieldKey }}">{!! $field->getLabel() !!}</label>
     <div class="control has-icons-left {{ $hasError ? 'has-icons-right' : '' }}">
-        <input type="number" class="input is-{{ $field->type }}" id="{{ $field->id }}" name="{{ $field->id }}" value="{{ $valueOrDefault }}" {!! $field->extra !!} {!! $min !== null ? 'min="'.$min.'"' : '' !!} {!! $max !== null ? 'max="'.$max.'"' : '' !!} {!! $step ? 'step="'.$step.'"' : '' !!} {!! $field->isRequired ? 'required' : '' !!}>
+        <input type="number" class="input is-{{ $field->getType() }}" id="{{ $field->getId() }}" name="{{ $field->getId() }}" value="{{ $valueOrDefault }}" {!! $field->getExtra() !!} {!! $min !== null ? 'min="'.$min.'"' : '' !!} {!! $max !== null ? 'max="'.$max.'"' : '' !!} {!! $step ? 'step="'.$step.'"' : '' !!} {!! $field->isRequired() ? 'required' : '' !!}>
         <span class="icon is-small is-left">
             <i class="fas fa-{{ $sign }}-sign"></i>
         </span>

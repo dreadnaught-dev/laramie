@@ -144,6 +144,9 @@
             }
         },
         "html": {
+            "required": [
+                "html"
+            ],
             "properties": {
                 "html": { "type": "string" }
             }
@@ -185,6 +188,9 @@
             }
         },
         "reference": {
+            "required": [
+                "relatedModel"
+            ],
             "properties": {
                 "relatedModel": { "type": "string" },
                 "subtype": { "enum": [ "single", "many" ] }

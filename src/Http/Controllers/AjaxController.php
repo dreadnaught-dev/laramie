@@ -51,7 +51,7 @@ class AjaxController extends Controller
         if ($transformItems) {
             // The name only needs to be unique per reference in case it's a radio select (this value isn't being submitted).
             $name = Str::random(10);
-            $alias = $model->getField($model->getAlias());
+            $alias = $model->getFieldSpec($model->getAlias());
 
             $paginator->setCollection($paginator->getCollection()
                 ->map(function ($e) use ($alias, $name) {
@@ -59,7 +59,7 @@ class AjaxController extends Controller
                         'id' => $e->id,
                         'name' => $name,
                         'label' => $alias
-                            ? LaramieHelpers::formatListValue($alias, data_get($e, $alias->id), true)
+                            ? LaramieHelpers::formatListValue($alias, data_get($e, $alias->getId()), true)
                             : null,
                         'selected' => data_get($e, 'selected') == 1,
                         'created_at' => \Carbon\Carbon::parse(data_get($e, 'created_at'))->diffForHumans(),
@@ -105,7 +105,7 @@ class AjaxController extends Controller
             : $resultsPerPage;
 
         $fieldInvokingRequest = $request->get('field');
-        $isTypeSpecific = data_get($outerModel->getField($fieldInvokingRequest), 'isTypeSpecific') === true;
+        $isTypeSpecific = optional($outerModel->getFieldSpec($fieldInvokingRequest))->isTypeSpecific();
         return $this->dataService->findByType(
             $model,
             [
@@ -159,23 +159,23 @@ class AjaxController extends Controller
                         // Search by the model's quickSearch array (will generally be the model's `alias` unless manually set).
                         foreach ($model->getQuickSearch() as $searchFieldName) {
                             // for, we'll also search by id and tags
-                            $searchField = $model->getField($searchFieldName);
+                            $searchField = $model->getFieldSpec($searchFieldName);
 
                             // Is the search field is set to an html field? search by whatever the field is pointing to for sorting
-                            if ($searchField->type == 'html') {
-                                if (data_get($searchField, 'sortBy') && $model->getField(data_get($searchField, 'sortBy'))) {
-                                    $searchField = $model->getField($searchField->sortBy);
+                            if ($searchField->getType() === 'html') {
+                                if ($searchField->getSortBy() && $model->getFieldSpec($searchField->getSortBy())) {
+                                    $searchField = $model->getFieldSpec($searchField->getSortBy());
                                 }
                             }
 
-                            if ($searchField->type == 'computed') {
-                                $query->orWhere(\DB::raw($searchField->sql), 'ilike', '%'.$keywords.'%');
-                            } elseif ($searchField->type == 'markdown') {
-                                $query->orWhere(\DB::raw('(data#>>\'{'.$searchField->_fieldName.',markdown}\')'), 'ilike', '%'.$keywords.'%');
-                            } elseif (in_array($searchField->type, ['id', 'created_at', 'updated_at'])) {
-                                $query->orWhere(\DB::raw($searchField->id), 'ilike', '%'.$keywords.'%');
+                            if ($searchField->getType() == 'computed') {
+                                $query->orWhere(\DB::raw($searchField->getSql()), 'ilike', '%'.$keywords.'%');
+                            } elseif ($searchField->getType() == 'markdown') {
+                                $query->orWhere(\DB::raw('(data#>>\'{'.$searchField->getFieldName().',markdown}\')'), 'ilike', '%'.$keywords.'%');
+                            } elseif (in_array($searchField->getType(), ['id', 'created_at', 'updated_at'])) {
+                                $query->orWhere(\DB::raw($searchField->getId()), 'ilike', '%'.$keywords.'%');
                             } else {
-                                $query->orWhere(\DB::raw('(data->>\''.$searchField->_fieldName.'\')'), 'ilike', '%'.$keywords.'%');
+                                $query->orWhere(\DB::raw('(data->>\''.$searchField->getFieldName().'\')'), 'ilike', '%'.$keywords.'%');
                             }
                         }
 
@@ -330,8 +330,8 @@ class AjaxController extends Controller
         $field = $request->get('field');
 
         $model = $this->dataService->getModelByKey($modelKey);
-        $referenceField = $model->getField($field);
-        $referenceFieldName = data_get($model->getField($field), '_fieldName');
+        $referenceField = $model->getFieldSpec($field);
+        $referenceFieldName = $referenceField->getFieldName();
         $isSelected = $request->get('selected') === '1';
 
         // TODO -- validate referenceItemId is NOT in the db (new item) or belongs to type: `data_get($referenceField, 'relatedModel')`
@@ -339,7 +339,7 @@ class AjaxController extends Controller
         $data = json_decode($item->origData() ?: '{}');
 
         // Single reference -- only one allowed at a time
-        if (data_get($referenceField, 'subtype') == 'single') {
+        if ($referenceField->getSubtype() === 'single') {
             $data->{$referenceFieldName} = $isSelected
                 ? $referenceItemId
                 : null;

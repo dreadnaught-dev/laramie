@@ -2,7 +2,7 @@
 
 namespace Laramie\Lib;
 
-class ModelSpec extends JsonBackedObject
+class ModelSpec extends JsonBackedObject implements FieldContainer
 {
     public function getAddNewText() : string { return $this->get('addNewText', 'Add New'); } /* @TODO preston -- update to use laravel translation */
     public function getAlias() : string { return $this->get('alias'); }
@@ -23,7 +23,7 @@ class ModelSpec extends JsonBackedObject
     public function getQuickSearch() : array { return $this->get('quickSearch'); }
     public function getRefs() : array { return collect($this->get('refs', []))->map(function($item) { return new RefSpec($item); })->toArray(); }
     public function getType() : string { return $this->get('_type'); }
-    public function isDeletable() : bool { return $this->get('isDeletable', true) === false; }
+    public function isDeletable() : bool { return $this->get('isDeletable') !== false; }
     public function isDisableMeta() : bool { return $this->get('isDisableMeta', false); }
     public function isDisableRevisions() : bool { return $this->get('isDisableRevisions', false) === true; }
     public function isEditable() : bool { return $this->get('isEditable', true); }
@@ -35,5 +35,7 @@ class ModelSpec extends JsonBackedObject
     /* Field-related functions */
     public function addField(string $key, object $fieldInfo) { $this->getFields()->{$key} = ModelLoader::processField($key, $fieldInfo); }
     public function getField($fieldName) { return $this->get('fields.' . $fieldName); }
+    public function getFieldSpec($fieldName) { $f = $this->get('fields.' . $fieldName); return $f ? new FieldSpec($this->get('fields.' . $fieldName)) : null; }
     public function getFields() { return $this->get('fields', (object) []); }
+    public function getFieldsSpecs() { return collect($this->get('fields', (object) []))->map(function($item) { return new FieldSpec($item); })->toArray(); }
 }

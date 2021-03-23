@@ -7,11 +7,11 @@
 
 @section('input')
     <label class="radio">
-        <input type="radio" id="{{ $field->id }}-yes" name="{{ $field->id }}" value="1" {{ $isTrue ? 'checked' : '' }}>
+        <input type="radio" id="{{ $field->getId() }}-yes" name="{{ $field->getId() }}" value="1" {{ $isTrue ? 'checked' : '' }}>
         Yes
     </label>
     <label class="radio">
-        <input type="radio" id="{{ $field->id }}-no" name="{{ $field->id }}" value="0" {{ $isFalse ? 'checked' : '' }}>
+        <input type="radio" id="{{ $field->getId() }}-no" name="{{ $field->getId() }}" value="0" {{ $isFalse ? 'checked' : '' }}>
         No
     </label>
 @overwrite

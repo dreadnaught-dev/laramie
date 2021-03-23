@@ -48,9 +48,9 @@ class LaramieHelpers
      *
      * @return string Formatted value
      */
-    public static function formatListValue($field, $value, $isShowUnsupporteMessage = true)
+    public static function formatListValue(FieldSpec $field, $value, $isShowUnsupporteMessage = true)
     {
-        $dataType = data_get($field, 'dataType', $field->type);
+        $dataType = $field->getDataType() ?: $field->getType();
 
         // Add the ability for a listener to override _how_ a type of data is
         // formatted for display. Also allows for user-defined field types to
@@ -78,7 +78,7 @@ class LaramieHelpers
                 return $value;
             case 'radio':
             case 'select':
-                $options = collect(data_get($field, 'options', []));
+                $options = collect($field->getOptions());
                 $value = is_array($value) ? $value : [ $value ];
                 $returnValue = collect($value)->map(function ($item, $key) use ($options) {
                     return data_get($options->firstWhere('value', $item), 'text', $item);
@@ -88,11 +88,11 @@ class LaramieHelpers
             case 'color':
                 return sprintf('<span style="color:%s">%s</span>', $value, $value);
             case 'range':
-                return sprintf('%s/%s', $value, data_get($field, 'max', 100));
+                return sprintf('%s/%s', $value, ($field->getMax() ?: 100));
             case 'password':
                 return $value && data_get($value, 'encryptedValue') ? '********' : '';
             case 'reference':
-                $tmp = $field->subtype == 'single' ? [$value] : $value;
+                $tmp = $field->getSubtype() == 'single' ? [$value] : $value;
 
                 return collect($tmp)->map(function ($e) {
                     return data_get($e, '_alias');
@@ -138,10 +138,10 @@ class LaramieHelpers
 
                 return '';
             case 'html':
-                return $value ?: data_get($field, 'html');
+                return $value ?: $field->getHtml();
             default:
                 if ($isShowUnsupporteMessage) {
-                    return sprintf('%s field type not supported (field: %s)', $field->type, $field->label);
+                    return sprintf('%s field type not supported (field: %s)', $field->getType(), $field->getLabel());
                 }
 
                 return $value;

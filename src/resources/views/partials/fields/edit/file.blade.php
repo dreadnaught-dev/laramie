@@ -1,29 +1,29 @@
 @extends('laramie::partials.fields.edit._base')
 
 @php
-    $fileInfo = data_get($item, $field->id, (object) []);
+    $fileInfo = data_get($item, $field->getId(), (object) []);
     $uploadKey = data_get($fileInfo, 'uploadKey');
-    $uploadType = data_get($field, 'subtype', data_get($field, 'type'));
+    $uploadType = $field->getSubtype() ?: $field->getType();
 @endphp
 
 @section('input')
     <div class="reference-wrapper file-wrapper{{ $uploadKey ? ' has-file is-checked' : '' }}">
         <label class="hide-when-no-file top-level-label">
-            <input type="checkbox" class="reference-ids" name="_{{ $field->id }}" {!! $uploadKey ? 'checked="checked"' : '' !!} onchange="$(this).closest('.reference-wrapper').toggleClass('is-checked', $(this).is(':checked'));" value="{{ $uploadKey }}"> Use <span class="selection-info" data-base-url="javascript:void(0);"><a class="js-file-name" onclick="dynamicFileHref(this);" href="javascript:void(0);" target="_blank"><img class="filetype-icon" src="{{ config('laramie.admin_url') }}/assets/icon/{{ data_get($fileInfo, 'uploadKey') }}_50">{{ data_get($fileInfo, 'name') }}</a></span>
+            <input type="checkbox" class="reference-ids" name="_{{ $field->getId() }}" {!! $uploadKey ? 'checked="checked"' : '' !!} onchange="$(this).closest('.reference-wrapper').toggleClass('is-checked', $(this).is(':checked'));" value="{{ $uploadKey }}"> Use <span class="selection-info" data-base-url="javascript:void(0);"><a class="js-file-name" onclick="dynamicFileHref(this);" href="javascript:void(0);" target="_blank"><img class="filetype-icon" src="{{ config('laramie.admin_url') }}/assets/icon/{{ data_get($fileInfo, 'uploadKey') }}_50">{{ data_get($fileInfo, 'name') }}</a></span>
         </label>
         <div class="hide-when-file">
             <div class="columns is-vcentered">
                 <div class="column is-half">
-                    <input type="file" class="input is-{{ $field->type }}" id="{{ $field->id }}" name="{{ $field->id }}" {!! $field->extra !!} {!! $uploadType === 'image' ? 'accept="image/*"' : '' !!} {{ $field->isRequired ? 'required' : '' }}>
+                    <input type="file" class="input is-{{ $field->getType() }}" id="{{ $field->getId() }}" name="{{ $field->getId() }}" {!! $field->getExtra() !!} {!! $uploadType === 'image' ? 'accept="image/*"' : '' !!} {{ $field->isRequired() ? 'required' : '' }}>
                 </div>
-                @if (data_get($field, 'canChooseFromLibrary') !== false)
+                @if ($field->canChooseFromLibrary())
                     <div class="column is-half">
                         <a class="tag js-toggle-reference-search">Choose from library</a>
                     </div>
                 @endif
             </div>
         </div>
-        <div class="modal reference-search" data-field="{{ data_get($field, '_fieldName') }}" data-type="{{ $model->getType() }}" data-lookup-type="laramieUpload" data-lookup-subtype="{{ $uploadType }}" data-is-single-reference="1">
+        <div class="modal reference-search" data-field="{{ $field->getFieldName() }}" data-type="{{ $model->getType() }}" data-lookup-type="laramieUpload" data-lookup-subtype="{{ $uploadType }}" data-is-single-reference="1">
             <div class="modal-background"></div>
             <div class="modal-card">
                 <header class="modal-card-head">

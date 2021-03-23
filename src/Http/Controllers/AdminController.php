@@ -13,12 +13,13 @@ use cogpowered\FineDiff\Granularity\Word;
 
 use Laramie\AdminModels\LaramieComment;
 use Laramie\Hook;
-use Laramie\Lib\LaramieHelpers;
 use Laramie\Hooks\HandleBulkAction;
-use Laramie\Hooks\PreList;
 use Laramie\Hooks\PostList;
 use Laramie\Hooks\PreEdit;
+use Laramie\Hooks\PreList;
 use Laramie\Hooks\TransformModelForEdit;
+use Laramie\Lib\FieldSpec;
+use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
 use Laramie\Services\LaramieDataService;
 
@@ -324,7 +325,7 @@ class AdminController extends Controller
 
         foreach ($fieldsFromRequest as $key => $value) {
             $key = preg_replace('/^_lf_/', '', $key);
-            if ($model->getField($key)) {
+            if ($model->getFieldSpec($key)) {
                 $listFields[$key] = (object) ['weight' => $weight, 'listed' => $value == 1];
                 $weight += 10;
             }
@@ -508,14 +509,14 @@ class AdminController extends Controller
 
         // If we're editing a new item, check to see if we need to pre-set any of the singular relationships (from QS)
         if ($item->isNew() && !session('isFromPost')) {
-            $singularRefs = collect($model->getFields())
+            $singularRefs = collect($model->getFieldsSpecs())
                 ->filter(function($item, $key) use($request) {
-                    return $item->type == 'reference'
-                    && $item->subtype == 'single'
+                    return $item->getType() == 'reference'
+                    && $item->getSubtype() == 'single'
                     && $request->get($key);
                 });
             foreach ($singularRefs as $key => $field) {
-                $item->{$key} = $this->dataService->findById($field->relatedModel, $request->get($key));
+                $item->{$key} = $this->dataService->findById($field->getRelatedModel(), $request->get($key));
             }
         }
 
@@ -610,7 +611,7 @@ class AdminController extends Controller
         Hook::fire(new TransformModelForEdit($model, $item, $user));
 
         // Load item with new values _before_ validation. If there are errors, flash updated item and redirect.
-        foreach ($model->getFields() as $fieldName => $field) {
+        foreach ($model->getFieldsSpecs() as $fieldName => $field) {
             $item->{$fieldName} = $this->updateField($field);
         }
 
@@ -707,19 +708,19 @@ class AdminController extends Controller
      *
      * @return mixed $value
      */
-    private function updateField($field, $prefix = null)
+    private function updateField(FieldSpec $field, $prefix = null)
     {
         $request = request();
-        $fieldName = $prefix.$field->_fieldName;
+        $fieldName = $prefix.$field->getFieldName();
 
-        $fieldValidation = data_get($field, 'validation');
+        $fieldValidation = $field->getValidation();
         if ($fieldValidation) {
             $this->validationRules[$fieldName] = $fieldValidation;
         }
 
         $value = $request->get($fieldName);
 
-        switch ($field->type) {
+        switch ($field->getType()) {
             case 'currency':
             case 'integer':
             case 'number':
@@ -786,7 +787,7 @@ class AdminController extends Controller
 
                     return $this->dataService->saveFile(
                         $request->file($fieldName),
-                        data_get($field, 'isPublic', config('laramie.files_are_public_by_default', false)),
+                        $field->isPublic(),
                         sprintf('%s.%s', $this->modelKey, $fieldName)
                     );
                 } elseif ($request->get('_'.$fieldName)) {
@@ -808,8 +809,8 @@ class AdminController extends Controller
             case 'reference':
                 $tmp = null;
                 $uuid = $value;
-                $tmpModel = $this->dataService->getModelByKey($field->relatedModel);
-                if ($field->subtype == 'single' && $uuid && LaramieHelpers::isValidUuid($uuid)) {
+                $tmpModel = $this->dataService->getModelByKey($field->getRelatedModel());
+                if ($field->getSubtype() == 'single' && $uuid && LaramieHelpers::isValidUuid($uuid)) {
                     // Single refs, non-array value of uuid
                     $tmp = $this->dataService->findById($tmpModel, $uuid);
                 } else {
@@ -845,7 +846,7 @@ class AdminController extends Controller
                     ->values()
                     ->all();
 
-                $aggregateItem = $field->isRepeatable ? [] : null;
+                $aggregateItem = $field->isRepeatable() ? [] : null;
 
                 $origPrefix = $prefix;
 
@@ -854,11 +855,11 @@ class AdminController extends Controller
                     $tmp = preg_replace('/[_]+$/', '', $prefix);
                     $oldKey = substr($tmp, strrpos($tmp, '_') + 1);
                     $item = (object) ['_key' => $oldKey];
-                    foreach ($field->fields as $subfieldName => $subfield) {
+                    foreach ($field->getFieldsSpecs() as $subfieldName => $subfield) {
                         $item->{$subfieldName} = $this->updateField($subfield, $prefix);
                     }
 
-                    if ($field->isRepeatable) {
+                    if ($field->isRepeatable()) {
                         $aggregateItem[] = $item;
                     } else {
                         $aggregateItem = $item;
@@ -994,10 +995,10 @@ class AdminController extends Controller
 
         $diffs = [];
 
-        foreach ($model->getFields() as $key => $field) {
+        foreach ($model->getFieldsSpecs() as $key => $field) {
             $diff = null;
 
-            switch ($field->type) {
+            switch ($field->getType()) {
                 case 'computed':
                 case 'password':
                     break;
@@ -1021,15 +1022,15 @@ class AdminController extends Controller
 
                     $aAliases = [];
                     $bAliases = [];
-                    $tmpRelatedModel = $this->dataService->getModelByKey($field->relatedModel);
+                    $tmpRelatedModel = $this->dataService->getModelByKey($field->getRelatedModel());
 
                     foreach ($a as $id) {
-                        $tmp = $this->dataService->findById($field->relatedModel, $id);
+                        $tmp = $this->dataService->findById($field->getRelatedModel(), $id);
                         $aAliases[] = data_get($tmp, $tmpRelatedModel->getAlias());
                     }
 
                     foreach ($b as $id) {
-                        $tmp = $this->dataService->findById($field->relatedModel, $id);
+                        $tmp = $this->dataService->findById($field->getRelatedModel(), $id);
                         $bAliases[] = data_get($tmp, $tmpRelatedModel->getAlias());
                     }
 
@@ -1050,7 +1051,7 @@ class AdminController extends Controller
 
             if ($diff !== null) {
                 $diffs[] = (object) [
-                    'label' => $field->label,
+                    'label' => $field->getLabel(),
                     'left' => preg_replace('/<ins>.*?<\/ins>/', '', $diff),
                     'right' => preg_replace('/<del>.*?<\/del>/', '', $diff),
                 ];

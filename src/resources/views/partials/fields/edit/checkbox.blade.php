@@ -2,12 +2,12 @@
     $hasError = $errors->has($fieldKey);
 @endphp
 
-<div class="field {{ $hasError ? 'is-danger' : '' }}" data-field-key="{{ $fieldKey }}" data-field-type="{{ $field->type }}">
+<div class="field {{ $hasError ? 'is-danger' : '' }}" data-field-key="{{ $fieldKey }}" data-field-type="{{ $field->getType() }}">
     <p class="control {{ $hasError ? 'has-icons-right' : '' }}">
         <label class="checkbox">
-            <input type="hidden" name="{{ $field->id }}" value="0">
-            <input type="checkbox" class="is-{{ $field->type }}" id="{{ $field->id }}" name="{{ $field->id }}" value="1" {{ data_get($item, $fieldKey) ? 'checked' : '' }} {!! $field->extra !!} {{ $field->isRequired ? 'required' : '' }}>
-            {{ $field->label }}
+            <input type="hidden" name="{{ $field->getId() }}" value="0">
+            <input type="checkbox" class="is-{{ $field->getType() }}" id="{{ $field->getId() }}" name="{{ $field->getId() }}" value="1" {{ data_get($item, $fieldKey) ? 'checked' : '' }} {!! $field->getExtra() !!} {{ $field->isRequired() ? 'required' : '' }}>
+            {{ $field->getLabel() }}
             @if ($hasError)
             <span class="icon is-small is-right">
               <i class="fas fa-exclamation-triangle"></i>

@@ -1,19 +1,19 @@
 @extends('laramie::partials.fields.edit._base')
 
 @php
-    $markdownValueOrDefault = isset($item->{$field->id})
-        ? data_get($item, $field->id . '.markdown')
-        : data_get($field, 'default');
+    $markdownValueOrDefault = isset($item->{$field->getId()})
+        ? data_get($item, $field->getId() . '.markdown')
+        : $field->getDefault();
 
-    $htmlValueOrDefault = isset($item->{$field->id})
-        ? data_get($item, $field->id . '.html')
+    $htmlValueOrDefault = isset($item->{$field->getId()})
+        ? data_get($item, $field->getId() . '.html')
         : \Laramie\Lib\LaramieHelpers::markdownToHtml($markdownValueOrDefault);
 @endphp
 
 @section('input')
     <div class="columns">
         <div class="column is-12-desktop is-half-fullhd markdown-textarea">
-            <textarea class="textarea markdown" rows="12" id="{{ $field->id }}" name="{{ $field->id }}" {!! $field->extra !!} {{ $field->isRequired ? 'required' : '' }}>{{ $markdownValueOrDefault }}</textarea>
+            <textarea class="textarea markdown" rows="12" id="{{ $field->getId() }}" name="{{ $field->getId() }}" {!! $field->getExtra() !!} {{ $field->isRequired() ? 'required' : '' }}>{{ $markdownValueOrDefault }}</textarea>
             <p class="is-hidden-fullhd markdown-preview-link" style="margin-top: .5rem;"><a class="tag js-preview-markdown" href="javascript:void(0);">Preview</a></p>
         </div>
         <div class="column is-half is-hidden-touch is-hidden-desktop-only is-hidden-widescreen-only markdown-preview">

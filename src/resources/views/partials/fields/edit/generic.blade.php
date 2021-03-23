@@ -36,17 +36,17 @@
 @endphp
 
 @section('input')
-    @if (in_array($field->type, $allowedInputTypes))
+    @if (in_array($field->getType(), $allowedInputTypes))
         <input
-            type="{{ $field->type }}"
-            class="input is-{{ $field->type }}"
-            id="{{ $field->id }}"
-            name="{{ $field->id }}"
+            type="{{ $field->getType() }}"
+            class="input is-{{ $field->getType() }}"
+            id="{{ $field->getId() }}"
+            name="{{ $field->getId() }}"
             value="{{ $valueOrDefault }}"
-            {!! $field->extra !!}
-            {{ $field->isRequired ? 'required' : '' }}
+            {!! $field->getExtra() !!}
+            {{ $field->isRequired() ? 'required' : '' }}
         >
     @else
-        Input type is is not yet implemented ({{ $field->type }})
+        Input type is is not yet implemented ({{ $field->getType() }})
     @endif
 @overwrite

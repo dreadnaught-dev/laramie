@@ -16,8 +16,13 @@ abstract class JsonBackedObject
         return $this->data;
     }
 
-    protected function get($key, $fallback = null)
+    public function get($key, $fallback = null)
     {
         return data_get($this->data, $key, $fallback);
+    }
+
+    public function set($key, $value)
+    {
+        return data_set($this->data, $key, $value);
     }
 }

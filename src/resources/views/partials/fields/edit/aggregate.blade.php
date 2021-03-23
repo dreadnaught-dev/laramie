@@ -2,31 +2,31 @@
     $aggregateFieldKey = $fieldKey;
     $aggregateField = $field;
 
-    $isRepeatable = $field->isRepeatable;
+    $isRepeatable = $field->isRepeatable();
     $aggregateDepth = isset($aggregateDepth) ? $aggregateDepth + 1 : 1;
 
-    $showWhen = null;
+    $showWhen = $field->getShowWhen();
 
-    if (data_get($field, 'showWhen')) {
-        $parts = array_filter(array_slice(explode('}}_', $aggregateField->id), 0, -1));
-        $parts[] = data_get($aggregateField, 'showWhen');
+    if ($showWhen) {
+        $parts = array_filter(array_slice(explode('}}_', $aggregateField->getId()), 0, -1));
+        $parts[] = $aggregateField->getShowWhen();
         $showWhen = implode('}}_', $parts);
     }
 @endphp
 
-<div class="aggregate-outer-wrapper has-margin-bottom {{ data_get($aggregateField, 'asTab') ? 'is-tab tab-'.\Str::slug($aggregateField->label) . ($selectedTab == \Str::slug($aggregateField->label) ? ' is-active' : '') : '' }}"
+<div class="aggregate-outer-wrapper has-margin-bottom {{ $aggregateField->asTab() ? 'is-tab tab-'.\Str::slug($aggregateField->getLabel()) . ($selectedTab == \Str::slug($aggregateField->getLabel()) ? ' is-active' : '') : '' }}"
     {!! $showWhen ? 'data-show-when="'.$showWhen.'"' : '' !!}
 >
-    @if (data_get($aggregateField, 'isHideLabel') !== true)
+    @if ($aggregateField->isHideLabel()) !== true)
         <h4 class="title is-4" style="margin: 1.5rem 0 .75rem">
-            {{ $aggregateField->isRepeatable ? $aggregateField->labelPlural : $aggregateField->label }}
+            {{ $aggregateField->isRepeatable() ? $aggregateField->getLabelPlural() : $aggregateField->getLabel() }}
             @if ($isRepeatable)
-                &nbsp;&nbsp;<a class="tag is-primary js-add-aggregate" data-type="{{ $field->_fieldName }}">Add {{ preg_match('/^[aeiou]/i', $field->label) ? 'an' : 'a'}} {{ $field->label }}</a>
+                &nbsp;&nbsp;<a class="tag is-primary js-add-aggregate" data-type="{{ $field->getFieldName() }}">Add {{ preg_match('/^[aeiou]/i', $field->getLabel()) ? 'an' : 'a'}} {{ $field->getLabel() }}</a>
             @endif
         </h4>
     @endif
 
-    <div class="aggregate-holder padded content {{ data_get($aggregateField, 'isUnwrap') === true ? 'unwrapped' : 'wrapped' }}" data-type="{{ $field->_fieldName }}" data-template="{{ $metaId . $field->_template }}" data-is-repeatable="{{ $field->isRepeatable ? '1' : '0' }}" data-min-items="{{ data_get($field, 'minItems') }}" data-max-items="{{ data_get($field, 'maxItems') }}" data-empty-message="No {{ $aggregateField->labelPlural }} added yet">
+    <div class="aggregate-holder padded content {{ $aggregateField->isUnwrap() ? 'unwrapped' : 'wrapped' }}" data-type="{{ $field->getFieldName() }}" data-template="{{ $metaId . $field->getTemplate() }}" data-is-repeatable="{{ $field->isRepeatable() ? '1' : '0' }}" data-min-items="{{ $field->getMinItems() }}" data-max-items="{{ $field->getMaxItems() }}" data-empty-message="No {{ $aggregateField->getLabelPlural() }} added yet">
         @if ($isRepeatable)
             <?php /*<p>No {{ $aggregateField->labelPlural }} added yet</p>*/ ?>
         @endif
@@ -35,35 +35,35 @@
             <script>
                 window.globals.aggregates = window.globals.aggregates || {};
                 window.globals.aggregates['{{ $item->id ?: 'new' }}'] = window.globals.aggregates['{{ $item->id ?: 'new' }}'] || {};
-                window.globals.aggregates['{{ $item->id ?: 'new' }}']['{{ $aggregateField->_fieldName }}'] = {!! json_encode(data_get($item, $fieldKey, $isRepeatable ? [] : (object) [])) !!};
+                window.globals.aggregates['{{ $item->id ?: 'new' }}']['{{ $aggregateField->getFieldName() }}'] = {!! json_encode(data_get($item, $fieldKey, $isRepeatable ? [] : (object) [])) !!};
             </script>
         @endif
 
         @push('aggregate-scripts')
-            <script id="{{ $metaId . $field->_template }}" type="text/x-handlebars-template">
+            <script id="{{ $metaId . $field->getTemplate() }}" type="text/x-handlebars-template">
                 <div class="media field">
                     @if ($isRepeatable)
                         <figure class="media-left">
-                            <span class="icon drag-{{ $field->_fieldName }}">
+                            <span class="icon drag-{{ $field->getFieldName() }}">
                                 <i class="fas fa-grip-vertical"></i>
                             </span>
                         </figure>
                     @endif
                     <div class="media-content">
-                        @foreach (data_get($aggregateField, 'fields') as $fieldKey => $field)
+                        @foreach ($aggregateField->getFieldsSpecs() as $fieldKey => $field)
                             @php
-                                $valueOrDefault = isset($item->{$field->id})
-                                    ? data_get($item, $field->id)
-                                    : data_get($field, 'default');
+                                $valueOrDefault = isset($item->{$field->getId()})
+                                    ? data_get($item, $field->getId())
+                                    : $field->getDefault();
                             @endphp
-                            @if ($field->isEditable)
-                                @includeIfFallback('laramie::partials.fields.edit.'.$field->type, 'laramie::partials.fields.edit.generic')
+                            @if ($field->isEditable())
+                                @includeIfFallback('laramie::partials.fields.edit.'.$field->getType(), 'laramie::partials.fields.edit.generic')
                             @endif
                         @endforeach
                     </div>
                     @if ($isRepeatable)
                         <figure class="media-right">
-                            <a class="delete js-remove-aggregate" title="Remove this {{ $aggregateField->label }}"></a>
+                            <a class="delete js-remove-aggregate" title="Remove this {{ $aggregateField->getLabel() }}"></a>
                         </figure>
                     @endif
                 </div>

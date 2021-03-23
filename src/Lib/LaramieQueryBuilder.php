@@ -337,7 +337,7 @@ class LaramieQueryBuilder
         $attributesToUpdate = [];
         $jsonAttributes = [];
 
-        $jsonModel = $this->dataService->getModelByKey($this->callingClass::getJsonClass());
+        $model = $this->dataService->getModelByKey($this->callingClass::getJsonClass());
 
         foreach ($attributes as $key => $value) {
             if (in_array($key, ['id', 'user_id', 'type', 'data', 'created_at', 'updated_at'])) {
@@ -345,10 +345,12 @@ class LaramieQueryBuilder
             } else {
                 $path = preg_split('/(\.|=\>)/', $key);
 
-                for ($i = 0, $fields = $jsonModel->getFields(); $i < count($path); ++$i ) {
-                    $jsonField = data_get($fields, $path[$i]);
+                // @preston -- stopped here. convert all references of getFields to getFieldsSpecs and update all fields iterated over to use FieldSpec methods.
+                // Once done, rename getFieldSpec and getFieldsSpecs to getField and getFields.
+                for ($i = 0, $fields = $model->getFieldsSpecs(); $i < count($path); ++$i ) {
+                    $field = data_get($fields, $path[$i]);
 
-                    $fieldType = data_get($jsonField, 'type');
+                    $fieldType = $field->getType();
 
                     if ($fieldType === 'computed') {
                         throw new Exception('You may not update computed attributes.');
@@ -356,10 +358,10 @@ class LaramieQueryBuilder
                         throw new Exception('You may not update `reference` attributes via `update()`.');
                     } elseif ($fieldType === 'aggregate') {
                         // Unfortunately, we can't update array values en-masse
-                        if (data_get($jsonField, 'isRepeatable')) {
-                            throw new Exception('You may not update aggregate arrays in this way (aggregate fields where `isRepeatable` is true).');
+                        if (data_get($field, 'isRepeatable')) {
+                            throw new Exception('You may not update repeatable aggregate fields this way.');
                         }
-                        $fields = data_get($jsonField, 'fields'); // select aggregate's fields to dive into
+                        $fields = $field->getFieldsSpecs(); // select aggregate's fields to dive into
                     }
                 }
 

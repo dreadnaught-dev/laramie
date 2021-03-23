@@ -1,1 +1,1 @@
-{!! $field->html !!}
+{!! $field->getHtml() !!}

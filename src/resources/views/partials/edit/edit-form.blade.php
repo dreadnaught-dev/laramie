@@ -11,7 +11,7 @@
     <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;" tabindex="-1" />
 
     @php
-        $tabbedAggregates = collect($model->getFields())->filter(function($item){ return $item->isEditable && $item->type == 'aggregate' && data_get($item, 'asTab', false); });
+        $tabbedAggregates = collect($model->getFieldsSpecs())->filter(function($item){ return $item->isEditable() && $item->getType() == 'aggregate' && $item->asTab(); });
         $hasTabs = count($tabbedAggregates) > 0;
     @endphp
 
@@ -24,9 +24,9 @@
               </a>
             </li>
             @foreach ($tabbedAggregates as $aggregate)
-                <li {!! $selectedTab == \Str::slug($aggregate->label) ? 'class="is-active"' : '' !!}>
-                  <a data-tab="{{ \Str::slug($aggregate->label) }}">
-                    {{ $aggregate->isRepeatable ? $aggregate->labelPlural : $aggregate->label }}
+                <li {!! $selectedTab == \Str::slug($aggregate->getLabel()) ? 'class="is-active"' : '' !!}>
+                  <a data-tab="{{ \Str::slug($aggregate->getLabel()) }}">
+                    {{ $aggregate->isRepeatable() ? $aggregate->getLabelPlural() : $aggregate->getLabel() }}
                   </a>
                 </li>
             @endforeach
@@ -34,14 +34,14 @@
         </div>
     @endif
 
-    @foreach ($model->getFields() as $fieldKey => $field)
-        @if ($field->isEditable)
+    @foreach ($model->getFieldsSpecs() as $fieldKey => $field)
+        @if ($field->isEditable())
             @php
-                $valueOrDefault = isset($item->{$field->id})
-                    ? data_get($item, $field->id)
-                    : data_get($field, 'default');
+                $valueOrDefault = isset($item->{$field->getId()})
+                    ? data_get($item, $field->getId())
+                    : $field->getDefault();
             @endphp
-            @includeIfFallback('laramie::partials.fields.edit.'.$field->type, 'laramie::partials.fields.edit.generic')
+            @includeIfFallback('laramie::partials.fields.edit.'.$field->getType(), 'laramie::partials.fields.edit.generic')
         @endif
     @endforeach
 

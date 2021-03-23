@@ -3,9 +3,9 @@
 @section('input')
     <textarea
         class="textarea"
-        id="{{ $field->id }}"
-        name="{{ $field->id }}"
-        {!! $field->extra !!}
-        {{ $field->isRequired ? 'required' : '' }}
+        id="{{ $field->getId() }}"
+        name="{{ $field->getId() }}"
+        {!! $field->getExtra() !!}
+        {{ $field->isRequired() ? 'required' : '' }}
     >{{ $valueOrDefault }}</textarea>
 @overwrite
