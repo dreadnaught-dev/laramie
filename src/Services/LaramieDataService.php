@@ -267,7 +267,7 @@ class LaramieDataService
                     // Check to see if we need to manipulate `$value` for searching (currently limited to date fields):
                     $modelField = $model->getFieldSpec($filter->field);
                     if ($operation !== 'between-dates' && (in_array($filter->field, ['_created_at', '_updated_at'])
-                        || in_array(data_get($modelField, 'dataType', data_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local'])))
+                        || in_array($modelField->getDataType(), ['dbtimestamp', 'timestamp', 'date', 'datetime-local'])))
                     {
                         try {
                             $value = Carbon::parse($value)->timestamp;
@@ -359,7 +359,7 @@ class LaramieDataService
         return $query;
     }
 
-    public function getSearchSqlFromFieldName($model, $field, $value = null)
+    public function getSearchSqlFromFieldName($model, string $field, $value = null)
     {
         $model = $this->getModelByKey($model);
 
@@ -368,14 +368,14 @@ class LaramieDataService
             return $field.'::text';
         }
 
-        if (in_array($field, ['created_at', 'updated_at'])) {
+        if (array_key_exists($field, config('laramie.laramie_data_fields'))) {
             return $field;
         }
 
         $modelField = $model->getFieldSpec($field);
 
-        $isComputedField = data_get($modelField, 'type') === 'computed';
-        $modelFieldType = data_get($modelField, 'dataType', data_get($modelField, 'type'));
+        $isComputedField = $modelField->getType() === 'computed';
+        $modelFieldType = $modelField->getDataType();
 
         // If searching by the `data` field, don't transform -- it's a manual query
         if (preg_match('/\bdata\b/', $field)) {
@@ -383,7 +383,7 @@ class LaramieDataService
         }
         if ($modelFieldType == 'dbtimestamp') {
             if ($isComputedField) {
-                $field = 'date_part(\'epoch\', '.preg_replace('/^_/', '', $modelField->sql).'::timestamp)::int';
+                $field = 'date_part(\'epoch\', '.preg_replace('/^_/', '', $modelField->getSql()).'::timestamp)::int';
             } else {
                 $field = 'date_part(\'epoch\', '.preg_replace('/^_/', '', $field).'::timestamp)::int';
             }
@@ -398,7 +398,7 @@ class LaramieDataService
             // listed/searched be searched.
             return null;
         } elseif ($modelFieldType == 'computed') {
-            $field = $modelField->sql;
+            $field = $modelField->getSql();
         } elseif ($modelFieldType == 'boolean') {
             $field = '(data->>\''.$field.'\')::boolean';
         } elseif ($modelFieldType == 'timestamp') {
@@ -416,17 +416,17 @@ class LaramieDataService
             else {
                 // If we're searching a reference field by a UUID, don't do the gymnastics of searching by its alias
                 $field = 'data->>\''.$field.'\'';
-                $relatedModel = $this->getModelByKey($modelField->relatedModel);
+                $relatedModel = $this->getModelByKey($modelField->getRelatedModel());
                 $relatedAlias = $relatedModel->getFieldSpec($relatedModel->getAlias());
 
                 // If the reference's alias is a computed field, modify the SQL, replacing `laramie_data` with `n2`, because we're nesting the subquery
                 $fieldSql = $relatedAlias->getType() == 'computed' ? preg_replace('/laramie_data\./', 'n2.', $relatedAlias->getSql()) : sprintf('n2.data->>\'%s\'', $relatedAlias->getFieldName());
 
-                if ($modelField->subtype == 'many') {
+                if ($modelField->getSubtype() == 'many') {
                     // @optimize -- this subselect takes a long time for large tables. Change to something like `data->>'field' in (select id::text from laramie_data where type='$relatedType' and data->>'$field' ilike 'keywords%')
-                    $field = '(select string_agg('.$fieldSql.', \'|\') from laramie_data as n2 where n2.id::text in (select * from json_array_elements_text((laramie_data.data->>\''.$modelField->_fieldName.'\')::json)))';
+                    $field = '(select string_agg('.$fieldSql.', \'|\') from laramie_data as n2 where n2.id::text in (select * from json_array_elements_text((laramie_data.data->>\''.$modelField->getFieldName().'\')::json)))';
                 } else {
-                    $field = '(select '.$fieldSql.' from laramie_data as n2 where (laramie_data.data->>\''.$modelField->_fieldName.'\')::uuid = n2.id)';
+                    $field = '(select '.$fieldSql.' from laramie_data as n2 where (laramie_data.data->>\''.$modelField->getFieldName().'\')::uuid = n2.id)';
                 }
             }
         } else {

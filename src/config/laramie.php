@@ -203,4 +203,12 @@ return [
     'web_middleware' => ['web', 'auth', RequestLogger::class],
 
     //'api_middleware' => ['web', 'auth', LaramieApiAuthenticate::class, RequestLogger::class],
+
+    /*
+    |--------------------------------------------------------------------------
+    | dbo.laramie_data fields
+    |--------------------------------------------------------------------------
+    */
+    'laramie_data_fields' => ['id' => 1, 'user_id' => 1, 'type' => 1, 'data' => 1, 'created_at' => 1, 'updated_at' => 1],
+
 ];

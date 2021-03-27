@@ -23,13 +23,13 @@ class ModelSpec extends JsonBackedObject implements FieldContainer
     public function getQuickSearch() : array { return $this->get('quickSearch'); }
     public function getRefs() : array { return collect($this->get('refs', []))->map(function($item) { return new RefSpec($item); })->toArray(); }
     public function getType() : string { return $this->get('_type'); }
-    public function isDeletable() : bool { return $this->get('isDeletable') !== false; }
-    public function isDisableMeta() : bool { return $this->get('isDisableMeta', false); }
-    public function isDisableRevisions() : bool { return $this->get('isDisableRevisions', false) === true; }
-    public function isEditable() : bool { return $this->get('isEditable', true); }
-    public function isListable() : bool { return $this->get('isListable', true); }
-    public function isSingular() : bool { return $this->get('isSingular', false); }
-    public function isSystemModel() : bool { return $this->get('isSystemModel', false); }
+    public function isDeletable() : bool { return $this->get('isDeletable') !== false; } // default to true
+    public function isDisableMeta() : bool { return $this->get('isDisableMeta') === true; } // default to false
+    public function isDisableRevisions() : bool { return $this->get('isDisableRevisions') === true; } // default to false
+    public function isEditable() : bool { return $this->get('isEditable') !== false; } // default to true
+    public function isListable() : bool { return $this->get('isListable') !== false; } // default to true
+    public function isSingular() : bool { return $this->get('isSingular') === true; } // default to false
+    public function isSystemModel() : bool { return $this->get('isSystemModel') === true; } // default to false
     public function setJsonValidator($jsonValidationSchema) { return $this->data->{'_jsonValidator'} = $jsonValidationSchema; }
 
     /* Field-related functions */

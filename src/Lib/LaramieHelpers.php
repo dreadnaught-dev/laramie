@@ -50,7 +50,7 @@ class LaramieHelpers
      */
     public static function formatListValue(FieldSpec $field, $value, $isShowUnsupporteMessage = true)
     {
-        $dataType = $field->getDataType() ?: $field->getType();
+        $dataType = $field->getDataType();
 
         // Add the ability for a listener to override _how_ a type of data is
         // formatted for display. Also allows for user-defined field types to

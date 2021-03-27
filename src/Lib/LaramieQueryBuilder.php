@@ -88,8 +88,19 @@ class LaramieQueryBuilder
             });
         }
         else {
-            $column = $this->translateColumn($column, $value ?: $operator);
-            $this->qb->where($column, $operator, $value, $boolean);
+            // If the operator is `=`, we can use the generally more performant gin index search.
+            if (
+                is_string($column) // don't operate on DB::raw columns
+                && ($operator === '=' || $value === null) // only operate on equality search
+                && !array_key_exists($column, config('laramie.laramie_data_fields')) // don't operate on concrete columns
+                && !preg_match('/\bdata\b/', $column) // don't operate on columns that may be accessing nested data props
+            ) {
+                $this->qb->where('data', '@>', DB::raw('\'{"'.$column.'":'.json_encode($value ?: $operator).'}\''));//$value ?: $operator, $boolean);
+            }
+            else {
+                $column = $this->translateColumn($column, $value ?: $operator);
+                $this->qb->where($column, $operator, $value, $boolean);
+            }
         }
 
         return $this;
@@ -453,7 +464,7 @@ class LaramieQueryBuilder
 
     protected function translateColumn($column, $value = null, $isWrapInDBRaw = true)
     {
-        if (gettype($column) == 'string') {
+        if (is_string($column)) {
             $sql = $this->dataService->getSearchSqlFromFieldName($this->callingClass::getJsonClass(), $column, $value);
 
             return $isWrapInDBRaw

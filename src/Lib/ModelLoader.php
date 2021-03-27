@@ -48,7 +48,7 @@ class ModelLoader
             ->all();
 
         // Cache the "loaded" config by saving a hydrated version of it to storage
-        if (true || $configCachedTime < $configModifiedTime) {
+        if ($configCachedTime < $configModifiedTime) {
             $models = (object) [];
             $menu = (object) [];
 
@@ -226,7 +226,7 @@ class ModelLoader
             $config->models = $models;
             Hook::fire(new ConfigLoaded($config));
 
-            // Add json validation _post_ `ConfigLoaded` event in case fields were dynamically added to models via `ConfigLoaded` event
+            // Add json validation _after_ `ConfigLoaded` event in case fields were dynamically added in `ConfigLoaded` hook
             foreach ($config->models as $model) {
                 $model->setJsonValidator(static::getValidationSchema($model));
             }
@@ -577,14 +577,14 @@ class ModelLoader
             case 'number':
             case 'range':
                 $validationType = (object) ['type' => 'number'];
-                if (data_get($field, 'isIntegerOnly')) {
+                if ($field->isIntegerOnly()) {
                     $validationType->multipleOf = 1.0;
                 }
-                if (is_numeric(data_get($field, 'min'))) {
-                    $validationType->minimum = data_get($field, 'min');
+                if (is_numeric($field->getMin())) {
+                    $validationType->minimum = $field->getMin();
                 }
-                if (is_numeric(data_get($field, 'max'))) {
-                    $validationType->maximum = data_get($field, 'max');
+                if (is_numeric($field->getMax())) {
+                    $validationType->maximum = $field->getMax();
                 }
                 break;
             case 'integer':
@@ -634,7 +634,7 @@ class ModelLoader
             case 'file':
             case 'image':
             case 'reference':
-                if (data_get($field, 'subtype') == 'many') {
+                if ($field->getSubtype() === 'many') {
                     // Multi reference
                     $validationType = (object) [
                         'type' => 'array',
@@ -652,7 +652,7 @@ class ModelLoader
                 }
                 break;
             case 'aggregate':
-                $validationType = data_get($field, 'isRepeatable') // @todo -- dive into aggregate fields and correctly set `types` and `patterns` for the fields where applicable. Note that this is most important for non-admin saving; normal Laravel validation still happens via the admin.
+                $validationType = $field->isRepeatable() // @todo -- dive into aggregate fields and correctly set `types` and `patterns` for the fields where applicable. Note that this is most important for non-admin saving; normal Laravel validation still happens via the admin.
                     ? (object) ['type' => 'array']
                     : (object) ['type' => 'object'];
                 break;

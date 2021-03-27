@@ -19,16 +19,16 @@ class FieldSpec extends JsonBackedObject implements FieldContainer
     public function getType() { return $this->get('type'); }
     public function getValidation() { return $this->get('validation'); }
     public function getWeight() { return $this->get('weight'); }
-    public function isEditable() { return $this->get('isEditable'); }
-    public function isListByDefault() { return $this->get('isListByDefault'); }
-    public function isListable() { return $this->get('isListable'); }
-    public function isMetaField() { return $this->get('isMetaField') !== true; }
-    public function isRequired() { return $this->get('isRequired'); }
-    public function isSearchable() { return $this->get('isSearchable') !== false; }
-    public function isSortable() { return $this->get('isSortable') !== false; }
+    public function isEditable() { return $this->get('isEditable') !== false; } // default to true
+    public function isListByDefault() { return $this->get('isListByDefault') !== false; } // default to true
+    public function isListable() { return $this->get('isListable') !== false; } // default to true
+    public function isMetaField() { return $this->get('isMetaField') === true; } // default to false
+    public function isRequired() { return $this->get('isRequired') === true; } // default to false
+    public function isSearchable() { return $this->get('isSearchable') !== false; } // default to true
+    public function isSortable() { return $this->get('isSortable') !== false; } // default to true
 
     /* Computed field attributes */
-    public function getDataType() { return $this->get('dataType'); }
+    public function getDataType() { return $this->get('dataType', $this->getType()); }
     public function getSql() { return $this->get('sql'); }
     public function isDeferred() { return $this->get('isDeferred') === true; }
 
