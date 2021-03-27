@@ -1,13 +1,14 @@
-var babel    = require('gulp-babel');
-var fixme    = require('fixme');
-var fs       = require('fs');
-var gulp     = require('gulp');
-var noop     = require('gulp-noop');
-var plumber  = require('gulp-plumber'); // better error handling; don't totally break on an error, but still show it
-var prettier = require('gulp-prettier');
-var sass     = require('gulp-dart-sass');
-var uglify   = require('gulp-uglify');
-var watch    = require('gulp-watch'); // more granular watch ability than gulp.watch. For a discussion on gulp.watch vs gulp-watch see http://stackoverflow.com/a/22391756
+var babel      = require('gulp-babel');
+var fs         = require('fs');
+var gulp       = require('gulp');
+var noop       = require('gulp-noop');
+var postcss    = require('gulp-postcss');
+var sourcemaps = require('gulp-sourcemaps');
+var plumber    = require('gulp-plumber'); // better error handling; don't totally break on an error, but still show it
+var prettier   = require('gulp-prettier');
+var sass       = require('gulp-dart-sass');
+var uglify     = require('gulp-uglify');
+var watch      = require('gulp-watch'); // more granular watch ability than gulp.watch. For a discussion on gulp.watch vs gulp-watch see http://stackoverflow.com/a/22391756
 
 var vendorJs = [
   './node_modules/cropperjs/dist/cropper.min.js',
@@ -33,6 +34,7 @@ gulp.task('default', gulp.series(gulp.parallel(styles, scripts), watchTask));
 function watchTask() {
   watch(['resources/sass/**/*.scss'], { ignoreInitial: false }, styles);
   watch(['resources/js/**/*.js'], { ignoreInitial: false }, scripts);
+  watch(['resources/views/**/*.php'], { ignoreInitial: false }, tailwind);
 }
 
 /* CONCRETE TASKS */
@@ -68,6 +70,18 @@ function styles() {
     .on('end', () => console.log('Regenerated styles...'));
 };
 
+gulp.task('tailwind', tailwind);
+function tailwind() {
+  return gulp.src(['resources/css/tailwind.css'])
+    .pipe(plumber())
+    .pipe(sourcemaps.init())
+    .pipe(postcss())
+    .pipe(sourcemaps.write('.'))
+    .pipe(gulp.dest('./public/css'))
+    .pipe(process.env.LIVE_COPY ? gulp.dest('../../../../public/laramie/admin/css') : noop())
+    .on('end', () => console.log('Regenerated tailwind styles...'));
+};
+
 gulp.task('scripts', scripts);
 function scripts() {
   return gulp.src('resources/js/**/*.js')
@@ -78,14 +92,4 @@ function scripts() {
     .pipe(process.env.LIVE_COPY ? gulp.dest('../../../../public/laramie/admin/js') : noop())
     .on('end', () => console.log('Regenerated scripts...'));
 };
-
-gulp.task('notes', function() {
-  fixme({
-    path:                 process.cwd(),
-    ignored_directories:  ['node_modules/**', 'vendor/**', '.git/**', 'public/**'],
-    file_patterns:        ['**/*.js', '**/*.php'],
-    file_encoding:        'utf8',
-    line_length_limit:    1000
-  });
-});
 
