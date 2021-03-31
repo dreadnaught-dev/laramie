@@ -40,11 +40,6 @@
         <div class="container is-fluid">
             <div class="has-text-centered">
                 Powered by <a href="https://github.com/dreadnaught-dev/laramie"><strong style="text-decoration: underline; text-decoration-skip: ink;">Laramie</strong></a>
-                <a style="margin-left: 1.5rem;" href="https://github.com/dreadnaught-dev/laramie" target="_blank">
-                    <span class="icon" style="color: #333;">
-                        <i class="fab fa-github"></i>
-                    </span>
-                </a>
             </div>
         </div>
     </footer>

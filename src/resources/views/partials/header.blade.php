@@ -35,11 +35,8 @@
             <div class="navbar-item has-dropdown is-hoverable">
                 <div class="navbar-link" title="Notifications">
                     <span class="icon" style="font-size: 1.2em;">
-                        <span class="fa-layers fa-fw">
-                            <i class="far fa-bell"></i>
-                            @if (count($alerts))
-                                <i class="fas fa-circle" style="color: tomato" data-fa-transform="shrink-8 up-5 right-5"></i>
-                            @endif
+                        <i class="g-icon"></i>
+                            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
                         </span>
                     </span>
                 </div>
@@ -81,12 +78,8 @@
                     <a class="navbar-item" href="{{ route('logout') }}"
                         onclick="event.preventDefault();
                                  document.getElementById('logout-form').submit();">
-                        <span class="icon"><i class="fas fa-lg fa-sign-out-alt"></i></span>&nbsp;Sign out
+                        <span class="icon"><i class="g-icon"><svg xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><g><path d="M0,0h24v24H0V0z" fill="none"/></g><g><path d="M17,8l-1.41,1.41L17.17,11H9v2h8.17l-1.58,1.58L17,16l4-4L17,8z M5,5h7V3H5C3.9,3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h7v-2H5V5z"/></g></svg></i></span>&nbsp;Sign out
                     </a>
-                    <hr class="navbar-divider">
-                    <div class="navbar-item is-hidden-touch is-pulled-right">
-                        <a href="https://github.com/laramie-cms/laramie" target="_blank"><span class="icon" style="color: #333;"><i class="fab fa-lg fa-github"></i></span></a>
-                    </div>
                 </div>
             </div>
 

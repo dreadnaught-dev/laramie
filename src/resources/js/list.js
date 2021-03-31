@@ -67,6 +67,19 @@ $(document).ready(function() {
         return false;
     });
 
+
+    //if (history.pushState) {
+        //$('#quick-search').on('change', function() {
+        //});
+        //if ($("#is-filtering").val() == "1") {
+            //$(e.target)
+                //.find(".post-only")
+                //.remove();
+        //}
+        ////var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?myNewUrlQuery=1';
+        ////window.history.pushState({path:newurl},'',newurl);
+    //}
+
     $(document).on("keyup keydown", function(e) {
         globals.isShiftDetected = e.shiftKey;
     });
@@ -82,7 +95,7 @@ $(document).ready(function() {
         } else if (isChecked) {
             var $tr = $item.closest("tr");
             if (globals.lastRowSelected && globals.isShiftDetected) {
-                $trs = $("#main-list-table tbody tr");
+                var $trs = $("#main-list-table tbody tr");
                 var start = $trs.index($tr);
                 var end = $trs.index(globals.lastRowSelected);
                 for (var i = $trs.index($tr); i != $trs.index(globals.lastRowSelected); i += end >= start ? 1 : -1) {

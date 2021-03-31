@@ -16,7 +16,6 @@ var vendorJs = [
   './node_modules/jquery/dist/jquery.min.js',
   './node_modules/tributejs/dist/tribute.min.js',
   './node_modules/trix/dist/trix.js',
-  './node_modules/@fortawesome/fontawesome-free/js/all.js',
   './node_modules/select2/dist/js/select2.min.js',
 ];
 
@@ -47,7 +46,7 @@ function runPrettier() {
 gulp.task('copy-vendor', copyVendor);
 function copyVendor() {
   for (var i = 0; i < vendorJs.length; i ++) {
-    var dest = './public/js' + (/fontawesome/i.test(vendorJs[i]) ? '/fontawesome' : '');
+    var dest = './public/js';
     gulp.src(vendorJs[i])
       .pipe(gulp.dest(dest))
   }
