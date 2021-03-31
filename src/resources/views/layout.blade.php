@@ -50,7 +50,6 @@
     <script src="/laramie/admin/js/tribute.min.js"></script>
     <script src="/laramie/admin/js/select2.min.js"></script>
     <script src="/laramie/admin/js/main.js"></script>
-    <script src="/laramie/admin/js/fontawesome/all.js"></script>
     @stack('scripts')
 </body>
 </html>
