@@ -37,6 +37,12 @@ function watchTask() {
   watch(['resources/views/**/*.php'], { ignoreInitial: false }, tailwind);
 }
 
+/* META TASKS (TASKS THAT WRAP OTHERS) */
+gulp.task('watch-templates', gulp.series(gulp.parallel(tailwind), watchTemplates));
+function watchTemplates() {
+  watch(['resources/views/**/*.php'], { ignoreInitial: false }, tailwind);
+}
+
 /* CONCRETE TASKS */
 gulp.task('prettier', runPrettier);
 function runPrettier() {
@@ -74,9 +80,9 @@ gulp.task('tailwind', tailwind);
 function tailwind() {
   return gulp.src(['resources/css/tailwind.css'])
     .pipe(plumber())
-    .pipe(sourcemaps.init())
+    //.pipe(sourcemaps.init())
     .pipe(postcss())
-    .pipe(sourcemaps.write('.'))
+    //.pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('./public/css'))
     .pipe(process.env.LIVE_COPY ? gulp.dest('../../../../public/laramie/admin/css') : noop())
     .on('end', () => console.log('Regenerated tailwind styles...'));

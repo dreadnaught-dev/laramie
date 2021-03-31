@@ -35,7 +35,7 @@
     "copy-vendor": "gulp copy-vendor",
     "prettier": "gulp prettier",
     "notes": "gulp notes",
-    "tailwind": "TAILWIND_MODE=prod gulp postcss"
+    "watch-templates": "TAILWIND_MODE=prod gulp watch-templates"
   },
   "dependencies": {
     "gulp-prettier": "^2.3.0",

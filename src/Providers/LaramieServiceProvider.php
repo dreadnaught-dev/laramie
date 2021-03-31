@@ -63,7 +63,7 @@ class LaramieServiceProvider extends ServiceProvider
         });
 
         // Inject data into views and partials as needed
-        \View::composer(['laramie::layout'], function ($view) {
+        \View::composer(['laramie::layout', 'laramie::layout-tailwind'], function ($view) {
             $systemUsers = DB::table('users')
                 ->whereRaw(DB::raw('jsonb_exists(data, \'roles\')')) // TODO -- do we need to add a more specific attribute? assumption is that anyone with roles is some sort of backend user.
                 ->select([config('laramie.username')])

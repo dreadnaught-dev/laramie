@@ -1,4 +1,4 @@
-@extends('laramie::layout')
+@extends('laramie::layout-tailwind')
 
 @php
     function recursivelyPrintMenus($node, $depth, $user, $dataService)
