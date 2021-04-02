@@ -3,7 +3,7 @@
         ($item->isUpdating() && $user->hasAccessToLaramieModel($model->getType(), 'update'));
 @endphp
 
-<form id="edit-form" class="edit-container {{ $selectedTab !== '_main' ? 'has-tab-selected' : '' }}" action="{{ url()->full() }}" method="post" enctype="multipart/form-data" data-item-id="{{ $item->id ?: 'new' }}">
+<form id="edit-form" class="edit-container {{ $selectedTab !== '_main' ? 'has-tab-selected' : '' }}" action="{{ url()->full() }}" method="post" enctype="multipart/form-data" data-item-id="{{ $item->id ?: 'new' }}" autocomplete="off">
     {!! !$canSave ? '<fieldset disabled>' : '' !!}
     {{ csrf_field() }}
     <input type="hidden" name="_metaId" value="{{ $metaId }}">

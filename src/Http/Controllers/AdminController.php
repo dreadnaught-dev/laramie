@@ -177,6 +177,10 @@ class AdminController extends Controller
 
         $listView = $model->getListView();
 
+        if ($request->ajax()) {
+            $listView = 'laramie::list-table';
+        }
+
         $extra->response = view($listView)
             ->with('model', $model)
             ->with('listableFields', $listableFields)
