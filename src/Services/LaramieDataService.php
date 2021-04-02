@@ -749,9 +749,10 @@ class LaramieDataService
         }
 
         $model = $this->getModelByKey($model);
+        $factory = data_get($model, 'factory', LaramieModel::class);
 
         if ($id == 'new') {
-            return new LaramieModel();
+            return $factory::load(null, true);
         }
 
         if ($id === null) {
@@ -770,8 +771,6 @@ class LaramieDataService
         if ($dbItem === null) {
             return null;
         }
-
-        $factory = data_get($model, 'factory', LaramieModel::class);
 
         $item = array_first($this->prefetchRelationships($model, [$factory::load($dbItem)], $maxPrefetchDepth, 0));
 
