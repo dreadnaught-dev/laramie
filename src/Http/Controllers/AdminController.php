@@ -177,6 +177,10 @@ class AdminController extends Controller
 
         $listView = $model->getListView();
 
+        if ($request->ajax()) {
+            $listView = 'laramie::list-table';
+        }
+
         $extra->response = view($listView)
             ->with('model', $model)
             ->with('listableFields', $listableFields)
@@ -798,7 +802,7 @@ class AdminController extends Controller
                         })
                         ->join('|');
                     // The 'keep' checkbox was checked.
-                    return $this->dataService->getFileInfo($request->get('_'.$fieldName));
+                    return $this->dataService->findByIdSuperficial('laramieUpload', $request->get('_'.$fieldName));
                 } else {
                     // check to see if we need to remove an old file
                     //$this->dataService->removeFile(data_get($item, $fieldName));

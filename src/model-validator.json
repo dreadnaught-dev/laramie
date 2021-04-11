@@ -159,7 +159,7 @@
         },
         "currency": {
             "properties": {
-                "sign": { "enum": [ "dollar", "euro", "pound", "yen" ] },
+                "currencyCode": { "type": "string" },
                 "min": { "type": "number" },
                 "max": { "type": "number" },
                 "step": { "type": "number" },

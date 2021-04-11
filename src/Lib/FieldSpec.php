@@ -48,7 +48,7 @@ class FieldSpec extends JsonBackedObject implements FieldContainer
     /* Currency / Number / Range field attributes */
     public function getMax() { return $this->get('max'); }
     public function getMin() { return $this->get('min'); }
-    public function getSign() { return $this->get('sign'); }
+    public function getCurrencyCode() { return $this->get('currencyCode'); }
     public function getStep() { return $this->get('step'); }
     public function isIntegerOnly() { return $this->get('isIntegerOnly') === true; }
 

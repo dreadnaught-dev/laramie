@@ -1,4 +1,13 @@
-$(document).ready(function() {
+class Laramie {
+  constructor() {
+    this.attachGlobalListeners();
+  }
+
+  attachGlobalListeners() {
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
     $("#nav-toggle").click(function(e) {
         $(e.target).toggleClass("is-active");
         $("#nav-menu").toggleClass("is-active");
@@ -78,7 +87,7 @@ $(document).ready(function() {
             $.event.trigger("meta-change", { id: itemId, meta: data });
         });
     });
-});
+}, false);
 
 function loadMeta(itemId, callback) {
     callback = callback || null;

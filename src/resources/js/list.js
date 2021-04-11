@@ -1,5 +1,6 @@
 var handlebarsTemplates = [];
 var filterIndex = 1;
+var quickSearchTimeout = null;
 
 $(document).ready(function() {
     loadHandlebarsTemplates();
@@ -67,6 +68,30 @@ $(document).ready(function() {
         return false;
     });
 
+    window.addEventListener('popstate', (event) => {
+      $('#quick-search').blur().val('');
+      if (event.state && event.state.isFromJs) {
+        $('#quick-search').val(event.state.quickSearch);
+      }
+      $.get(document.location, function(data) {
+        $('#list-table-wrapper').replaceWith(data);
+      });
+    });
+
+    $('#quick-search').on("keyup", function(e) {
+      clearTimeout(quickSearchTimeout);
+      quickSearchTimeout = setTimeout(function() {
+        var tmp = $('#list-form').find(':input:not(.post-only)').serialize();
+        var searchUrl = location.href.replace(/[?].*$/, '') + "?" + tmp;
+        $.get(searchUrl, function(data) {
+          $('#list-table-wrapper').replaceWith(data);
+        });
+        if (history.pushState) {
+          window.history.pushState({isFromJs: 1, path:searchUrl, quickSearch: $('#quick-search').val()},'',searchUrl);
+        }
+      }, 250); // debounce quick search
+    });
+
     $(document).on("keyup keydown", function(e) {
         globals.isShiftDetected = e.shiftKey;
     });
@@ -82,7 +107,7 @@ $(document).ready(function() {
         } else if (isChecked) {
             var $tr = $item.closest("tr");
             if (globals.lastRowSelected && globals.isShiftDetected) {
-                $trs = $("#main-list-table tbody tr");
+                var $trs = $("#main-list-table tbody tr");
                 var start = $trs.index($tr);
                 var end = $trs.index(globals.lastRowSelected);
                 for (var i = $trs.index($tr); i != $trs.index(globals.lastRowSelected); i += end >= start ? 1 : -1) {

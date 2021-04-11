@@ -100,15 +100,15 @@
                         <div class="field">
                             <label class="label">Rotation</label>
                             <p class="control">
-                                <button class="button image-control" data-operation="rotate" data-amount="-45"><span class="icon is-small"><i class="fas fa-undo"></i></span></button>
-                                <button class="button image-control" data-operation="rotate" data-amount="45"><span class="icon is-small"><i class="fas fa-redo"></i></span></button>
+                                <button class="button image-control" data-operation="rotate" data-amount="-45"><span class="icon is-small"><i class="g-icon"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></i></span></button>
+                                <button class="button image-control" data-operation="rotate" data-amount="45"><span class="icon is-small"><i class="g-icon"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></i></span></button>
                             </p>
                         </div>
                         <div class="field">
                             <label class="label">Flip</label>
                             <p class="control">
-                                <button class="button image-control" data-operation="scaleX" data-amount="-1" onclick="$(this).data('amount', $(this).data('amount') == '-1' ? '1' : '-1');"><span class="icon is-small"><i class="fas fa-arrows-alt-h"></i></span></button>
-                                <button class="button image-control" data-operation="scaleY" data-amount="-1" onclick="$(this).data('amount', $(this).data('amount') == '-1' ? '1' : '-1');"><span class="icon is-small"><i class="fas fa-arrows-alt-v"></i></span></button>
+                                <button class="button image-control" data-operation="scaleX" data-amount="-1" onclick="$(this).data('amount', $(this).data('amount') == '-1' ? '1' : '-1');"><span class="icon is-small"><i class="g-icon"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></i></span></button>
+                                <button class="button image-control" data-operation="scaleY" data-amount="-1" onclick="$(this).data('amount', $(this).data('amount') == '-1' ? '1' : '-1');"><span class="icon is-small"><i class="g-icon"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0z" fill="none"/><path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/></svg></i></span></button>
                             </p>
                         </div>
                     </div>
