@@ -189,7 +189,12 @@ class AssetController extends Controller
         } catch (\Exception $e) {
             $imageKeyParts = $this->getImageKeyAndPostfix($imageKey);
             $fileInfo = $this->dataService->getFileInfo($imageKeyParts->key);
-            $extension = object_get($fileInfo, 'extension');
+            $extension = strtolower(object_get($fileInfo, 'extension', ''));
+
+            if (preg_match('/(doc|xls)x$/', $extension)) {
+                $extension = preg_replace('/x$/i', '', $extension);
+            }
+
             $filePath = public_path('laramie/admin/icons/file.png');
             if (in_array($extension, Globals::VALID_ICON_TYPES)) {
                 $tmpFilePath = public_path('laramie/admin/icons/'.$extension.'.png');
