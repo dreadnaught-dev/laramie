@@ -8,8 +8,10 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Auth\Factory as Auth;
 
 use Laramie\Globals;
-use Laramie\LaramieUser;
+use Laramie\Hook;
 use Laramie\Services\LaramieDataService;
+use Laramie\LaramieUser;
+use Laramie\Hooks\LaramieUserAuthenticated;
 
 class Authenticate
 {
@@ -81,7 +83,9 @@ class Authenticate
 
                 // Save all the above processing to the user's session so we don't have to do it on every request
                 $request->session()->put('_laramie', $user->id);
-                $userUuid = $user->id;
+                $userUuid = $user->id; 
+                
+                Hook::fire(new LaramieUserAuthenticated($user));               
             }
         }
 

@@ -52,6 +52,8 @@ Route::group(
                 Route::post('/mfa-register', 'MFAController@postRegister');
                 Route::get('/mfa-login', 'MFAController@getLogin')->name('mfa-login');
                 Route::post('/mfa-login', 'MFAController@postLogin');
+                Route::get('/mfa-recovery', 'MFAController@getRecovery')->name('mfa-recovery');
+                Route::post('/mfa-recovery', 'MFAController@postRecovery');
 
                 Route::get('/assets/icon/{imageKey}', 'AssetController@showIcon')->name('icon');
                 Route::get('/assets/image/{imageKey}', 'AssetController@showImage')->name('image');
