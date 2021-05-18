@@ -921,7 +921,7 @@ class AdminController extends Controller
                     break;
                 case 'aggregate': // Aggregates pose a bit of a challenge -- we could recurse into them... but doing a diff on their json encoded data is easier. I'm fine with that for now.
                 case 'hidden': // Hidden fields can literally be anything (including objects, etc), so we're going to handle the same way we handle aggregates for now.
-                    $diff = $differ->render(json_encode(data_get($previousItem, $key, '{}'), JSON_PRETTY_PRINT), json_encode(object_get($item, $key, '{}'), JSON_PRETTY_PRINT));
+                    $diff = $differ->render(json_encode(data_get($previousItem, $key, '{}'), JSON_PRETTY_PRINT), json_encode(data_get($item, $key, '{}'), JSON_PRETTY_PRINT));
                     break;
                 case 'file':
                 case 'image':
@@ -943,26 +943,26 @@ class AdminController extends Controller
 
                     foreach ($a as $id) {
                         $tmp = $this->dataService->findById($field->relatedModel, $id);
-                        $aAliases[] = data_get($tmp, object_get($tmpRelatedModel, 'alias', 'id'));
+                        $aAliases[] = data_get($tmp, data_get($tmpRelatedModel, 'alias', 'id'));
                     }
 
                     foreach ($b as $id) {
                         $tmp = $this->dataService->findById($field->relatedModel, $id);
-                        $bAliases[] = data_get($tmp, object_get($tmpRelatedModel, 'alias', 'id'));
+                        $bAliases[] = data_get($tmp, data_get($tmpRelatedModel, 'alias', 'id'));
                     }
 
                     $diff = $differ->render(implode(', ', $bAliases), implode('', $aAliases));
                     break;
                 case 'markdown':
-                    $diff = $differ->render(data_get($previousItem, "$key.markdown", ''), object_get($item, "$key.markdown", ''));
+                    $diff = $differ->render(data_get($previousItem, "$key.markdown", ''), data_get($item, "$key.markdown", ''));
                     break;
                 case 'timestamp':
-                    $previous = sprintf('%s %s %s', data_get($previousItem, "$key.date", ''), object_get($previousItem, "$key.time", ''), object_get($previousItem, "$key.timezone", ''));
-                    $current = sprintf('%s %s %s', data_get($item, "$key.date", ''), object_get($item, "$key.time", ''), object_get($item, "$key.timezone", ''));
+                    $previous = sprintf('%s %s %s', data_get($previousItem, "$key.date", ''), data_get($previousItem, "$key.time", ''), data_get($previousItem, "$key.timezone", ''));
+                    $current = sprintf('%s %s %s', data_get($item, "$key.date", ''), data_get($item, "$key.time", ''), data_get($item, "$key.timezone", ''));
                     $diff = $differ->render($previous, $current);
                     break;
                 default:
-                    $diff = $differ->render(data_get($previousItem, $key, ''), object_get($item, $key, ''));
+                    $diff = $differ->render(data_get($previousItem, $key, ''), data_get($item, $key, ''));
                     break;
             }
 

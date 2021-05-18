@@ -304,7 +304,7 @@ class LaramieDataService
                     // Check to see if we need to manipulate `$value` for searching (currently limited to date fields):
                     $modelField = data_get($model->fields, $filter->field);
                     if ($operation !== 'between-dates' && (in_array($filter->field, ['_created_at', '_updated_at'])
-                        || in_array(data_get($modelField, 'dataType', object_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local'])))
+                        || in_array(data_get($modelField, 'dataType', data_get($modelField, 'type')), ['dbtimestamp', 'timestamp', 'date', 'datetime-local'])))
                     {
                         try {
                             $value = \Carbon\Carbon::parse($value, config('laramie.timezone'))->timestamp;

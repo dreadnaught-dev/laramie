@@ -141,7 +141,7 @@ class ModelLoader
                 }
 
                 $defaultBulkActions = config('laramie.default_bulk_actions');
-                $modelBulkActions = array_merge(data_get($model, 'bulkActions', $defaultBulkActions), object_get($model, 'additionalBulkActions', []));
+                $modelBulkActions = array_merge(data_get($model, 'bulkActions', $defaultBulkActions), data_get($model, 'additionalBulkActions', []));
                 if ($modelBulkActions != $defaultBulkActions) {
                     $model->bulkActions = $modelBulkActions;
                 }
@@ -265,7 +265,7 @@ class ModelLoader
                 self::dfValidateField($model, $aggregateField, $schema, $validator, $errors);
             }
         }
-        $fieldValidator = self::extend(data_get($schema, 'fields._base'), object_get($schema, 'fields.'.$type));
+        $fieldValidator = self::extend(data_get($schema, 'fields._base'), data_get($schema, 'fields.'.$type));
         $validator->reset();
         $validator->check($field, $fieldValidator);
         if (!$validator->isValid()) {
@@ -447,7 +447,7 @@ class ModelLoader
                         return (object) ['text' => $item, 'value' => $item];
                     } elseif ($type == 'object' || ($type == 'array' && static::isAssoc($item))) {
                         $tmp = (object) $item;
-                        $text = data_get($tmp, 'text', object_get($tmp, 'key'));
+                        $text = data_get($tmp, 'text', data_get($tmp, 'key'));
                         $value = data_get($tmp, 'value') ?: $text;
                         if (!$text || !$value) {
                             throw new Exception('Select / radio `options` must be a valid array.');
