@@ -102,6 +102,7 @@ class AdminController extends Controller
     {
         $user = $this->dataService->getUser();
         $this->ensureHasReadAccess($user, $modelKey);
+        $isAjaxRequest = $request->ajax();
 
         $options = collect($request->all())
             ->filter(function ($item) {
@@ -165,7 +166,9 @@ class AdminController extends Controller
         // The user's model prefs may include things like which columns to show, etc
         $prefs = $request->user()->getLaramiePrefs();
 
-        $reports = $this->dataService->getUserReportsForModel($model);
+        $reports = $isAjaxRequest
+            ? null
+            : $this->dataService->getUserReportsForModel($model);
 
         $models = $this->dataService->findByType($model, $options);
 
@@ -177,7 +180,7 @@ class AdminController extends Controller
 
         $listView = $model->getListView();
 
-        if ($request->ajax()) {
+        if ($isAjaxRequest) {
             $listView = 'laramie::list-table';
         }
 
