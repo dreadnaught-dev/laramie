@@ -2,6 +2,7 @@
 
 namespace Laramie;
 
+use Arr;
 use DB;
 use Illuminate\Console\Command;
 
@@ -97,6 +98,17 @@ class LaramieUser extends LaramieModel
     public function hasAbility($ability)
     {
         return array_key_exists($ability, $this->getAbilities());
+    }
+
+    public static function loginOnceUsingId($id) {
+        $laramieUser = static::filterQuery(false)->find($id);
+        $laravelUser = Arr::first(\DB::select('select id from users where '.config('laramie.username').' like ?', [data_get($laramieUser, 'user')]));
+        $success = auth()->onceUsingId(data_get($laravelUser, 'id', -1));
+        if ($success) {
+            session()->flash('_laramie', $laramieUser->id);
+        }
+
+        return $laramieUser;
     }
 }
 
