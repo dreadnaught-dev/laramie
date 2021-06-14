@@ -352,7 +352,7 @@ class AdminController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private function redirectToFilteredListPage($modelKey, Request $request)
+    protected function redirectToFilteredListPage($modelKey, Request $request)
     {
         $filterString = collect($request->all())
             ->filter(function ($value, $key) {
