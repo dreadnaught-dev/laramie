@@ -2,6 +2,7 @@
 
 namespace Laramie\Services;
 
+use Arr;
 use DB;
 use Exception;
 use Storage;
@@ -870,15 +871,22 @@ class LaramieDataService
     {
         $model = $this->getModelByKey($model);
 
+        $factory = data_get($model, 'factory', LaramieModel::class);
+
         if ($id == 'new') {
-            return new LaramieModel();
+            return $factory::load(null, true);
+        }
+
+        if ($id === null) {
+            return null;
         }
 
         $query = $this->getBaseQuery($model)
             ->where('id', $id);
 
-        return array_first([LaramieModel::load($query->first())]);
+        return Arr::first([$factory::load($query->first())]);
     }
+
 
     public function findItemRevisions($id)
     {

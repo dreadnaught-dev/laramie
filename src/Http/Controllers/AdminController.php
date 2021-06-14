@@ -302,7 +302,7 @@ class AdminController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private function redirectToFilteredListPage($modelKey, Request $request)
+    protected function redirectToFilteredListPage($modelKey, Request $request)
     {
         $filterString = collect($request->all())
             ->filter(function ($value, $key) {
@@ -823,7 +823,7 @@ class AdminController extends Controller
         $error = null;
 
         try {
-            $this->dataService->deleteById($modelKey, $id);
+            $this->dataService->findByIdSuperficial($modelKey, $id)->delete();
         } catch (Exception $e) {
             $error = $e->getMessage();
         }
