@@ -71,7 +71,7 @@ class LaramieModel implements \JsonSerializable
         } elseif ($data !== null && is_object($data)) {
             $data = self::hydrate($data);
         } elseif ($isReturnEmptyModelIfNullData && $data === null) {
-            $data = self::hydrate((object) []);
+            $data = self::hydrate((object) ['type' => static::getJsonClass()]);
         } else {
             throw new Exception('LaramieModel received invalid data type to load');
         }
