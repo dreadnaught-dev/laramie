@@ -145,6 +145,7 @@ EOT;
             $this->commands([
                 \Laramie\Console\Commands\AuthorizeLaramieUser::class,
                 \Laramie\Console\Commands\ClearModelCache::class,
+                \Laramie\Console\Commands\ClearUserPrefs::class,
             ]);
         }
     }
