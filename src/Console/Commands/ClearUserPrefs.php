@@ -44,7 +44,7 @@ class ClearUserPrefs extends Command
 
             DB::statement($query);
 
-            $this->info('Cache updated for ' . $this->argument('user'));
+            $this->info('Prefs updated for ' . $this->argument('user'));
         }
         else {
             $this->error('Could not find user ' . $this->argument('user'));
