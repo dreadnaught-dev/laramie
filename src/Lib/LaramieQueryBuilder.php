@@ -51,6 +51,10 @@ class LaramieQueryBuilder
         };
     }
 
+    public function query() {
+        return $this;
+    }
+
     public function depth($maxPrefetchDepth)
     {
         $this->maxPrefetchDepth = $maxPrefetchDepth;

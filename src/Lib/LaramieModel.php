@@ -516,6 +516,11 @@ class LaramieModel implements \JsonSerializable
         return static::setOption('filterQuery', $isFilterQuery);
     }
 
+    public static function query()
+    {
+        return static::getLaramieQueryBuilder('query');
+    }
+
     public static function setOption(string $optionName, $optionValue)
     {
         return static::getLaramieQueryBuilder('setOption', [$optionName, $optionValue]);
