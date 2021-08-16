@@ -488,6 +488,24 @@ class LaramieModel implements \JsonSerializable
         return static::getLaramieQueryBuilder('addComment', [$this->id, $comment]);
     }
 
+    public function getLastVersion()
+    {
+        $lastArchivedItem = \DB::table('laramie_data_archive')
+            ->where('laramie_data_id', data_get($this, 'id', \Laramie\Globals::DummyId))
+            ->orderByDesc('created_at')
+            ->limit(1)
+            ->first();
+
+        // Set the id to _this_ id (not the archived table's id).
+        if ($lastArchivedItem) {
+            $lastArchivedItem->id = $this->id;
+        }
+
+        return $lastArchivedItem
+            ? self::hydrate($lastArchivedItem)
+            : null;
+    }
+
     public static function depth($maxPrefetchDepth)
     {
         return static::getLaramieQueryBuilder('depth', [$maxPrefetchDepth]);
