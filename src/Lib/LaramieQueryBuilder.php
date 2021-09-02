@@ -67,6 +67,14 @@ class LaramieQueryBuilder
         return $this->setOption('filterQuery', $isFilterQuery);
     }
 
+    public function getFilteredQueryBuilder()
+    {
+        $model = $this->dataService->getModelByKey($this->callingClass::getJsonClass());
+        $query = $this->dataService->getBaseQuery($model);
+
+        return $this->dataService->augmentListQuery($query, $model, array_merge($this->searchOptions, ['sort' => null]), $this->queryCallback);
+    }
+
     public function setOption(string $optionName, $optionValue)
     {
         $this->searchOptions[$optionName] = $optionValue;
