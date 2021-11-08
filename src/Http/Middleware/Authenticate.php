@@ -49,52 +49,53 @@ class Authenticate
     public function handle($request, Closure $next)
     {
         $linkedField = config('laramie.username');
-        $userUuid = null;
+        $loggedInUserId = $request->session()->get('_laramie');
+        $user = null;
 
         // If we're on a mfa route, skip. We need to allow those routes through.
         if (strpos($request->route()->getActionName(), 'MFAController') !== false) {
             return $next($request);
         }
 
-        // If the user is already logged in, we don't need go any further
-        if (!$request->session()->has('_laramie')) {
-            // Get the laramieUser that's linked to the Laravel one (via `$linkedField`)
-            $user = LaramieUser::superficial()
-                ->where('user', '=', $this->auth->user()->{$linkedField})
-                ->where('status', '=', 'Active')
-                ->first();
+        // TODO -- can we refactor by moving some of this logic based on Laravel's Login method (so move the logic to set session vars to event listener)?
 
-            if ($user) {
-                // Check two-factor authentication (can be enabled/disabled at the application or user level)
-                $mfaGloballyEnabled = config('laramie.enable_mfa', false);
+        $user = $loggedInUserId
+            ? LaramieUser::filterQuery(false)->find($loggedInUserId)
+            : LaramieUser::where('user', '=', $this->auth->user()->{$linkedField})->where('status', '=', 'Active')->first();
 
-                if ($mfaGloballyEnabled
-                    && object_get($user, 'mfa.enabled')
-                    && !$request->session()->has('_mfa')
-                ) {
-                    $request->session()->put('url.intended', url()->current());
-                    // Is the user registered? Attempt to authenticate them. Otherwise, register them:
-                    if (object_get($user, 'mfa.registrationCompleted')) {
-                        return redirect()->to(route('laramie::mfa-login'));
-                    } else {
-                        return redirect()->to(route('laramie::mfa-register'));
-                    }
-                }
+        // If a user's first request since logging in:
+        if (!$loggedInUserId && $user) {
+            // Save all the above processing to the user's session so we don't have to do it on every request
+            $loggedInUserId = $user->id;
+            $request->session()->put('_laramie', $loggedInUserId);
 
-                // Save all the above processing to the user's session so we don't have to do it on every request
-                $request->session()->put('_laramie', $user->id);
-                $userUuid = $user->id; 
-                
-                Hook::fire(new LaramieUserAuthenticated($user));               
+            Hook::fire(new LaramieUserAuthenticated($user));
+        }
+
+        // Check to see if we need to present the user MFA screens:
+        $mfaRequired = !$request->get('skipMfa');
+            && $user
+            && config('laramie.enable_mfa', false)
+            && object_get($user, 'mfa.enabled')
+            && !$request->session()->has('_mfa');
+
+        if ($mfaRequired) {
+            $request->session()->put('url.intended', url()->current());
+            // Is the user registered? Attempt to authenticate them. Otherwise, register them:
+            if (object_get($user, 'mfa.registrationCompleted')) {
+                return redirect()->to(route('laramie::mfa-login'));
+            } else {
+                return redirect()->to(route('laramie::mfa-register'));
             }
         }
 
         // At this point a user should have been authenticated by above, or have session info set. If not, throw an auth
         // exception.
-        if ($userUuid === null && $request->session()->get('_laramie') === null) {
+        if ($loggedInUserId === null && $request->session()->get('_laramie') === null) {
             throw new AuthorizationException('You are not authorized for access.');
         }
 
         return $next($request);
     }
+
 }
