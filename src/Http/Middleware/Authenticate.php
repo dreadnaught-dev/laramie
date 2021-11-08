@@ -73,7 +73,7 @@ class Authenticate
         }
 
         // Check to see if we need to present the user MFA screens:
-        $mfaRequired = !$request->get('skipMfa');
+        $mfaRequired = !$request->get('skipMfa')
             && $user
             && config('laramie.enable_mfa', false)
             && object_get($user, 'mfa.enabled')
