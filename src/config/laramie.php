@@ -47,7 +47,7 @@ return [
     | schemas need to be processed).
     |
     */
-    'model_path' => [base_path('models/kitchen-sink.json')],
+    'model_path' => [base_path('schema/kitchen-sink.json')],
 
     /*
     |--------------------------------------------------------------------------
