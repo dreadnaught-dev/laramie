@@ -52,31 +52,4 @@ class Controller extends BaseController
                 return $e->weight;
             });
     }
-
-    /**
-     * Process the request and get an array of filter objects (generally mapped from the query string).
-     *
-     * @return mixed[] Filter objects
-     */
-    protected function getFilters($data)
-    {
-        $filterRegex = '/^filter_(?<filterIndex>[^_]+)_field$/';
-
-        return collect($data)
-            ->filter(function ($e, $key) use ($filterRegex) {
-                return preg_match($filterRegex, $key) && $e;
-            })
-            ->map(function ($e, $key) use ($filterRegex, $data) {
-                preg_match($filterRegex, $key, $matches);
-
-                return (object) [
-                    'key' => $matches['filterIndex'],
-                    'field' => data_get($data, sprintf('filter_%s_field', $matches['filterIndex'])),
-                    'operation' => data_get($data, sprintf('filter_%s_operation', $matches['filterIndex']), 'is equal to'), // short-hand filter; default to equality check if not specified
-                    'value' => data_get($data, sprintf('filter_%s_value', $matches['filterIndex'])),
-                ];
-            })
-            ->values()
-            ->all();
-    }
 }

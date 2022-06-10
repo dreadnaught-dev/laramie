@@ -30,6 +30,7 @@ class LaramieDataService
     protected $cachedItems = [];
     protected static $isFetchingUser = false;
     protected static $cachedUser = null;
+    public static $overrideUserId = null;
 
     public function __construct()
     {
@@ -64,24 +65,23 @@ class LaramieDataService
     public function getUser()
     {
         if (!self::$cachedUser) {
-            if (!app()->runningInConsole()) {
-                // If set here, it's because this is an API request (set in ApiAuthenticate directly on the auth()->user() object as there's no session).
-                $laramieUserId = data_get(auth()->user(), '_laramie');
+            // If set here, it's because this is an API request (set in ApiAuthenticate directly on the auth()->user() object as there's no session).
+            $laramieUserId = data_get(auth()->user(), '_laramie') ?: self::$overrideUserId;
 
-                if (!$laramieUserId) {
-                    $laramieUserId = session()->get('_laramie', Uuid::uuid4()->toString());
-                    if (gettype($laramieUserId) === 'object') {
-                        $laramieUserId = data_get($laramieUserId, 'id');
-                    }
+            if (!$laramieUserId) {
+                $laramieUserId = session()->get('_laramie', Uuid::uuid4()->toString());
+                if (gettype($laramieUserId) === 'object') {
+                    $laramieUserId = data_get($laramieUserId, 'id');
                 }
-
-                self::$isFetchingUser = true;
-
-                self::$cachedUser = LaramieUser::filterQuery(false)
-                    ->find($laramieUserId);
-
-                self::$isFetchingUser = false;
             }
+
+            self::$isFetchingUser = true;
+
+            self::$cachedUser = Uuid::isValid($laramieUserId)
+                ? LaramieUser::filterQuery(false)->find($laramieUserId)
+                : null;
+
+            self::$isFetchingUser = false;
         }
 
         return self::$cachedUser;

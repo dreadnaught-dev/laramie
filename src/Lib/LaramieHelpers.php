@@ -324,4 +324,26 @@ class LaramieHelpers
             }
         }
     }
+
+    public static function extractFiltersFromData($qs)
+    {
+        $filterRegex = '/^filter_(?<filterIndex>[^_]+)_field$/';
+
+        return collect($qs)
+            ->filter(function ($e, $key) use ($filterRegex) {
+                return preg_match($filterRegex, $key) && $e;
+            })
+            ->map(function ($e, $key) use ($filterRegex, $qs) {
+                preg_match($filterRegex, $key, $matches);
+
+                return (object) [
+                    'key' => $matches['filterIndex'],
+                    'field' => data_get($qs, sprintf('filter_%s_field', $matches['filterIndex'])),
+                    'operation' => data_get($qs, sprintf('filter_%s_operation', $matches['filterIndex']), 'is equal to'), // short-hand filter; default to equality check if not specified
+                    'value' => data_get($qs, sprintf('filter_%s_value', $matches['filterIndex'])),
+                ];
+            })
+            ->values()
+            ->all();
+    }
 }
