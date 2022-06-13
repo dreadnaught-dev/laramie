@@ -7,8 +7,7 @@ use Laramie\Http\Middleware\RequestLogger;
 use Laramie\Http\Middleware\ShareAlertFromSession;
 
 /*
- * Register the API routes -- these routes are protected by basic auth (the
- * username and password are properties on LaramieUsers).
+ * Register the API routes -- these routes are protected by basic auth.
  *
  * Currently only read-only routes are available (list and detail).
  */

@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Access\AuthorizationException;
 
 use Laramie\Globals;
-use Laramie\LaramieUser;
 use Laramie\Services\LaramieDataService;
 
 class ApiAuthenticate

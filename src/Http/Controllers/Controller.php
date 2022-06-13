@@ -20,7 +20,7 @@ class Controller extends BaseController
     {
         return $listableFieldsCollection
             ->filter(function ($item) {
-                return $item->listed;
+                return $item->get('listed');
             })
             ->all();
     }
@@ -36,12 +36,12 @@ class Controller extends BaseController
         $prefs = $prefs !== null ? $prefs : (object) [];
 
         return collect($model->getFieldsSpecs())
-            ->filter(function ($item) use($prefs) {
+            ->filter(function ($item) {
                 return $item->isListable();
             })
             ->each(function ($item) use ($prefs) {
-                $item->weight = data_get($prefs, $item->getId().'.weight', $item->getWeight());
-                $item->listed = data_get($prefs, $item->getId().'.listed', $item->isListByDefault());
+                $item->set('weight', data_get($prefs, $item->getId().'.weight', $item->getWeight()));
+                $item->set('listed', data_get($prefs, $item->getId().'.listed', $item->isListByDefault()));
             })
             ->sortBy(function ($item) {
                 return $item->getWeight();

@@ -911,7 +911,7 @@ class AdminController extends Controller
         $this->ensureDeleteAccess($user, $modelKey);
 
         try {
-            $this->dataService->deleteById($modelKey, $id);
+            $this->dataService->findByIdSuperficial($modelKey, $id)->delete();
         } catch (Exception $e) {
             $error = $e->getMessage();
         }

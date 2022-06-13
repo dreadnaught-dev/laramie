@@ -11,7 +11,6 @@ trait LaramieAuth
     public function isAdmin() { return $this->isLaramieAdmin(); }
     public function hasAbility($modelType, $ability = 'read') { return $this->hasLaramieAbility($modelType, $ability); }
 
-    private $_laramie = null;
     private $_roles = null;
 
     public function getHandle()
@@ -59,12 +58,7 @@ trait LaramieAuth
 
     protected function getLaramieData()
     {
-        if (!isset($this->_laramie)) {
-            // TODO -- remove the default
-            $this->_laramie = json_decode(data_get($this, 'data', '{"roles": ["'.Globals::AdminRoleId.'"]}'));
-        }
-
-        return $this->_laramie;
+        return json_decode(data_get($this, 'data', '{"roles": []}'));
     }
 
     protected function getLaramieRoles()

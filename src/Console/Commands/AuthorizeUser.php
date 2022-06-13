@@ -63,6 +63,8 @@ class AuthorizeUser extends Command
                 'updated_at' => Carbon::now(),
                 'created_at' => Carbon::now(),
             ]);
+
+            $user = DB::table('users')->where($linkedField, 'ilike', $email)->first();
         } elseif (!$user) {
             $this->error(sprintf('Could not find user with %s of \'%s\'. If you would like to create them, you may do so by passing an additional `password` option to this command', $linkedField, $email));
 
