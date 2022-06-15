@@ -450,7 +450,7 @@ class LaramieModel implements \JsonSerializable
 
     public function delete($isDeleteHistory = false)
     {
-        return static::getLaramieQueryBuilder('deleteById', [$this->id, $isDeleteHistory]);
+        return static::getLaramieQueryBuilder('deleteById', [$this->id, $isDeleteHistory, data_get($this, 'type')]);
     }
 
     public function replicate(array $except = null)

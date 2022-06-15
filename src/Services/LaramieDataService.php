@@ -719,7 +719,7 @@ class LaramieDataService
         }
     }
 
-    public function findByIdSuperficial($model, $id)
+    public function findByIdSuperficial($model, $id, $options = [])
     {
         $model = $this->getModelByKey($model);
 
@@ -729,6 +729,10 @@ class LaramieDataService
 
         $query = $this->getBaseQuery($model)
             ->where('id', $id);
+
+        if (config('laramie.suppress_events') !== true && data_get($options, 'filterQuery', true) !== false) {
+            Hook::fire(new FilterQuery($model, $query, $this->getUser(), $options));
+        }
 
         return Arr::first([LaramieModel::load($query->first())]);
     }

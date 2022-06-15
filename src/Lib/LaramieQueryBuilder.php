@@ -343,10 +343,10 @@ class LaramieQueryBuilder
         return $this->depth(0);
     }
 
-    public function deleteById($id, $isDeleteHistory = false)
+    public function deleteById($id, $isDeleteHistory = false, $type = null)
     {
         return $this->dataService
-            ->deleteById($this->callingClass::getJsonClass(), $id, $isDeleteHistory);
+            ->deleteById($type ?: $this->callingClass::getJsonClass(), $id, $isDeleteHistory);
     }
 
     public function save(LaramieModel $item, $validate = true, $runSaveHooks = true)

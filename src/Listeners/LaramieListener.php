@@ -277,7 +277,7 @@ class LaramieListener
 
         if ($bulkActionName === 'delete') {
             foreach ($items as $item) {
-                $dataService->deleteById($model, $item->id);
+                $item->delete();
             }
         }
 
@@ -298,7 +298,7 @@ class LaramieListener
             $csvHeaders = [];
             $csvFieldOrder = [];
             foreach ($listableFields as $key => $field) {
-                $csvHeaders[] = $field->label;
+                $csvHeaders[] = $field->getLabel();
                 $csvFieldOrder[$key] = $field;
             }
 

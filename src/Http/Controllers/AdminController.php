@@ -238,14 +238,13 @@ class AdminController extends Controller
     {
         $model = $this->dataService->getModelByKey($modelKey);
         $nameOfBulkAction = $request->get('bulk-action-operation');
+        $user = $this->dataService->getUser();
 
         $postData = $request->all();
-        $filters = LaramieHelpers::extractFiltersFromData($postData);
-        $postData['filters'] = $filters;
+
+        $postData['filters'] = LaramieHelpers::extractFiltersFromData($postData);
         $postData['quickSearch'] = $request->get('quick-search');
         $postData['sort'] = data_get($postData, 'sort', 'id');
-
-        $user = $this->dataService->getUser();
 
         // Ensure user's abilities allow bulk action
         $slugifiedAction = Str::slug($nameOfBulkAction);
@@ -284,6 +283,7 @@ class AdminController extends Controller
             'response' => $this->redirectToFilteredListPage($modelKey, $request),
             'listableFields' => $this->getListableFields($model), // inject context of what fields the list page is showing
             'context' => 'admin',
+            'qs' => $postData,
         ];
 
         $alert = null;
@@ -292,7 +292,6 @@ class AdminController extends Controller
         try {
             // Execute the bulk action
             Hook::fire(new HandleBulkAction($model, $nameOfBulkAction, $items, $user, $extra));
-
             DB::commit();
         } catch (\Illuminate\Database\QueryException $e) {
             DB::rollBack();
