@@ -246,22 +246,22 @@ class LaramieModel implements \JsonSerializable
         return static::getLaramieQueryBuilder('whereRaw', func_get_args());
     }
 
-    final public static function whereIn(string $column, $values, string $boolean = 'and', bool $not = false)
+    final public static function whereIn($column, $values, string $boolean = 'and', bool $not = false)
     {
         return static::getLaramieQueryBuilder('whereIn', func_get_args());
     }
 
-    final public static function whereNotIn(string $column, $values, string $boolean = 'and')
+    final public static function whereNotIn($column, $values, string $boolean = 'and')
     {
         return static::getLaramieQueryBuilder('whereNotIn', func_get_args());
     }
 
-    final public static function whereNull(string $column, string $boolean = 'and', bool $not = false)
+    final public static function whereNull($column, string $boolean = 'and', bool $not = false)
     {
         return static::getLaramieQueryBuilder('whereNull', func_get_args());
     }
 
-    final public static function whereNotNull(string $column, string $boolean = 'and')
+    final public static function whereNotNull($column, string $boolean = 'and')
     {
         return static::getLaramieQueryBuilder('whereNotNull', func_get_args());
     }
@@ -276,12 +276,12 @@ class LaramieModel implements \JsonSerializable
         return static::getLaramieQueryBuilder('whereNotTag', [$tag]);
     }
 
-    final public static function orderBy(string $field, string $direction = 'asc')
+    final public static function orderBy($field, string $direction = 'asc')
     {
         return static::getLaramieQueryBuilder('orderBy', func_get_args());
     }
 
-    final public static function orderByDesc(string $field)
+    final public static function orderByDesc($field)
     {
         return static::getLaramieQueryBuilder('orderByDesc', func_get_args());
     }
@@ -291,12 +291,12 @@ class LaramieModel implements \JsonSerializable
         return static::getLaramieQueryBuilder('orderByRaw', func_get_args());
     }
 
-    final public static function latest(string $column = 'created_at')
+    final public static function latest($column = 'created_at')
     {
         return static::getLaramieQueryBuilder('latest', func_get_args());
     }
 
-    final public static function oldest(string $column = 'created_at')
+    final public static function oldest($column = 'created_at')
     {
         return static::getLaramieQueryBuilder('oldest', func_get_args());
     }
@@ -375,32 +375,32 @@ class LaramieModel implements \JsonSerializable
         return static::getLaramieQueryBuilder('findOrFail', func_get_args());
     }
 
-    final public static function count(string $columns = '*')
+    final public static function count($columns = '*')
     {
         return static::getLaramieQueryBuilder('count', func_get_args());
     }
 
-    final public static function min(string $column)
+    final public static function min($column)
     {
         return static::getLaramieQueryBuilder('min', func_get_args());
     }
 
-    final public static function max(string $column)
+    final public static function max($column)
     {
         return static::getLaramieQueryBuilder('max', func_get_args());
     }
 
-    final public static function sum(string $column)
+    final public static function sum($column)
     {
         return static::getLaramieQueryBuilder('sum', func_get_args());
     }
 
-    final public static function avg(string $column)
+    final public static function avg($column)
     {
         return static::getLaramieQueryBuilder('avg', func_get_args());
     }
 
-    final public static function average(string $column)
+    final public static function average($column)
     {
         return self::avg();
     }
@@ -520,6 +520,24 @@ class LaramieModel implements \JsonSerializable
         ]);
     }
 
+    public function getLastVersion()
+    {
+        $lastArchivedItem = \DB::table('laramie_data_archive')
+            ->where('laramie_data_id', data_get($this, 'id', \Laramie\Globals::DummyId))
+            ->orderByDesc('created_at')
+            ->limit(1)
+            ->first();
+
+        // Set the id to _this_ id (not the archived table's id).
+        if ($lastArchivedItem) {
+            $lastArchivedItem->id = $this->id;
+        }
+
+        return $lastArchivedItem
+            ? self::hydrate($lastArchivedItem)
+            : null;
+    }
+
     public static function depth($maxPrefetchDepth)
     {
         return static::getLaramieQueryBuilder('depth', [$maxPrefetchDepth]);
@@ -528,6 +546,16 @@ class LaramieModel implements \JsonSerializable
     public static function filterQuery(bool $isFilterQuery)
     {
         return static::setOption('filterQuery', $isFilterQuery);
+    }
+
+    public static function getFilteredQueryBuilder()
+    {
+        return static::getLaramieQueryBuilder('getFilteredQueryBuilder');
+    }
+
+    public static function query()
+    {
+        return static::getLaramieQueryBuilder('query');
     }
 
     public static function setOption(string $optionName, $optionValue)

@@ -40,7 +40,7 @@ class ApiController extends Controller
 
         $options = $request->all();
 
-        $filters = $this->getFilters($options);
+        $filters = LaramieHelpers::extractFiltersFromData($options);
 
         $options['filters'] = $filters;
         $options['quickSearch'] = $request->get('quick-search');

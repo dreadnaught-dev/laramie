@@ -129,7 +129,7 @@ class AjaxController extends Controller
                             return sprintf('when \'%s\' then 1', $item);
                         })
                         ->implode(' ');
-                    $query->addSelect(\DB::raw('(case id '.$uuidSql.' else 2 end) as selected'));
+                    $query->addSelect(\DB::raw('(case id::text '.$uuidSql.' else 2 end) as selected'));
                     $query->orderBy('selected', 'asc');
                 }
                 if ($invertSearch) {
@@ -143,9 +143,9 @@ class AjaxController extends Controller
                 // If a tag was passed, only show items that were tagged accordingly
                 if ($tag){
                     $query->whereIn('id', function ($query) use ($tag) {
-                        $query->select('laramie_data_id')
-                            ->from('laramie_data_meta')
-                            ->where('type', '=', 'Tag')
+                        $query->select(\DB::raw('data->>\'relatedItemId\''))
+                            ->from('laramie_data')
+                            ->where('type', '=', 'laramieTag')
                             ->whereIn(\DB::raw('data->>\'text\''), array_filter(preg_split('/\s*[|]\s*/', $tag)));
                     });
                 }
@@ -185,10 +185,10 @@ class AjaxController extends Controller
                         }
 
                         // Lastly search tags
-                        $query->orWhereIn('id', function ($query) use ($keywords) {
-                            $query->select('laramie_data_id')
-                                ->from('laramie_data_meta')
-                                ->where('type', '=', 'Tag')
+                        $query->orWhereIn(DB::raw('id::text'), function ($query) use ($keywords) {
+                            $query->select(\DB::raw('data->>\'relatedItemId\''))
+                                ->from('laramie_data')
+                                ->where('type', '=', 'laramieTag')
                                 ->where(\DB::raw('data->>\'text\''), 'ilike', '%'.$keywords.'%');
                         });
                     }

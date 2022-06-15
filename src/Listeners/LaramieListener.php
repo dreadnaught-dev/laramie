@@ -132,8 +132,8 @@ class LaramieListener
 
                 foreach ($additionalSelects as $item) {
                     $condition = $item->getValue();
-                    if (strpos($condition, 'as "_id"') !== false) {
-                        $userQuery->addSelect(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text as _id'));
+                    if (strpos($condition, 'id::text') !== false) {
+                        $userQuery->addSelect(DB::raw(str_replace('id::text', 'uuid_generate_v3(uuid_ns_url(), id::text)::text', $condition)));
                     }
                     else {
                         $userQuery->addSelect($item);
@@ -172,7 +172,12 @@ class LaramieListener
                 if (!(data_get($extra, 'isFromAjaxController') && data_get($extra, 'isInvertedSearch'))) {
                     $whereId = collect($queryWheres)->filter(function($item) { return data_get($item, 'column') === 'id'; })->first();
                     if ($whereId) {
-                        $userQuery->where(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text'), data_get($whereId, 'value'));
+                        if (strtolower(data_get($whereId, 'type', '')) === 'in') {
+                            $userQuery->whereIn(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text'), data_get($whereId, 'values'));
+                        }
+                        else {
+                            $userQuery->where(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text'), data_get($whereId, 'operator', '='), data_get($whereId, 'value'));
+                        }
                     }
                 }
 

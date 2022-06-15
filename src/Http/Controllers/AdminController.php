@@ -155,7 +155,7 @@ class AdminController extends Controller
             return data_get($extra, 'response');
         }
 
-        $filters = $this->getFilters($options);
+        $filters = LaramieHelpers::extractFiltersFromData($options);
 
         $options['filters'] = $filters;
         $options['quickSearch'] = $request->get('quick-search');
@@ -240,8 +240,8 @@ class AdminController extends Controller
         $nameOfBulkAction = $request->get('bulk-action-operation');
 
         $postData = $request->all();
-
-        $postData['filters'] = $this->getFilters($postData);
+        $filters = LaramieHelpers::extractFiltersFromData($postData);
+        $postData['filters'] = $filters;
         $postData['quickSearch'] = $request->get('quick-search');
         $postData['sort'] = data_get($postData, 'sort', 'id');
 

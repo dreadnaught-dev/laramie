@@ -23,5 +23,9 @@
                 <button class="button is-link">Verify</button>
             </div>
         </div>
+
+        <p>
+            If you have lost your MFA device, you may <a href="{{ route('laramie::mfa-recovery') }}" class="tag is-primary">enter a recovery code</a> to gain access.
+        </p>
     </form>
 @endsection

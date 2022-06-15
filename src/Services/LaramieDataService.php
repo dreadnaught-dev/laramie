@@ -65,9 +65,11 @@ class LaramieDataService
 
     public function getUser()
     {
-        return app()->runningInConsole() // @TODO -- necessary?
-            ? null
-            : auth()->user();
+        if (!self::$cachedUser) {
+            self::$cachedUser = auth()->user();
+        }
+
+        return self::$cachedUser;
     }
 
     public function getUserId()
@@ -492,7 +494,7 @@ class LaramieDataService
                     ->unique()
                     ->toArray();
 
-                if (count($uuidList) == 0) {
+                if (count($uuidList) === 0) {
                     continue;
                 }
 
@@ -500,7 +502,7 @@ class LaramieDataService
                     $this->getModelByKey($modelKey),
                     [
                         'resultsPerPage' => 0,
-                        'filterQuery' => false,
+                        'filterQuery' => true, // NOTE: Filtering queries here could lead to issues with users having access to "outer" content types, but not those referenced from them. By filtering the query at this level, users editing an "outer" item could null out the reference they don't have access to...
                     ],
                     function ($query) use ($uuidList) {
                         $query->whereIn('id', $uuidList);

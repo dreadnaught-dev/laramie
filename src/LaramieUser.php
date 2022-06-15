@@ -2,6 +2,7 @@
 
 namespace Laramie;
 
+use Arr;
 use DB;
 use Illuminate\Console\Command;
 use Str;
@@ -83,6 +84,16 @@ class LaramieUser extends LaramieModel
     {
         return array_key_exists($ability, $this->getAbilities());
     }
+
+    public static function onceUsingId($id)
+    {
+        if (!is_int($id) && LaramieHelpers::isValidUuid($id)) {
+            $id = data_get(DB::table('users')
+                ->where(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text'), $id)
+                ->first()
+                , 'id', -1);
+        }
+
+        return auth()->onceUsingId($id);
+    }
 }
-
-

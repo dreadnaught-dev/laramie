@@ -4,6 +4,7 @@ namespace Laramie\Lib;
 
 use DB;
 use Exception;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Laramie\Services\LaramieDataService;
@@ -50,6 +51,10 @@ class LaramieQueryBuilder
         };
     }
 
+    public function query() {
+        return $this;
+    }
+
     public function depth($maxPrefetchDepth)
     {
         $this->maxPrefetchDepth = $maxPrefetchDepth;
@@ -60,6 +65,14 @@ class LaramieQueryBuilder
     public function filterQuery(bool $isFilterQuery)
     {
         return $this->setOption('filterQuery', $isFilterQuery);
+    }
+
+    public function getFilteredQueryBuilder()
+    {
+        $model = $this->dataService->getModelByKey($this->callingClass::getJsonClass());
+        $query = $this->dataService->getBaseQuery($model);
+
+        return $this->dataService->augmentListQuery($query, $model, array_merge($this->searchOptions, ['sort' => null]), $this->queryCallback);
     }
 
     public function setOption(string $optionName, $optionValue)
@@ -125,7 +138,7 @@ class LaramieQueryBuilder
         return $this;
     }
 
-    public function whereIn(string $column, $values, string $boolean = 'and', bool $not = false)
+    public function whereIn($column, $values, string $boolean = 'and', bool $not = false)
     {
         $column = $this->translateColumn($column);
         $this->qb->whereIn($column, $values, $boolean, $not);
@@ -133,22 +146,22 @@ class LaramieQueryBuilder
         return $this;
     }
 
-    public function orWhereIn(string $column, $values)
+    public function orWhereIn($column, $values)
     {
         return $this->whereIn($column, $values, 'or');
     }
 
-    public function whereNotIn(string $column, $values, string $boolean = 'and')
+    public function whereNotIn($column, $values, string $boolean = 'and')
     {
         return $this->whereIn($column, $values, $boolean, true);
     }
 
-    public function orWhereNotIn(string $column, $values)
+    public function orWhereNotIn($column, $values)
     {
         return $this->whereIn($column, $values, 'or', true);
     }
 
-    public function whereNull(string $column, string $boolean = 'and', bool $not = false)
+    public function whereNull($column, string $boolean = 'and', bool $not = false)
     {
         $column = $this->translateColumn($column);
         $this->qb->whereNull($column, $boolean, $not);
@@ -156,17 +169,17 @@ class LaramieQueryBuilder
         return $this;
     }
 
-    public function orWhereNull(string $column)
+    public function orWhereNull($column)
     {
         return $this->whereNull($column, 'or');
     }
 
-    public function whereNotNull(string $column, string $boolean = 'and')
+    public function whereNotNull($column, string $boolean = 'and')
     {
         return $this->whereNull($column, $boolean, true);
     }
 
-    public function orWhereNotNull(string $column)
+    public function orWhereNotNull($column)
     {
         return $this->whereNull($column, 'or', true);
     }
@@ -181,7 +194,7 @@ class LaramieQueryBuilder
         return $this->whereRaw(DB::raw('(select 1 from laramie_data ldm where ldm.data->\'relatedItemId\' = laramie_data.id and ldm.type ilike ? and data->>\'text\' ilike ? limit 1) != 1'), ['laramieTag', $tag]);
     }
 
-    public function orderBy(string $column, string $direction = 'asc')
+    public function orderBy($column, string $direction = 'asc')
     {
         $this->searchOptions['sort'] = null;
         $column = $this->translateColumn($column);
@@ -190,7 +203,7 @@ class LaramieQueryBuilder
         return $this;
     }
 
-    public function orderByDesc(string $column)
+    public function orderByDesc($column)
     {
         return $this->orderBy($column, 'desc');
     }
@@ -202,7 +215,7 @@ class LaramieQueryBuilder
         return $this;
     }
 
-    public function oldest(string $column = 'created_at')
+    public function oldest($column = 'created_at')
     {
         $column = $this->translateColumn($column);
         $this->qb->oldest($column);
@@ -210,7 +223,7 @@ class LaramieQueryBuilder
         return $this;
     }
 
-    public function latest(string $column = 'created_at')
+    public function latest($column = 'created_at')
     {
         $column = $this->translateColumn($column);
         $this->qb->latest($column);
@@ -406,33 +419,33 @@ class LaramieQueryBuilder
     }
 
     /* AGGREGATE FUNCTIONS */
-    public function count(string $columns = '*')
+    public function count($columns = '*')
     {
         return $this->getAggregateQuery()->count($columns);
     }
 
-    public function max(string $column)
+    public function max($column)
     {
         $column = $this->castColumnAsNumeric($column);
 
         return $this->castResultAsNumeric($this->getAggregateQuery()->max($column));
     }
 
-    public function min(string $column)
+    public function min($column)
     {
         $column = $this->castColumnAsNumeric($column);
 
         return $this->castResultAsNumeric($this->getAggregateQuery()->min($column));
     }
 
-    public function avg(string $column)
+    public function avg($column)
     {
         $column = $this->castColumnAsNumeric($column);
 
         return $this->castResultAsNumeric($this->getAggregateQuery()->avg($column));
     }
 
-    public function sum(string $column)
+    public function sum($column)
     {
         $column = $this->castColumnAsNumeric($column);
 
@@ -448,7 +461,7 @@ class LaramieQueryBuilder
         return $this->dataService->augmentListQuery($query, $model, array_merge($this->searchOptions, ['sort' => null]), $this->queryCallback);
     }
 
-    private function castColumnAsNumeric(string $column)
+    private function castColumnAsNumeric($column)
     {
         return DB::raw('('.$this->translateColumn($column, null, false).')::numeric');
     }
@@ -464,7 +477,11 @@ class LaramieQueryBuilder
 
     protected function translateColumn($column, $value = null, $isWrapInDBRaw = true)
     {
-        if (is_string($column)) {
+        if ($column instanceof Expression) {
+            return $column;
+        }
+
+        if (gettype($column) == 'string') {
             $sql = $this->dataService->getSearchSqlFromFieldName($this->callingClass::getJsonClass(), $column, $value);
 
             return $isWrapInDBRaw

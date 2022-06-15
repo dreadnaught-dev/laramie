@@ -129,7 +129,7 @@ class AssetController extends Controller
         $fileInfo = $this->dataService->getFileInfo($imageKeyParts->key);
 
         // Don't try to get an image for a non-image type file
-        if (!in_array(data_get($fileInfo, 'extension'), Globals::SUPPORTED_RASTER_IMAGE_TYPES)) {
+        if (!preg_match('/^('. implode('|', Globals::SUPPORTED_RASTER_IMAGE_TYPES).')$/i', data_get($fileInfo, 'extension'))) {
             throw new Exception('File type not supported');
         }
 
@@ -187,7 +187,12 @@ class AssetController extends Controller
         } catch (\Exception $e) {
             $imageKeyParts = $this->getImageKeyAndPostfix($imageKey);
             $fileInfo = $this->dataService->getFileInfo($imageKeyParts->key);
-            $extension = data_get($fileInfo, 'extension');
+            $extension = strtolower(data_get($fileInfo, 'extension', ''));
+
+            if (preg_match('/(doc|xls)x$/', $extension)) {
+                $extension = preg_replace('/x$/i', '', $extension);
+            }
+
             $filePath = public_path('laramie/admin/icons/file.png');
             if (in_array($extension, Globals::VALID_ICON_TYPES)) {
                 $tmpFilePath = public_path('laramie/admin/icons/'.$extension.'.png');

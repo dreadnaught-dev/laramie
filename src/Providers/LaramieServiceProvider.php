@@ -128,11 +128,13 @@ EOT;
      */
     private function registerCustomCommands()
     {
+        $commands = [\Laramie\Console\Commands\ClearUserPrefs::class];
+
         if ($this->app->runningInConsole()) {
-            $this->commands([
-                \Laramie\Console\Commands\AuthorizeUser::class,
-                \Laramie\Console\Commands\ClearModelCache::class,
-            ]);
+            $commands[] = \Laramie\Console\Commands\AuthorizeUser::class;
+            $commands[] = \Laramie\Console\Commands\ClearModelCache::class;
         }
+
+        $this->commands($commands);
     }
 }
