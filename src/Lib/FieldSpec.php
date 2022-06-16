@@ -31,6 +31,7 @@ class FieldSpec extends JsonBackedObject implements FieldContainer
     public function getDataType() { return $this->get('dataType', $this->getType()); }
     public function getSql() { return $this->get('sql'); }
     public function isDeferred() { return $this->get('isDeferred') === true; }
+    public function getListTemplate() { return $this->get('listTemplate'); }
 
     /* File field attributes */
     public function canChooseFromLibrary() { return $this->get('canChooseFromLibrary') !== false; }

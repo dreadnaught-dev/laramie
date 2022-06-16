@@ -222,10 +222,16 @@ class AjaxController extends Controller
      */
     public function deleteMeta($modelKey, $id, Request $request)
     {
-        DB::table('laramie_data')
+        $meta = DB::table('laramie_data')
             ->whereIn('type', ['laramieComment', 'laramieTag'])
             ->where('id', $id)
-            ->delete();
+            ->first();
+
+        if ($meta) {
+            DB::table('laramie_data')->where('id', $id)->delete();
+            $metaData = json_decode($meta->data);
+            return $this->getMeta($modelKey, data_get($metaData, 'relatedItemId'));
+        }
 
         return response()->json((object) ['success' => true]);
     }
@@ -237,10 +243,12 @@ class AjaxController extends Controller
      */
     public function addTag($modelKey, $id, Request $request)
     {
-        LaramieTag::create([
-            'relatedItemId' => $id,
-            'tag' => $request->get('meta'),
-        ]);
+        if ($tag = trim($request->get('meta'))) {
+            LaramieTag::create([
+                'relatedItemId' => $id,
+                'tag' => $tag,
+            ]);
+        }
 
         return $this->getMeta($modelKey, $id);
     }
@@ -252,7 +260,9 @@ class AjaxController extends Controller
      */
     public function addComment($modelKey, $id, Request $request)
     {
-        LaramieComment::createFromText($id, $request->get('meta'));
+        if ($comment = trim($request->get('meta'))) {
+            LaramieComment::createFromText($id, $comment);
+        }
 
         return $this->getMeta($modelKey, $id);
     }

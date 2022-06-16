@@ -129,6 +129,7 @@
             "properties": {
                 "dataType": { "type": "string" },
                 "isDeferred": { "type": "boolean" },
+                "listTemplate": { "type": "string" },
                 "sql": { "type": "string" }
             }
         },

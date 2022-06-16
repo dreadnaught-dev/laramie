@@ -75,6 +75,9 @@ class LaramieHelpers
             case 'time':
             case 'checkbox':
             case 'computed':
+                if ($listTemplate = $field->getListTemplate()) {
+                    return str_replace('{{value}}', $value, $listTemplate);
+                }
                 return $value;
             case 'radio':
             case 'select':

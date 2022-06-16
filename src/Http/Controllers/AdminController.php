@@ -935,7 +935,7 @@ class AdminController extends Controller
      */
     public function deleteRevision($modelKey, $revisionId)
     {
-        $model = $this->dataService->getModelByKey($item->type);
+        $model = $this->dataService->getModelByKey($modelKey);
 
         if (config('laramie.disable_revisions') || $model->isDisableRevisions()) {
             abort(403);

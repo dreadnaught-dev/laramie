@@ -76,8 +76,8 @@ class LaramieListener
                 if ($model->isDisableMeta()) {
                     continue;
                 }
-                $model->addField('_tags', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieTag\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'isListByDefault' => false, 'isSearchable' => false]);
-                $model->addField('_comments', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieComment\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'isListByDefault' => false, 'isSearchable' => false]);
+                $model->addField('_tags', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieTag\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'isListByDefault' => false, 'isSearchable' => false, 'listTemplate' => '<span class="js-meta" data-meta-type="tags"><i class="fas fa-tags has-text-grey"></i>&nbsp;<span class="tag-count">{{value}}</span></span>']);
+                $model->addField('_comments', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data as ld2 where ld2.type = \'laramieComment\' and (ld2.data->>\'relatedItemId\')::uuid = laramie_data.id)', 'isListByDefault' => false, 'isSearchable' => false, 'listTemplate' => '<span class="js-meta" data-meta-type="comments"><i class="fas fa-comments has-text-grey"></i>&nbsp;<span class="comment-count">{{value}}</span></span>']);
                 $model->addField('_versions', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data_archive as lda where laramie_data.id = lda.laramie_data_id)', 'isListByDefault' => false, 'isSearchable' => false]);
             }
         }
@@ -205,7 +205,7 @@ class LaramieListener
 
         $deferredFields = collect($model->getFieldsSpecs())
             ->filter(function($item) {
-                return data_get($item, 'type') === 'computed' && data_get($item, 'isDeferred');
+                return $item->getType() === 'computed' && $item->isDeferred();
             });
 
         if (count($deferredFields)) {
