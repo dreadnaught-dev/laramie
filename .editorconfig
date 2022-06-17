@@ -18,7 +18,7 @@ indent_style = space
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[*.{js,css}]
+[*.{js,css,yml,yaml}]
 indent_size = 2
 
 [*.md]
