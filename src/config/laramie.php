@@ -40,14 +40,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Model Path
+    | Schema Path
     |--------------------------------------------------------------------------
     |
     | The path to your main Laramie model schema (can be an array, if multiple
     | schemas need to be processed).
     |
     */
-    'model_path' => [base_path('schema/kitchen-sink.json')],
+    'schema_path' => [base_path('schema/kitchen-sink.json')],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Model Discovery
+    |--------------------------------------------------------------------------
+    |
+    | The path to the folder you would like to use for auto-discovery of your
+    | concrete Laramie Models (can be an array).
+    | Leave empty to disable auto discovery.
+    |
+    */
+    'model_discovery_path' => [base_path('app/Models')],
 
     /*
     |--------------------------------------------------------------------------

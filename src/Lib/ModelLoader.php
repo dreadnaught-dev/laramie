@@ -25,14 +25,14 @@ class ModelLoader
     public static function load()
     {
         // The config path _could_ be an array. If so, we'll merge all those configs together
-        $configPath = config('laramie.model_path');
+        $schemaPath = config('laramie.schema_path');
         $adminConfigPath = __DIR__.'/../admin-models.json';
         $cachedConfigPath = storage_path('framework/cache/laramie-models.php');
 
         $configModifiedTime = 0;
         $configCachedTime = file_exists($cachedConfigPath) ? filemtime($cachedConfigPath) : -1;
 
-        $configs = static::ensureArray($configPath);
+        $configs = static::ensureArray($schemaPath);
         array_unshift($configs, $adminConfigPath);
 
         $configs = collect($configs)

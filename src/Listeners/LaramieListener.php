@@ -81,6 +81,83 @@ class LaramieListener
                 $model->addField('_versions', (object) ['type' => 'computed', 'isMetaField' => true, 'isDeferred' => true, 'sql' => '(select count(*) from laramie_data_archive as lda where laramie_data.id = lda.laramie_data_id)', 'isListByDefault' => false, 'isSearchable' => false]);
             }
         }
+
+        // Find all models within the auto-discovery folder that extend LaramieModel
+        $modelDiscoveryPaths = config('laramie.model_discovery_path', []);
+        $modelDiscoveryPaths = array_filter(is_array($modelDiscoveryPaths) ? $modelDiscoveryPaths : [$modelDiscoveryPaths]);
+        $factoryHash = [];
+        foreach ($modelDiscoveryPaths as $path) {
+            $directory = new \RecursiveDirectoryIterator($path);
+            $iterator = new \RecursiveIteratorIterator($directory);
+            $phpFiles = new \RegexIterator($iterator, '/^.+\.php$/i', \RecursiveRegexIterator::GET_MATCH);
+            foreach ($phpFiles as $info) {
+                $filePath = data_get($info, 0);
+                $code = file($filePath);
+                $namespace = null;
+                $className = null;
+                $jsonClassFallback = null;
+
+                // Extract the class's namespace:
+                foreach ($code as $line) {
+                    if (preg_match('/^\s*namespace\s+(?<namespace>[^;]+);/', $line, $match)) {
+                        $namespace = data_get($match, 'namespace');
+                        break;
+                    }
+                }
+                // Extract the class's name:
+                foreach ($code as $line) {
+                    if (preg_match('/^\s*class\s+(?<className>[^\W]+)/', $line, $match)) {
+                        $className = data_get($match, 'className');
+                        break;
+                    }
+                }
+
+                // Extract the json class's name (will only be used as a fall-back if we can't get it via reflection).
+                foreach ($code as $line) {
+                    if (preg_match('/[$]jsonClass\s*=\s*(?<jsonClass>[^;]+);/', $line, $match)) {
+                        $jsonClassFallback = preg_replace('/[\'"]/', '', data_get($match, 'jsonClass'));
+                        break;
+                    }
+                }
+
+                // Using the namespace and class name, use reflection to determine if the file is a subclass of `LaramieModel`
+                if ($namespace && $className) {
+                    try {
+                        $fullPath = implode('\\', [$namespace, $className]);
+                        $reflectionClass = new \ReflectionClass($fullPath);
+
+                        if ($reflectionClass->isSubclassOf(LaramieModel::class)) {
+                            // try to get the json class via reflection (might be different than convention).
+                            $jsonClassFallback = $jsonClassFallback ?: lcfirst($className); // make a note in documentation that convention looks for camel-cased json name
+                            $jsonClass = null;
+                            try {
+                                $tmp = $reflectionClass->newInstanceWithoutConstructor();
+                                $jsonClass = $tmp->getJsonClass();
+                            }
+                            catch (\Exception $e) {
+                                $jsonClass = $jsonClassFallback;
+                            }
+
+                            $factoryHash[$jsonClass] = $reflectionClass->getName();
+                        }
+                    }
+                    catch (\Exception $e) {
+                        Log::error("Laramie: could not use reflection to determine ancestry for $fullPath");
+                    }
+                }
+            }
+        }
+
+        if (count($factoryHash)) {
+            foreach ($models as $model) {
+                if ($model->getFactory() !== LaramieModel::class) {
+                    continue;
+                }
+                if (array_key_exists($model->getType(), $factoryHash)) {
+                    $model->set('factory', $factoryHash[$model->getType()]);
+                }
+            }
+        }
     }
 
     /**
