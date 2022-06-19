@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie;
 
 class Hook
@@ -25,7 +27,7 @@ class Hook
             : get_class($event);
 
         $sortedListeners = collect(data_get(self::$listeners, $key, []))
-            ->sortBy(function($item) {
+            ->sortBy(function ($item) {
                 return $item->sort;
             });
 
@@ -38,7 +40,7 @@ class Hook
                 [$class, $method] = \Str::parseCallback($callback);
                 $instance = app($class);
                 $returnValue = $instance->{$method}($event);
-            } else if (is_callable($callback)) {
+            } elseif (is_callable($callback)) {
                 $returnValue = $callback($event);
             } else {
                 throw new \Exception('You must specify a callback function or a fully qualified "classPath@method" string to handle Laramie Hooks');

@@ -1,19 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\File;
 use Illuminate\Http\Request;
 use Intervention\Image\ImageManager;
-use Storage;
-use Exception;
-
-use Laramie\Hook;
-use Laramie\Hook\PreSave;
-use Laramie\Hook\PostSave;
 use Laramie\Globals;
+use Laramie\Hook;
+use Laramie\Hook\PostSave;
+use Laramie\Hook\PreSave;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Services\LaramieDataService;
+use Storage;
 
 /**
  * The AssetController serves files and facilitates image manipulation.
@@ -129,7 +130,7 @@ class AssetController extends Controller
         $fileInfo = $this->dataService->getFileInfo($imageKeyParts->key);
 
         // Don't try to get an image for a non-image type file
-        if (!preg_match('/^('. implode('|', Globals::SUPPORTED_RASTER_IMAGE_TYPES).')$/i', data_get($fileInfo, 'extension'))) {
+        if (!preg_match('/^('.implode('|', Globals::SUPPORTED_RASTER_IMAGE_TYPES).')$/i', data_get($fileInfo, 'extension'))) {
             throw new Exception('File type not supported');
         }
 
@@ -151,8 +152,7 @@ class AssetController extends Controller
             $image = $manager->make($filePath);
         } catch (Exception $e) {
             throw $e;
-        }
-        finally {
+        } finally {
             unlink($filePath);
         }
 

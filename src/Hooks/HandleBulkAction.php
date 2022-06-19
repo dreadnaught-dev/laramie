@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Hooks;
 
 use Illuminate\Foundation\Auth\User;
-
 use Laramie\Lib\ModelSpec;
 
 /*

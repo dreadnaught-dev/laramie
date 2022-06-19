@@ -1,14 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Lib;
 
 use Exception;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-
 use Laramie\AdminModels\LaramieComment;
-use Laramie\AdminModels\LaramieTag;
-use Laramie\Lib\LaramieHelpers;
 
 /**
  * LaramieModel makes JSON data stored in dbo.laramie_data accessible (and has
@@ -111,8 +110,6 @@ class LaramieModel implements \JsonSerializable
      * Factory: return instance of LaramieModel class, populated with
      * attributes from `$data`.
      *
-     * @param \stdClass $data
-     *
      * @return static
      */
     public static function hydrate(\stdClass $data)
@@ -154,11 +151,14 @@ class LaramieModel implements \JsonSerializable
         return $tmp;
     }
 
-    public static function setGlobalHidden($hidden) {
+    public static function setGlobalHidden($hidden)
+    {
         static::$globalHidden = $hidden;
     }
 
-    public function hydrated($data) { }
+    public function hydrated($data)
+    {
+    }
 
     /**
      * Hydrate `$data` into a LaramieModel -- take json data and hoist its
@@ -181,7 +181,9 @@ class LaramieModel implements \JsonSerializable
         $origData = $this->data;
         unset($this->data);
 
-        $tmp = json_decode($origData);
+        $tmp = $origData
+            ? json_decode($origData)
+            : null;
 
         if (gettype($tmp) == 'object') {
             foreach ($tmp as $key => $value) {
@@ -591,7 +593,8 @@ class LaramieModel implements \JsonSerializable
         return lcfirst(class_basename(static::class)); // `class_basename` is a Laravel Helper
     }
 
-    public function jsonSerialize() {
+    public function jsonSerialize()
+    {
         $hidden = array_merge(static::$globalHidden, $this->hidden);
 
         foreach ($this as $key => $value) {
@@ -599,6 +602,7 @@ class LaramieModel implements \JsonSerializable
                 unset($this->{$key});
             }
         }
+
         return $this;
     }
 }

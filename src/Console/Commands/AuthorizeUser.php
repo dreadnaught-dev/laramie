@@ -1,19 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Console\Commands;
 
-use Arr;
 use Carbon\Carbon;
 use DB;
 use Hash;
 use Illuminate\Console\Command;
-use PragmaRX\Google2FA\Google2FA;
-use Str;
-
-use Laramie\Globals;
-use Laramie\Lib\LaramieModel;
-use Laramie\Services\LaramieDataService;
 use Laramie\AdminModels\LaramieRole;
+use Laramie\Globals;
+use Laramie\Services\LaramieDataService;
+use Str;
 
 class AuthorizeUser extends Command
 {
@@ -49,6 +47,7 @@ class AuthorizeUser extends Command
 
         if (!$roleId) {
             $this->error(sprintf('Could not find the role with the name of \'%s\'', $roleName));
+
             return;
         }
 
@@ -77,6 +76,7 @@ class AuthorizeUser extends Command
 
         if (data_get($laramieData, 'roles')) {
             $this->error('This user has already been granted access.');
+
             return;
         }
 

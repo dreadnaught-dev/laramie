@@ -1,16 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Http\Controllers;
 
+use cogpowered\FineDiff\Diff;
+use cogpowered\FineDiff\Granularity\Word;
 use DB;
 use Exception;
 use Illuminate\Http\Request;
-use Ramsey\Uuid\Uuid;
-use Str;
-use Validator;
-use cogpowered\FineDiff\Diff;
-use cogpowered\FineDiff\Granularity\Word;
-
 use Laramie\AdminModels\LaramieComment;
 use Laramie\Hook;
 use Laramie\Hooks\HandleBulkAction;
@@ -22,6 +20,9 @@ use Laramie\Lib\FieldSpec;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
 use Laramie\Services\LaramieDataService;
+use Ramsey\Uuid\Uuid;
+use Str;
+use Validator;
 
 /**
  * The AdminController is the primary application controller. Middleware is
@@ -250,7 +251,7 @@ class AdminController extends Controller
         $slugifiedAction = Str::slug($nameOfBulkAction);
         if ($slugifiedAction === 'delete') {
             $this->ensureDeleteAccess($user, $modelKey);
-        } else if ($slugifiedAction === 'duplicate') {
+        } elseif ($slugifiedAction === 'duplicate') {
             $this->ensureBulkDuplicateAccess($user, $modelKey);
         }
 
@@ -261,8 +262,7 @@ class AdminController extends Controller
         // Have "all" matching records been selected? Great. But limit to `max_bulk_records` just in case there are too many records
         if ($isAllSelected) {
             $postData['resultsPerPage'] = config('laramie.max_bulk_records');
-        }
-        else {
+        } else {
             $itemIds = collect(data_get($postData, 'bulk-action-ids', []))
                 ->filter(function ($item) {
                     return $item && LaramieHelpers::isValidUuid($item);
@@ -270,10 +270,10 @@ class AdminController extends Controller
         }
 
         $items = $this->dataService->findByType($model, $postData, function ($query) use ($itemIds) {
-                if ($itemIds) {
-                    $query->whereIn(DB::raw('id::text'), $itemIds);
-                }
-            }, 0);
+            if ($itemIds) {
+                $query->whereIn(DB::raw('id::text'), $itemIds);
+            }
+        }, 0);
 
         if ($isAllSelected && $items->hasMorePages()) {
             throw new Exception('For performance reasons, you may only select up to '.config('laramie.max_bulk_records').' items at a time for bulk actions');
@@ -325,7 +325,7 @@ class AdminController extends Controller
         $listFields = [];
 
         $fieldsFromRequest = collect($request->all())
-            ->filter(function($item, $key) {
+            ->filter(function ($item, $key) {
                 return preg_match('/^_lf_/', $key);
             });
 
@@ -516,7 +516,7 @@ class AdminController extends Controller
         // If we're editing a new item, check to see if we need to pre-set any of the singular relationships (from QS)
         if ($item->isNew() && !session('isFromPost')) {
             $singularRefs = collect($model->getFieldsSpecs())
-                ->filter(function($item, $key) use($request) {
+                ->filter(function ($item, $key) use ($request) {
                     return $item->getType() == 'reference'
                     && $item->getSubtype() == 'single'
                     && $request->get($key);
@@ -570,7 +570,7 @@ class AdminController extends Controller
         $extraInfoToPassToEvents->context = 'admin';
 
         // Generally speaking, if you need to dynamically alter your model for edit, do so in this event:
-        Hook::fire(new TransformModelForEdit($model,  $item, $user));
+        Hook::fire(new TransformModelForEdit($model, $item, $user));
 
         // If you need to modify your _item_ for edit, generally do so here:
         Hook::fire(new PreEdit($model, $item, $user, $extraInfoToPassToEvents));
@@ -703,7 +703,7 @@ class AdminController extends Controller
             ->with('alert', (object) [
                 'class' => 'is-success',
                 'title' => 'Success!',
-                'alert' => $alertMessage])
+                'alert' => $alertMessage, ])
             ->with('formStatus', 'success')
             ->with('status', 'saved');
     }
@@ -752,7 +752,7 @@ class AdminController extends Controller
                 if ($request->get('_'.$fieldName)) {
                     // The 'keep' checkbox was checked. Remove the "required" validation if we're keeping something that already exists.
                     $this->validationRules[$fieldName] = collect(explode('|', $fieldValidation))
-                        ->filter(function($item) {
+                        ->filter(function ($item) {
                             return $item !== 'required';
                         })
                         ->join('|');
@@ -778,7 +778,7 @@ class AdminController extends Controller
             case 'image':
                 if ($request->hasFile($fieldName)) {
                     // First, check to see if we need to remove an old file
-                    //$this->dataService->removeFile(data_get($item, $fieldName));
+                    // $this->dataService->removeFile(data_get($item, $fieldName));
                     // If it's a new upload, store a record of it -- when the item is edited in the future, we'll use the record to persist upload details.
 
                     // Validate the file _before_ we save it; this fixes the
@@ -799,7 +799,7 @@ class AdminController extends Controller
                 } elseif ($request->get('_'.$fieldName)) {
                     // Remove the "required" validation if we're keeping something that already exists.
                     $this->validationRules[$fieldName] = collect(explode('|', $fieldValidation))
-                        ->filter(function($item) {
+                        ->filter(function ($item) {
                             return !preg_match('/^required/', $item);
                         })
                         ->join('|');
@@ -807,7 +807,7 @@ class AdminController extends Controller
                     return $this->dataService->findByIdSuperficial('laramieUpload', $request->get('_'.$fieldName));
                 } else {
                     // check to see if we need to remove an old file
-                    //$this->dataService->removeFile(data_get($item, $fieldName));
+                    // $this->dataService->removeFile(data_get($item, $fieldName));
                     return null;
                 }
                 break;
@@ -957,7 +957,7 @@ class AdminController extends Controller
 
         $model = $this->dataService->getModelByKey($item->type);
 
-        if (config('laramie.disable_revisions') || $model->issDisableRevisions()) {
+        if (config('laramie.disable_revisions') || $model->isDisableRevisions()) {
             abort(403);
         }
 
@@ -1079,7 +1079,7 @@ class AdminController extends Controller
     {
         DB::table('laramie_data')
             ->whereIn('type', ['laramieComment', 'laramieTag'])
-            ->where('data','@>', DB::raw('\'{"relatedItemId":"'.$oldId.'"}\''))
+            ->where('data', '@>', DB::raw('\'{"relatedItemId":"'.$oldId.'"}\''))
             ->update(['data' => DB::raw('data || \'{"relatedItem":"'.$newId.'"}\'')]);
     }
 
@@ -1102,8 +1102,7 @@ class AdminController extends Controller
 
     private function ensureBulkDuplicateAccess($user, $modelKey)
     {
-        if (!
-            ($user->hasAccessToLaramieModel($modelKey, 'read') &&
+        if (!($user->hasAccessToLaramieModel($modelKey, 'read') &&
                 $user->hasAccessToLaramieModel($modelKey, 'create')
             )
         ) {

@@ -1,7 +1,8 @@
 <?php
 
-use Laramie\Hook;
+declare(strict_types=1);
 
+use Laramie\Hook;
 use Laramie\Http\Middleware\Authorize as LaramieAuthorize;
 use Laramie\Http\Middleware\RequestLogger;
 use Laramie\Http\Middleware\ShareAlertFromSession;

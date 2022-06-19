@@ -1,16 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Lib;
 
 use Arr;
 use Exception;
-use Str;
-
+use JsonSchema\Validator;
 use Laramie\Globals;
 use Laramie\Hook;
-use Laramie\Hooks\ConfigLoaded;
 use Laramie\Hooks\AugmentModelValidator;
-use JsonSchema\Validator;
+use Laramie\Hooks\ConfigLoaded;
+use Str;
 
 /**
  * Process and load Laramie configuration files.
@@ -186,7 +187,7 @@ class ModelLoader
                 $models->{$key} = $model;
             }
 
-            $models = collect($models)->map(function($item) {
+            $models = collect($models)->map(function ($item) {
                 return new ModelSpec($item);
             });
 
@@ -231,7 +232,7 @@ class ModelLoader
                 $model->setJsonValidator(static::getValidationSchema($model));
             }
 
-            $config->models = $models->map(function($item) { return $item->toData(); });
+            $config->models = $models->map(function ($item) { return $item->toData(); });
 
             // Save the processed config to storage so we don't have to that processing on every request.
             file_put_contents($cachedConfigPath, json_encode($config, JSON_PRETTY_PRINT));
@@ -688,7 +689,7 @@ class ModelLoader
      */
     private static function joinPaths()
     {
-        $paths = array();
+        $paths = [];
 
         foreach (func_get_args() as $arg) {
             if ($arg !== '') {
@@ -735,13 +736,11 @@ class ModelLoader
      * Take an array and return whether or not it's associative
      * (from https://stackoverflow.com/a/173479).
      *
-     * @param array $arr
-     *
      * @return bool
      */
     private static function isAssoc(array $arr)
     {
-        if (array() === $arr) {
+        if ($arr === []) {
             return false;
         }
 

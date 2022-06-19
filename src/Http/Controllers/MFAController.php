@@ -1,13 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Http\Controllers;
 
 use DB;
 use Illuminate\Http\Request;
-use PragmaRX\Google2FA\Google2FA;
-use Laramie\Services\LaramieDataService;
-
 use Laramie\LaramieUser;
+use Laramie\Services\LaramieDataService;
+use PragmaRX\Google2FA\Google2FA;
 
 /**
  * Handle MFA.
@@ -70,11 +71,11 @@ class MFAController extends Controller
             // from being used again if cached by some MITM vector; whether the
             // browser a key-logger, networking equipment, etc).
             $mfaRecoveryCodes = $recoveryCodes
-                ->filter(function($item) use($recoveryCode) {
+                ->filter(function ($item) use ($recoveryCode) {
                     return $item != $recoveryCode;
                 });
 
-            for ($i = $mfaRecoveryCodes->count(); $i < 5; $i ++) {
+            for ($i = $mfaRecoveryCodes->count(); $i < 5; $i++) {
                 $mfaRecoveryCodes->push(\Str::random(10));
             }
 
@@ -110,7 +111,7 @@ class MFAController extends Controller
 
             // Give the user some recovery codes:
             $mfaRecoveryCodes = collect([]);
-            for ($i = 0; $i < 5; $i ++) {
+            for ($i = 0; $i < 5; $i++) {
                 $mfaRecoveryCodes->push(\Str::random(10));
             }
             $user->mfa->recoveryCodes = $mfaRecoveryCodes->join('|');
@@ -148,8 +149,7 @@ class MFAController extends Controller
         if ($isResettingMfa) {
             if ($request->session()->has('_mfa_secret')) {
                 $secret = $request->session()->get('_mfa_secret');
-            }
-            else {
+            } else {
                 $secret = $this->google2fa->generateSecretKey();
                 $request->session()->put('_mfa_secret', $secret);
             }

@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Hooks;
 
 use Illuminate\Foundation\Auth\User;
-
 use Laramie\Lib\ModelSpec;
 
 /*
@@ -22,9 +23,9 @@ class FilterQuery
     /**
      * Create a new FilterQuery hook.
      *
-     * @param stdClass $model JSON-decoded model definition (from laramie-models.json, etc).
+     * @param stdClass                          $model JSON-decoded model definition (from laramie-models.json, etc).
      * @param Illuminate\Database\Query\Builder $query the query that will be used to fetch db instances of the `$model`
-     * @param Laramie\Lib\LaramieModel $user laramie's version of the logged in user
+     * @param Laramie\Lib\LaramieModel          $user  laramie's version of the logged in user
      */
     public function __construct(ModelSpec $model, $query, User $user = null, &$extra = null)
     {

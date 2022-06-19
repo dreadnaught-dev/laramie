@@ -1,7 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
 use Laramie\Http\Middleware\ApiAuthenticate as LaramieApiAuthenticate;
-use Laramie\Http\Middleware\Authenticate as LaramieAuthenticate;
 use Laramie\Http\Middleware\RequestLogger;
 
 return [
@@ -24,7 +25,7 @@ return [
     | name of a model whose list page should serve as the admin dashboard.
     |
     */
-    //'dashboard_override' => 'vanilla',
+    // 'dashboard_override' => 'vanilla',
 
     /*
     |--------------------------------------------------------------------------
@@ -214,7 +215,7 @@ return [
     */
     'web_middleware' => ['web', 'auth', RequestLogger::class],
 
-    //'api_middleware' => ['web', 'auth', LaramieApiAuthenticate::class, RequestLogger::class],
+    // 'api_middleware' => ['web', 'auth', LaramieApiAuthenticate::class, RequestLogger::class],
 
     /*
     |--------------------------------------------------------------------------
@@ -222,5 +223,4 @@ return [
     |--------------------------------------------------------------------------
     */
     'laramie_data_fields' => ['id' => 1, 'user_id' => 1, 'type' => 1, 'data' => 1, 'created_at' => 1, 'updated_at' => 1],
-
 ];

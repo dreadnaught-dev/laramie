@@ -1,18 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie;
 
-use Arr;
 use DB;
-use Illuminate\Console\Command;
-use Str;
-
-use App\User;
-use Laramie\Globals;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
-use Laramie\Services\LaramieDataService;
 use PragmaRX\Google2FA\Google2FA;
+use Str;
 
 class LaramieUser extends LaramieModel
 {
@@ -73,8 +69,8 @@ class LaramieUser extends LaramieModel
         foreach ($this->getRoles() as $role) {
             // The `data` attribute contains the abilities the particular role has been granted
             collect(json_decode(data_get($role->toArray(), 'data')))
-                ->filter(function($item) { return $item === true; })
-                ->each(function($item, $key) use(&$abilities) { $abilities[$key] = true; });
+                ->filter(function ($item) { return $item === true; })
+                ->each(function ($item, $key) use (&$abilities) { $abilities[$key] = true; });
         }
 
         return $abilities;
@@ -90,8 +86,7 @@ class LaramieUser extends LaramieModel
         if (!is_int($id) && LaramieHelpers::isValidUuid($id)) {
             $id = data_get(DB::table('users')
                 ->where(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text'), $id)
-                ->first()
-                , 'id', -1);
+                ->first(), 'id', -1);
         }
 
         return auth()->onceUsingId($id);

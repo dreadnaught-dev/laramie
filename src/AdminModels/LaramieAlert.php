@@ -1,16 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\AdminModels;
 
 use Carbon\Carbon;
 use DB;
-
-use Laramie\Lib\LaramieModel;
 use Laramie\Lib\LaramieHelpers;
+use Laramie\Lib\LaramieModel;
 
 class LaramieAlert extends LaramieModel
 {
-    static $userHash = [];
+    public static $userHash = [];
 
     public function getAuthorName()
     {
@@ -40,7 +41,7 @@ class LaramieAlert extends LaramieModel
     private function getAuthor()
     {
         if (!array_key_exists($this->user_id, static::$userHash)) {
-            static::$userHash[$this->user_id] = DB::table('users')->where('id', $this->user_id)->addSelect(DB::raw(config('laramie.username') . ' as handle'))->first();
+            static::$userHash[$this->user_id] = DB::table('users')->where('id', $this->user_id)->addSelect(DB::raw(config('laramie.username').' as handle'))->first();
         }
 
         return static::$userHash[$this->user_id];

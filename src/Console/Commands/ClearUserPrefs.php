@@ -1,13 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Console\Commands;
 
 use DB;
-
 use Illuminate\Console\Command;
-
 use Laramie\LaramieUser;
-
 use Ramsey\Uuid\Uuid;
 
 class ClearUserPrefs extends Command
@@ -44,18 +43,17 @@ class ClearUserPrefs extends Command
         $user = LaramieUser::where($userLookupField, $userArg)->first();
 
         if ($user) {
-            $updateString = $keys->reduce(function($carry, $item) {
-                return $carry . ' ' . sprintf('#- \'{prefs,%s}\'', $item);
+            $updateString = $keys->reduce(function ($carry, $item) {
+                return $carry.' '.sprintf('#- \'{prefs,%s}\'', $item);
             });
 
-            $query = sprintf('update laramie_data set data = data %s where id = \'%s\'', ($updateString ?? '- \'prefs\''), data_get($user, 'id'));
+            $query = sprintf('update laramie_data set data = data %s where id = \'%s\'', ($updateString ?: '- \'prefs\''), data_get($user, 'id'));
 
             DB::statement($query);
 
-            $this->info('Prefs updated for ' . $this->argument('user'));
-        }
-        else {
-            $this->error('Could not find user ' . $this->argument('user'));
+            $this->info('Prefs updated for '.$this->argument('user'));
+        } else {
+            $this->error('Could not find user '.$this->argument('user'));
         }
     }
 }

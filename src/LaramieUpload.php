@@ -1,15 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie;
 
-use DB;
-use Illuminate\Console\Command;
-
-use Laramie\Globals;
-use Laramie\Lib\LaramieHelpers;
+use Illuminate\Http\File;
 use Laramie\Lib\LaramieModel;
 use Laramie\Services\LaramieDataService;
-use Illuminate\Http\File;
 
 class LaramieUpload extends LaramieModel
 {
@@ -29,5 +26,3 @@ class LaramieUpload extends LaramieModel
         return static::createFromFile($file, $isPublic, $source, $destination);
     }
 }
-
-

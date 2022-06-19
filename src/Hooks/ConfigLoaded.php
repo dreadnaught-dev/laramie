@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Hooks;
 
 /*
@@ -12,11 +14,6 @@ class ConfigLoaded
 {
     public $config;
 
-    /**
-     * Create a new ConfigLoaded event instance.
-     *
-     * @param stdClass $model JSON-decoded model definition (from your models.json).
-     */
     public function __construct($config)
     {
         $this->config = $config;

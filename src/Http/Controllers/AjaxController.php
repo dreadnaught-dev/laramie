@@ -1,17 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Http\Controllers;
 
 use DB;
 use Illuminate\Http\Request;
-use Str;
-
 use Laramie\AdminModels\LaramieAlert;
 use Laramie\AdminModels\LaramieComment;
 use Laramie\AdminModels\LaramieTag;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\ModelSpec;
 use Laramie\Services\LaramieDataService;
+use Str;
 
 /**
  * The AjaxController is primarily responsible for handling all the AJAX interactions initiated by the list and edit
@@ -106,6 +107,7 @@ class AjaxController extends Controller
 
         $fieldInvokingRequest = $request->get('field');
         $isTypeSpecific = optional($outerModel->getFieldSpec($fieldInvokingRequest))->isTypeSpecific();
+
         return $this->dataService->findByType(
             $model,
             [
@@ -141,7 +143,7 @@ class AjaxController extends Controller
                     $query->whereRaw(\DB::raw('data->>\'extension\' in (\''.implode("','", config('laramie.allowed_image_types')).'\')'));
                 }
                 // If a tag was passed, only show items that were tagged accordingly
-                if ($tag){
+                if ($tag) {
                     $query->whereIn('id', function ($query) use ($tag) {
                         $query->select(\DB::raw('data->>\'relatedItemId\''))
                             ->from('laramie_data')
@@ -199,7 +201,6 @@ class AjaxController extends Controller
                 }
             }
         );
-
     }
 
     /**
@@ -211,7 +212,7 @@ class AjaxController extends Controller
     {
         return response()->json((object) [
             'tags' => LaramieTag::where('relatedItemId', $id)->orderBy('created_at', 'desc')->get(),
-            'comments' => LaramieComment::where('relatedItemId', $id)->orderBy('created_at', 'desc')->get()->map(function($item) { return $item->getAjaxViewModel(); }),
+            'comments' => LaramieComment::where('relatedItemId', $id)->orderBy('created_at', 'desc')->get()->map(function ($item) { return $item->getAjaxViewModel(); }),
         ]);
     }
 
@@ -230,6 +231,7 @@ class AjaxController extends Controller
         if ($meta) {
             DB::table('laramie_data')->where('id', $id)->delete();
             $metaData = json_decode($meta->data);
+
             return $this->getMeta($modelKey, data_get($metaData, 'relatedItemId'));
         }
 
@@ -237,7 +239,7 @@ class AjaxController extends Controller
     }
 
     /**
-     * Add a tag to an item. Return tags / comments to repopulate ui
+     * Add a tag to an item. Return tags / comments to repopulate ui.
      *
      * @return \Illuminate\Http\Response
      */
@@ -322,10 +324,10 @@ class AjaxController extends Controller
         if (!LaramieHelpers::isValidUuid($itemId)) {
             $itemId = null;
         }
-        $item = $this->dataService->findByType($modelKey, null, function($query) use ($itemId) {
-                $query->where('id', $itemId)
+        $item = $this->dataService->findByType($modelKey, null, function ($query) use ($itemId) {
+            $query->where('id', $itemId)
                     ->limit(1);
-            })
+        })
             ->first();
 
         $referenceItemId = $request->get('referenceId');
@@ -357,7 +359,7 @@ class AjaxController extends Controller
             $existingSelection = collect(data_get($data, $referenceFieldName, []));
             $existingSelection->push($referenceItemId);
             $data->{$referenceFieldName} = $existingSelection
-                ->filter(function($item) use($isSelected, $referenceItemId) {
+                ->filter(function ($item) use ($isSelected, $referenceItemId) {
                     return $isSelected
                         ? true
                         : $item != $referenceItemId;

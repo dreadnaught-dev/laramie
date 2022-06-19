@@ -1,13 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Http\Middleware;
 
-use Arr;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Access\AuthorizationException;
-
-use Laramie\Globals;
-use Laramie\Services\LaramieDataService;
+use Illuminate\Support\Facades\Auth;
 
 class ApiAuthenticate
 {

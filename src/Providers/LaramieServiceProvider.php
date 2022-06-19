@@ -1,17 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Providers;
 
-use Arr;
 use DB;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\ServiceProvider;
 use Laramie\AdminModels\LaramieAlert;
 use Laramie\Http\Middleware\RequestLogger;
-use Laramie\Lib\LaramieHelpers;
-use Laramie\Hook;
 use Laramie\Services\LaramieDataService;
 
 /*
@@ -107,11 +105,12 @@ EOT;
 
         Validator::extend('laramie_image', function ($attribute, $value, $parameters, $validator) {
             $extension = $value->getClientOriginalExtension();
+
             return in_array(strtolower($extension), $parameters);
         });
 
         Validator::replacer('laramie_image', function ($message, $attribute, $rule, $parameters) {
-            return 'This must be a file of type:' . implode(', ', $parameters);
+            return 'This must be a file of type:'.implode(', ', $parameters);
         });
     }
 

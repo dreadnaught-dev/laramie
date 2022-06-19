@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Services;
 
 use Arr;
@@ -7,16 +9,6 @@ use Carbon\Carbon;
 use DB;
 use Exception;
 use JsonSchema\Validator;
-use Ramsey\Uuid\Uuid;
-use Storage;
-
-use Laramie\Lib\FieldContainer;
-use Laramie\Lib\FieldSpec;
-use Laramie\Lib\FileInfo;
-use Laramie\Lib\LaramieHelpers;
-use Laramie\Lib\LaramieModel;
-use Laramie\Lib\ModelLoader;
-use Laramie\Lib\ModelSpec;
 use Laramie\Hook;
 use Laramie\Hooks\FilterQuery;
 use Laramie\Hooks\ModifyFileInfoPreSave;
@@ -25,6 +17,14 @@ use Laramie\Hooks\PostFetch;
 use Laramie\Hooks\PostSave;
 use Laramie\Hooks\PreDelete;
 use Laramie\Hooks\PreSave;
+use Laramie\Lib\FieldContainer;
+use Laramie\Lib\FileInfo;
+use Laramie\Lib\LaramieHelpers;
+use Laramie\Lib\LaramieModel;
+use Laramie\Lib\ModelLoader;
+use Laramie\Lib\ModelSpec;
+use Ramsey\Uuid\Uuid;
+use Storage;
 
 class LaramieDataService
 {
@@ -111,7 +111,7 @@ class LaramieDataService
         $this->prefetchRelationships($model, $laramieModels, $maxPrefetchDepth, $curDepth);
 
         if ($isSpiderAggregates) {
-            $laramieModels->each(function($item) use($model, $maxPrefetchDepth) {
+            $laramieModels->each(function ($item) use ($model, $maxPrefetchDepth) {
                 $this->spiderAggregates($model, $item, $maxPrefetchDepth); // @TODO preston -- create common interface for aggregate fields and ModelSpec (FieldContainer)?
             });
         }
@@ -246,13 +246,13 @@ class LaramieDataService
         }
 
         $filterGroups = collect(data_get($options, 'filters', []))
-            ->groupBy(function($item) { return data_get($item, 'field'); });
+            ->groupBy(function ($item) { return data_get($item, 'field'); });
 
         // @TODO -- add laramie config param to dictate how to handle group filter logic (AND or OR). For now, default to ORing within a group (as defined by which field is being searched).
         // For example, if multiple user filters are added, we will return records that match any user supplied.
 
         foreach ($filterGroups as $filters) {
-            $query->where(function($query) use($filters, $model) {
+            $query->where(function ($query) use ($filters, $model) {
                 foreach ($filters as $filter) {
                     $operation = $filter->operation;
                     $value = $filter->value;
@@ -269,11 +269,12 @@ class LaramieDataService
                     // Check to see if we need to manipulate `$value` for searching (currently limited to date fields):
                     $modelField = $model->getFieldSpec($filter->field);
                     if ($operation !== 'between-dates' && (in_array($filter->field, ['_created_at', '_updated_at'])
-                        || in_array($modelField->getDataType(), ['dbtimestamp', 'timestamp', 'date', 'datetime-local'])))
-                    {
+                        || in_array($modelField->getDataType(), ['dbtimestamp', 'timestamp', 'date', 'datetime-local']))) {
                         try {
                             $value = Carbon::parse($value)->timestamp;
-                        } catch (Exception $e) { $value = 0; }
+                        } catch (Exception $e) {
+                            $value = 0;
+                        }
                     }
 
                     switch ($operation) {
@@ -315,16 +316,17 @@ class LaramieDataService
                             break;
                         case 'between-dates':
                             $dates = collect(preg_split('/[|]/', $value))
-                                ->map(function($item) {
+                                ->map(function ($item) {
                                     try {
                                         return Carbon::parse($item);
-                                    } catch (\Exception $e) { /* error parsing date. don't add filter */ }
+                                    } catch (\Exception $e) { /* error parsing date. don't add filter */
+                                    }
                                 })
                                 ->filter()
                                 ->toArray();
 
                             if (count($dates) === 2) {
-                                $query->orWhere(function($query) use($field, $dates) {
+                                $query->orWhere(function ($query) use ($field, $dates) {
                                     $query->where(DB::raw($field), '>=', $dates[0]->startOfDay()->timestamp);
                                     $query->where(DB::raw($field), '<=', $dates[1]->endOfDay()->timestamp);
                                 });
@@ -410,12 +412,10 @@ class LaramieDataService
         } elseif ($modelFieldType == 'reference') {
             // If the value we're searching by is a valid uuid (or collection of uuids), don't try to search by alias
             if (LaramieHelpers::isValidUuid($value)
-                || (collect($value)->every(function($item){ return LaramieHelpers::isValidUuid($item); }))
-            )
-            {
+                || (collect($value)->every(function ($item) { return LaramieHelpers::isValidUuid($item); }))
+            ) {
                 $field = 'data->>\''.$field.'\'';
-            }
-            else {
+            } else {
                 // If we're searching a reference field by a UUID, don't do the gymnastics of searching by its alias
                 $field = 'data->>\''.$field.'\'';
                 $relatedModel = $this->getModelByKey($modelField->getRelatedModel());
@@ -488,7 +488,7 @@ class LaramieDataService
             // Next, pull those relationships
             foreach ($referencedUuids as $modelKey => $uuidList) {
                 $uuidList = collect($uuidList)
-                    ->filter(function($uuid) {
+                    ->filter(function ($uuid) {
                         return !array_key_exists($uuid, $this->cachedItems);
                     })
                     ->unique()
@@ -607,7 +607,7 @@ class LaramieDataService
         }
 
         if (!LaramieHelpers::isValidUuid($id)) {
-            throw new Exception('Id must be a valid UUID ' . $id);
+            throw new Exception('Id must be a valid UUID '.$id);
         }
 
         $query = $this->getBaseQuery($model)
@@ -688,11 +688,11 @@ class LaramieDataService
                 foreach ($aggregateReferenceFields as $aggregateReferenceFieldKey => $aggregateReferenceField) {
                     // If `$aggregateData` is an array, we're processing a repeatable aggregate.
                     if (is_array($aggregateData)) {
-                        for ($i = 0; $i < count($aggregateData); ++$i) {
+                        for ($i = 0; $i < count($aggregateData); $i++) {
                             $aggregateReferenceFieldData = data_get($aggregateData[$i], $aggregateReferenceFieldKey);
                             if (is_array($aggregateReferenceFieldData)) {
                                 // If `$aggregateReferenceFieldData` is an array, we're processing a `reference-many` field
-                                for ($j = 0; $j < count($aggregateReferenceFieldData); ++$j) {
+                                for ($j = 0; $j < count($aggregateReferenceFieldData); $j++) {
                                     $aggregateReferenceFieldData[$j] = $this->findById($this->getModelByKey($aggregateReferenceField->relatedModel), $aggregateReferenceFieldData[$j], $prefetchDepth);
                                 }
                             } else {
@@ -705,7 +705,7 @@ class LaramieDataService
                         $aggregateReferenceFieldData = data_get($aggregateData, $aggregateReferenceFieldKey);
                         if (is_array($aggregateReferenceFieldData)) {
                             // If `$aggregateReferenceFieldData` is an array, we're processing a `reference-many` field
-                            for ($i = 0; $i < count($aggregateReferenceFieldData); ++$i) {
+                            for ($i = 0; $i < count($aggregateReferenceFieldData); $i++) {
                                 $aggregateReferenceFieldData[$i] = $this->findById($this->getModelByKey($aggregateReferenceField->relatedModel), $aggregateReferenceFieldData[$i], $prefetchDepth);
                             }
                         } else {
@@ -856,7 +856,7 @@ class LaramieDataService
             } elseif ($field->type == 'aggregate') {
                 $aggregateData = data_get($data, $key, null);
                 if (is_array($aggregateData)) {
-                    for ($i = 0; $i < count($aggregateData); ++$i) {
+                    for ($i = 0; $i < count($aggregateData); $i++) {
                         $aggregateData[$i] = $this->flattenRelationships($field, $aggregateData[$i]);
                     }
                 } else {
@@ -906,7 +906,7 @@ class LaramieDataService
                 // Insert
                 $data->type = $model->getType();
                 $data->created_at = data_get($data, 'created_at', $dbNow);
-            } else if (array_key_exists($data->id, $this->cachedItems)) {
+            } elseif (array_key_exists($data->id, $this->cachedItems)) {
                 unset($this->cachedItems[$data->id]);
             }
 
@@ -993,9 +993,7 @@ class LaramieDataService
             DB::commit();
         } catch (\Illuminate\Database\QueryException $e) {
             DB::rollBack();
-            throw config('app.debug')
-                ? $e
-                : new Exception('Error saving item');
+            throw config('app.debug') ? $e : new Exception('Error saving item');
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
@@ -1040,9 +1038,7 @@ class LaramieDataService
             DB::commit();
         } catch (\Illuminate\Database\QueryException $e) {
             DB::rollBack();
-            throw config('app.debug')
-                ? $e
-                : new Exception('Error deleting item');
+            throw config('app.debug') ? $e : new Exception('Error deleting item');
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;

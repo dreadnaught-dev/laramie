@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Http\Middleware;
 
 use Closure;
@@ -16,8 +18,6 @@ class ShareAlertFromSession
 
     /**
      * Create a new ShareAlertFromSession instance.
-     *
-     * @param \Illuminate\Contracts\View\Factory $view
      */
     public function __construct(ViewFactory $view)
     {
@@ -31,7 +31,6 @@ class ShareAlertFromSession
      * available, which is convenient since they don't have to continually run checks for the presence of alerts.
      *
      * @param \Illuminate\Http\Request $request
-     * @param \Closure                 $next
      *
      * @return mixed
      */

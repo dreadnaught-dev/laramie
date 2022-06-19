@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Lib;
 
 use Illuminate\Http\UploadedFile;
-use Ramsey\Uuid\Uuid;
 
 class FileInfo
 {

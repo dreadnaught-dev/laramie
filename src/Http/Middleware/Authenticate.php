@@ -1,15 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Http\Middleware;
 
-use DB;
 use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Auth\Factory as Auth;
-
-use Laramie\Globals;
 use Laramie\LaramieUser;
-use Laramie\Services\LaramieDataService;
 
 class Authenticate
 {
@@ -22,8 +20,6 @@ class Authenticate
 
     /**
      * Create a new middleware instance.
-     *
-     * @param \Illuminate\Contracts\Auth\Factory $auth
      */
     public function __construct(Auth $auth)
     {
@@ -37,7 +33,6 @@ class Authenticate
      * following middleware comes into play.
      *
      * @param \Illuminate\Http\Request $request
-     * @param \Closure                 $next
      * @param string[]                 ...$guards
      *
      * @return mixed

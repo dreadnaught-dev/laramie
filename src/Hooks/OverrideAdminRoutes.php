@@ -1,8 +1,8 @@
 <?php
 
-namespace Laramie\Hooks;
+declare(strict_types=1);
 
-use Laramie\Lib\LaramieModel;
+namespace Laramie\Hooks;
 
 /*
  * Called after registering Laramie routes -- useful for overriding specific

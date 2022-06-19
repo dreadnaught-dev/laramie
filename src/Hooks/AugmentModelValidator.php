@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Hooks;
 
 /*
@@ -10,12 +12,7 @@ class AugmentModelValidator
 {
     public $modelValidator;
 
-    /**
-     * Create a new AugmentModelValidator event instance.
-     *
-     * @param stdClass $modelValidator JSON-decoded model validation definition (model-validator.json).
-     */
-    public function __construct($modelValidator)
+    public function __construct(mixed $modelValidator)
     {
         $this->modelValidator = $modelValidator;
     }

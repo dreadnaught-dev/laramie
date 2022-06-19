@@ -3,5 +3,6 @@ grumphp:
     failed: ~
     succeeded: ~
   tasks:
-    phpcsfixer2: ~
+    phpcsfixer2:
+      config: .php-cs-fixer.php
     #phpstan: ~ #NOTE: phpstan job takes a while to run, so ./vendor/bin/phpstan -c .phpstan.neon analyse

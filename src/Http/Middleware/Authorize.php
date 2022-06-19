@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Http\Middleware;
 
 use Closure;
 use Illuminate\Contracts\Auth\Factory as Auth;
-
-use Laramie\Services\LaramieDataService;
 
 class Authorize
 {
@@ -18,8 +18,6 @@ class Authorize
 
     /**
      * Create a new middleware instance.
-     *
-     * @param \Illuminate\Contracts\Auth\Factory $auth
      */
     public function __construct(Auth $auth)
     {
@@ -34,7 +32,6 @@ class Authorize
      * model type.
      *
      * @param \Illuminate\Http\Request $request
-     * @param \Closure                 $next
      *
      * @return mixed
      */

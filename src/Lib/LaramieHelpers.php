@@ -1,14 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Lib;
 
 use Carbon\Carbon;
 use Illuminate\Http\File;
 use Intervention\Image\ImageManager;
+use Laramie\Globals;
 use Ramsey\Uuid\Uuid;
 use Storage;
-
-use Laramie\Globals;
 
 class LaramieHelpers
 {
@@ -30,7 +31,7 @@ class LaramieHelpers
 
         $qs = collect($qs)
             ->filter(function ($item) { return $item && gettype($item) != 'array'; }) // exclude `bulk-action-ids`
-            ->map(function ($value, $key) use ($curSort, $curSortDirection) {
+            ->map(function ($value, $key) {
                 return "$key=$value";
             })
             ->values()
@@ -76,13 +77,14 @@ class LaramieHelpers
             case 'checkbox':
             case 'computed':
                 if ($listTemplate = $field->getListTemplate()) {
-                    return str_replace('{{value}}', $value, $listTemplate);
+                    return str_replace('{{value}}', (string) $value, $listTemplate);
                 }
+
                 return $value;
             case 'radio':
             case 'select':
                 $options = collect($field->getOptions());
-                $value = is_array($value) ? $value : [ $value ];
+                $value = is_array($value) ? $value : [$value];
                 $returnValue = collect($value)->map(function ($item, $key) use ($options) {
                     return data_get($options->firstWhere('value', $item), 'text', $item);
                 });
@@ -105,10 +107,12 @@ class LaramieHelpers
             case 'date':
             case 'dbtimestamp':
                 $dateFormat = config('laramie.date_presentation_format') ?: 'Y-m-d'; // Carbon's default if none provided
+
                 return $value ? Carbon::parse($value)->format($dateFormat) : '';
             case 'datetime':
             case 'datetime-local':
                 $dateFormat = config('laramie.datetime_presentation_format') ?: 'Y-m-d H:i:s'; // Carbon's default if none provided
+
                 return $value ? Carbon::parse($value)->format($dateFormat) : '';
             case 'dateDiff':
                 if ($value) {
@@ -277,7 +281,7 @@ class LaramieHelpers
         // @optimize -- move thumb gen to postsave
         // If the upload is an image, create thumbnails (for use by the admin)
         $storageDisk = config('laramie.storage_disk');
-        if ($upload->extension && preg_match('/^('. implode('|', Globals::SUPPORTED_RASTER_IMAGE_TYPES).')$/i', $upload->extension)) { // only try to take thumbnails of a subset of allowed image types:
+        if ($upload->extension && preg_match('/^('.implode('|', Globals::SUPPORTED_RASTER_IMAGE_TYPES).')$/i', $upload->extension)) { // only try to take thumbnails of a subset of allowed image types:
             $filePath = static::getLocalFilePath($upload);
             $manager = new ImageManager(['driver' => static::getInterventionImageDriver()]);
             $thumbWidths = [50]; // Currently only make one small thumbnail
@@ -291,11 +295,12 @@ class LaramieHelpers
                     $thumbnail = new File($tmpThumbnailPath);
                     Storage::disk($storageDisk)->putFileAs('', $thumbnail, static::applyPathPostfix($upload->path, '_'.$width), (data_get($upload, 'isPublic') ? 'public' : 'private'));
                 } catch (\Exception $e) {
-                    if (!$swallowErrors) { throw $e; }
+                    if (!$swallowErrors) {
+                        throw $e;
+                    }
                 } finally {
                     unlink($tmpThumbnailPath);
                 }
-
             }
         }
         // @optimize -- can we add a temp attribute that lets us know if we need to do this

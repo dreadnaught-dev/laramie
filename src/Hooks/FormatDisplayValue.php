@@ -1,8 +1,8 @@
 <?php
 
-namespace Laramie\Hooks;
+declare(strict_types=1);
 
-use Laramie\Lib\LaramieModel;
+namespace Laramie\Hooks;
 
 /*
  * Called before before displaying a value on the list page or csv export.

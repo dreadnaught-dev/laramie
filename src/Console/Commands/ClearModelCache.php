@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Console\Commands;
 
 use Illuminate\Console\Command;

@@ -1,22 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Listeners;
 
-use DB;
 use Cache;
+use DB;
 use Exception;
 use Illuminate\Http\File;
-use Ramsey\Uuid\Uuid;
-use Storage;
-use Str;
-
 use Laramie\AdminModels\LaramieAlert;
 use Laramie\Globals;
 use Laramie\Hook;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
-use Laramie\Lib\ModelLoader;
 use Laramie\Services\LaramieDataService;
+use Ramsey\Uuid\Uuid;
+use Str;
 
 class LaramieListener
 {
@@ -40,7 +39,7 @@ class LaramieListener
     }
 
     /**
-     * Handle config-loaded event
+     * Handle config-loaded event.
      *
      * @param $event Laramie\Hooks\ConfigLoaded
      */
@@ -133,15 +132,13 @@ class LaramieListener
                             try {
                                 $tmp = $reflectionClass->newInstanceWithoutConstructor();
                                 $jsonClass = $tmp->getJsonClass();
-                            }
-                            catch (\Exception $e) {
+                            } catch (\Exception $e) {
                                 $jsonClass = $jsonClassFallback;
                             }
 
                             $factoryHash[$jsonClass] = $reflectionClass->getName();
                         }
-                    }
-                    catch (\Exception $e) {
+                    } catch (\Exception $e) {
                         Log::error("Laramie: could not use reflection to determine ancestry for $fullPath");
                     }
                 }
@@ -197,13 +194,13 @@ class LaramieListener
                 $userQuery = DB::table('users')
                     ->addSelect(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text) as id'))
                     ->addSelect(DB::raw('id as user_id'))
-                    ->addSelect(DB::raw('\'' . $type . '\' as type'))
+                    ->addSelect(DB::raw('\''.$type.'\' as type'))
                     ->addSelect(DB::raw('data || concat(\'{"user":"\','.config('laramie.username').',\'"}\')::jsonb as data'))
                     ->addSelect('created_at')
                     ->addSelect('updated_at');
 
                 $additionalSelects = collect($query->columns)
-                    ->filter(function($item) {
+                    ->filter(function ($item) {
                         return $item instanceof \Illuminate\Database\Query\Expression;
                     });
 
@@ -211,8 +208,7 @@ class LaramieListener
                     $condition = $item->getValue();
                     if (strpos($condition, 'id::text') !== false) {
                         $userQuery->addSelect(DB::raw(str_replace('id::text', 'uuid_generate_v3(uuid_ns_url(), id::text)::text', $condition)));
-                    }
-                    else {
+                    } else {
                         $userQuery->addSelect($item);
                     }
                 }
@@ -231,14 +227,13 @@ class LaramieListener
                 $bindings = [];
                 $queryWheres = $query->wheres;
                 $queryBindings = $query->getBindings();
-                for ($i = 0; $i < count($queryWheres); $i ++) {
-                    if (data_get($queryWheres, $i . '.column')) {
-                        continue;
+                for ($i = 0; $i < count($queryWheres); $i++) {
+                    if (data_get($queryWheres, $i.'.column')) {
+                        break;
                     }
-                    if (strpos(optional(data_get($queryWheres, $i . '.query.wheres.0.column'))->getValue(), 'data->>\'user\'') !== false) {
-                        $userQuery->where(config('laramie.username'), data_get($queryWheres, $i . '.query.wheres.0.operator'), $queryBindings[$i]);
-                    }
-                    else {
+                    if (strpos(optional(data_get($queryWheres, $i.'.query.wheres.0.column'))->getValue(), 'data->>\'user\'') !== false) {
+                        $userQuery->where(config('laramie.username'), data_get($queryWheres, $i.'.query.wheres.0.operator'), $queryBindings[$i]);
+                    } else {
                         $wheres[] = $queryWheres[$i];
                         $bindings[] = $queryBindings[$i];
                     }
@@ -247,12 +242,11 @@ class LaramieListener
 
                 // If filtering by id, translate it to work for the users table
                 if (!(data_get($extra, 'isFromAjaxController') && data_get($extra, 'isInvertedSearch'))) {
-                    $whereId = collect($queryWheres)->filter(function($item) { return data_get($item, 'column') === 'id'; })->first();
+                    $whereId = collect($queryWheres)->filter(function ($item) { return data_get($item, 'column') === 'id'; })->first();
                     if ($whereId) {
                         if (strtolower(data_get($whereId, 'type', '')) === 'in') {
                             $userQuery->whereIn(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text'), data_get($whereId, 'values'));
-                        }
-                        else {
+                        } else {
                             $userQuery->where(DB::raw('uuid_generate_v3(uuid_ns_url(), id::text)::text'), data_get($whereId, 'operator', '='), data_get($whereId, 'value'));
                         }
                     }
@@ -281,7 +275,7 @@ class LaramieListener
         }
 
         $deferredFields = collect($model->getFieldsSpecs())
-            ->filter(function($item) {
+            ->filter(function ($item) {
                 return $item->getType() === 'computed' && $item->isDeferred();
             });
 
@@ -291,14 +285,14 @@ class LaramieListener
                 ->whereIn('id', $items->pluck('id'));
 
             foreach ($deferredFields as $deferredFieldKey => $deferredField) {
-                $valuesQuery->addSelect(DB::raw($deferredField->getSql() . ' as "' . $deferredFieldKey . '"'));
+                $valuesQuery->addSelect(DB::raw($deferredField->getSql().' as "'.$deferredFieldKey.'"'));
             }
 
             $deferredValues = $valuesQuery->get()->keyBy('id');
 
             foreach ($deferredFields as $deferredFieldKey => $deferredField) {
                 foreach ($items as $item) {
-                    $item->{$deferredFieldKey} = data_get($deferredValues, $item->id . '.' . $deferredFieldKey);
+                    $item->{$deferredFieldKey} = data_get($deferredValues, $item->id.'.'.$deferredFieldKey);
                 }
             }
         }
@@ -356,16 +350,12 @@ class LaramieListener
             foreach ($items as $item) {
                 $item->delete();
             }
-        }
-
-        else if ($bulkActionName === 'duplicate') {
+        } elseif ($bulkActionName === 'duplicate') {
             foreach ($items as $item) {
                 $newItem = $item->replicate();
                 $dataService->save($model, $newItem);
             }
-        }
-
-        else if ($bulkActionName === 'export-to-csv') {
+        } elseif ($bulkActionName === 'export-to-csv') {
             $listableFields = data_get($extra, 'listableFields', collect(['id'])) // should always be defined, but default to `id` just in case
                 ->filter(function ($item) { // Don't include meta fields in export (versions, tags, comments).
                     return data_get($item, 'isMetaField') !== true;
@@ -463,14 +453,12 @@ class LaramieListener
                     if ($field->getType() === 'reference') {
                         if ($field->getSubtype() === 'many') {
                             $jsonInfo->{$fieldName} = collect(data_get($item, $fieldName))
-                                ->map(function($item) { return data_get($item, 'id'); })
+                                ->map(function ($item) { return data_get($item, 'id'); })
                                 ->toArray();
+                        } else {
+                            $jsonInfo->{$fieldName} = data_get($item, $fieldName.'.id');
                         }
-                        else {
-                            $jsonInfo->{$fieldName} = data_get($item, $fieldName . '.id');
-                        }
-                    }
-                    else {
+                    } else {
                         $jsonInfo->{$fieldName} = data_get($item, $fieldName);
                     }
                 }
@@ -510,7 +498,7 @@ class LaramieListener
                 $mentions = data_get($matches, 'mentions');
                 foreach ($mentions as $mention) {
                     $mentionedUser = DB::table('users')
-                        ->where(config('laramie.username'), 'ilike', $mention . '%')
+                        ->where(config('laramie.username'), 'ilike', $mention.'%')
                         ->first();
                     if ($mentionedUser) {
                         LaramieAlert::create([
@@ -553,5 +541,4 @@ class LaramieListener
     {
         return app(LaramieDataService::class);
     }
-
 }

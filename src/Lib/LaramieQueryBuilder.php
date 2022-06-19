@@ -1,12 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Lib;
 
 use DB;
 use Exception;
 use Illuminate\Database\Query\Expression;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 use Laramie\Services\LaramieDataService;
 
 /**
@@ -51,7 +51,8 @@ class LaramieQueryBuilder
         };
     }
 
-    public function query() {
+    public function query()
+    {
         return $this;
     }
 
@@ -93,14 +94,13 @@ class LaramieQueryBuilder
     {
         // If the where is an array, assume it contains kvps that should be added:
         if (is_array($column)) {
-            $this->qb->where(function($query) use($column) {
+            $this->qb->where(function ($query) use ($column) {
                 foreach ($column as $arrKey => $arrValue) {
                     $column = $this->translateColumn($arrKey, $arrValue);
                     $query->where($column, '=', $arrValue);
                 }
             });
-        }
-        else {
+        } else {
             // If the operator is `=`, we can use the generally more performant gin index search.
             if (
                 is_string($column) // don't operate on DB::raw columns
@@ -108,9 +108,8 @@ class LaramieQueryBuilder
                 && !array_key_exists($column, config('laramie.laramie_data_fields')) // don't operate on concrete columns
                 && !preg_match('/\bdata\b/', $column) // don't operate on columns that may be accessing nested data props
             ) {
-                $this->qb->where('data', '@>', DB::raw('\'{"'.$column.'":'.json_encode($value ?: $operator).'}\''));//$value ?: $operator, $boolean);
-            }
-            else {
+                $this->qb->where('data', '@>', DB::raw('\'{"'.$column.'":'.json_encode($value ?: $operator).'}\'')); // $value ?: $operator, $boolean);
+            } else {
                 $column = $this->translateColumn($column, $value ?: $operator);
                 $this->qb->where($column, $operator, $value, $boolean);
             }
@@ -371,7 +370,7 @@ class LaramieQueryBuilder
 
                 // @preston -- stopped here. convert all references of getFields to getFieldsSpecs and update all fields iterated over to use FieldSpec methods.
                 // Once done, rename getFieldSpec and getFieldsSpecs to getField and getFields.
-                for ($i = 0, $fields = $model->getFieldsSpecs(); $i < count($path); ++$i ) {
+                for ($i = 0, $fields = $model->getFieldsSpecs(); $i < count($path); $i++) {
                     $field = data_get($fields, $path[$i]);
 
                     $fieldType = $field->getType();

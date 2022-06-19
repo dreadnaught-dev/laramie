@@ -1,15 +1,23 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Laramie;
 
 use Cache;
-
-use Laramie\Globals;
 use Laramie\AdminModels\LaramieRole;
 
 trait LaramieAuth
 {
-    public function isAdmin() { return $this->isLaramieAdmin(); }
-    public function hasAbility($modelType, $ability = 'read') { return $this->hasLaramieAbility($modelType, $ability); }
+    public function isAdmin()
+    {
+        return $this->isLaramieAdmin();
+    }
+
+    public function hasAbility($modelType, $ability = 'read')
+    {
+        return $this->hasLaramieAbility($modelType, $ability);
+    }
 
     private $_roles = null;
 
@@ -35,7 +43,7 @@ trait LaramieAuth
 
         // If no ability is specified, just make sure the user has _some_ ability for the model.
         if (!$ability) {
-            return (count($userAbilitiesForType) > 0);
+            return count($userAbilitiesForType) > 0;
         }
 
         return in_array('all', $userAbilitiesForType)
@@ -88,7 +96,7 @@ trait LaramieAuth
     private function getNonSystemModelTypes()
     {
         // The types cache gets cleared any time there's an update that triggers a new `ConfigLoaded` hook.
-        return Cache::rememberForever(Globals::LARAMIE_TYPES_CACHE_KEY, function() {
+        return Cache::rememberForever(Globals::LARAMIE_TYPES_CACHE_KEY, function () {
             return collect(app(\Laramie\Services\LaramieDataService::class)->getAllModels())
                 ->filter(function ($e) {
                     return !data_get($e, 'isSystemModel');

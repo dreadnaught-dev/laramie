@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laramie\Hooks;
 
 use Illuminate\Foundation\Auth\User;
-
 use Laramie\Lib\ModelSpec;
 
 /*
@@ -21,8 +22,8 @@ class PostFetch
     /**
      * Create a new PostFetch hook.
      *
-     * @param stdClass $model JSON-decoded model definition (from laramie-models.json, etc).
-     * @param Laramie\Lib\LaramieModel $user laramie's version of the logged in user
+     * @param stdClass                 $model JSON-decoded model definition (from laramie-models.json, etc).
+     * @param Laramie\Lib\LaramieModel $user  laramie's version of the logged in user
      */
     public function __construct(ModelSpec $model, &$items, User $user = null, &$extra = null)
     {
