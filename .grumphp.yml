@@ -1,0 +1,7 @@
+grumphp:
+  ascii:
+    failed: ~
+    succeeded: ~
+  tasks:
+    phpcsfixer2: ~
+    #phpstan: ~ #NOTE: phpstan job takes a while to run, so ./vendor/bin/phpstan -c .phpstan.neon analyse

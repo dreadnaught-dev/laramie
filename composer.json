@@ -23,6 +23,9 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.8",
+        "laravel/framework": "^9.17",
+        "nunomaduro/larastan": "^2.1",
+        "orchestra/testbench": "^7.5",
         "phpro/grumphp": "^1.12",
         "phpstan/phpstan": "^1.7",
         "phpunit/phpunit": "^9.3.3"
@@ -43,6 +46,9 @@
                 "Laramie\\Providers\\LaramieServiceProvider",
                 "Laramie\\Providers\\LaramieEventServiceProvider"
             ]
+        },
+        "grumphp": {
+            "config-default-path": ".grumphp.yml"
         }
     },
     "config": {
