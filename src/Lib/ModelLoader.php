@@ -159,13 +159,13 @@ class ModelLoader
 
                 // Don't allow reference fields to be used as aliases -- we run into an issue
                 // with prefetching relationships and potentially going down a recursive rabbit hole
-                if (preg_match('/^reference/', data_get($fields, $model->alias.'.type'))) {
+                if (preg_match('/^reference/', data_get($fields, $model->alias.'.type', 'unknown-type'))) {
                     throw new Exception('Sorry, you may not use a reference field as an alias. You may use a computed field if you need additional flexibility');
                 }
 
                 // Don't allow aggregate fields to be used as aliases -- we run into an issue
                 // with prefetching relationships and potentially going down a recursive rabbit hole
-                if (preg_match('/^aggregate/', data_get($fields, $model->alias.'.type'))) {
+                if (preg_match('/^aggregate/', data_get($fields, $model->alias.'.type', 'unknown-type'))) {
                     throw new Exception('Sorry, you may not use an aggregate field as an alias. You may use a computed field if you need additional flexibility');
                 }
 
