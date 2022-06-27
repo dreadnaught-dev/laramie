@@ -50,7 +50,7 @@ class LaramieDataService
                 throw new Exception(sprintf('Model type does not exist: `%s`.', $model));
             }
 
-            return new ModelSpec(json_decode(json_encode($modelConfig)));
+            return new ModelSpec($modelConfig);
         } elseif ($model instanceof ModelSpec) {
             return $model;
         }
@@ -918,7 +918,7 @@ class LaramieDataService
             // that may have been removed will still exist in archived versions of the
             // data). Basically what this means is that what gets saved in the db must
             // comply with the schema.
-            $allowedFields = ['id', 'type', 'created_at', 'updated_at'];
+            $allowedFields = collect(array_keys(config('laramie.laramie_data_fields')))->filter(function($item) { return $item !== 'data'; })->toArray();
             foreach ($model->getFieldsSpecs() as $key => $field) {
                 if (!in_array($field->getType(), ['computed', 'html'])) {
                     // Don't save computed/html fields (these will be calculated every time the item is accessed).

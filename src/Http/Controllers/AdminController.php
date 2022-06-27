@@ -117,7 +117,7 @@ class AdminController extends Controller
         // either this or its edit page. If not, check to see if there's a default
         // report to load. If so, load it.
         if (!count($options)) {
-            $referrer = $request->headers->get('referer');
+            $referrer = $request->headers->get('referer', '');
             $currentUrl = url()->current();
             if (strpos($referrer, $currentUrl) !== 0) {
                 $defaultReport = $request->cookie('default_'.$modelKey);
