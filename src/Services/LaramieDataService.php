@@ -133,7 +133,7 @@ class LaramieDataService
             $laramieModels->appends($qs);
         }
 
-        $this->prefetchRelationships($model, $laramieModels, $maxPrefetchDepth, $curDepth);
+        $this->prefetchRelationships($model, $laramieModels, $maxPrefetchDepth, $curDepth, $options);
 
         if ($isSpiderAggregates) {
             $laramieModels->each(function($item) use($model, $maxPrefetchDepth) {
@@ -143,7 +143,8 @@ class LaramieDataService
 
         $options['curDepth'] = $curDepth;
         if (config('laramie.suppress_events') !== true && !self::$isFetchingUser) {
-            Hook::fire(new PostFetch($model, $laramieModels, $this->getUser(), $options));
+            $user = data_get($options, 'user') ?: $this->getUser();
+            Hook::fire(new PostFetch($model, $laramieModels, $user, $options));
         }
 
         return $laramieModels;
@@ -207,7 +208,8 @@ class LaramieDataService
          * on the injected arguments.
          */
         if (config('laramie.suppress_events') !== true && object_get($options, 'filterQuery', true) !== false) {
-            Hook::fire(new FilterQuery($model, $query, $this->getUser(), $options));
+            $user = data_get($options, 'user') ?: $this->getUser();
+            Hook::fire(new FilterQuery($model, $query, $user, $options));
         }
 
         $options = (array) $options;
@@ -480,7 +482,7 @@ class LaramieDataService
     }
 
     // Note that we aren't preventing cyclic relationships (on save or on fetch). We do enforce a max recursion depth, however, which will prevent infinite loops
-    private function prefetchRelationships($model, $laramieModels, $maxPrefetchDepth, $curDepth)
+    private function prefetchRelationships($model, $laramieModels, $maxPrefetchDepth, $curDepth, $options)
     {
         // Set a convenience `_alias` attribute -- will be useful to save on logic where we'd otherwise be looking the alias up.
         foreach ($laramieModels as $laramieModel) {
@@ -528,6 +530,7 @@ class LaramieDataService
                     [
                         'resultsPerPage' => 0,
                         'filterQuery' => false,
+                        'user' => data_get($options, 'user'),
                     ],
                     function ($query) use ($uuidList) {
                         $query->whereIn('id', $uuidList);
@@ -730,7 +733,7 @@ class LaramieDataService
         }
     }
 
-    public function findById($model, $id = null, $maxPrefetchDepth = 5)
+    public function findById($model, $id = null, $maxPrefetchDepth = 5, $options = [])
     {
         $id = is_string($model) && Uuid::isValid($model)
             ? $model
@@ -772,7 +775,7 @@ class LaramieDataService
             return null;
         }
 
-        $item = array_first($this->prefetchRelationships($model, [$factory::load($dbItem)], $maxPrefetchDepth, 0));
+        $item = array_first($this->prefetchRelationships($model, [$factory::load($dbItem)], $maxPrefetchDepth, 0, $options));
 
         // NOTE: we're only diving into aggregate relationships for single item
         // selection. What this means is that reference fields within deeply
@@ -783,7 +786,8 @@ class LaramieDataService
 
         $itemCollection = collect([$item]); // Wrap the single item in a collection to give `PostFetch` a consistent interface -- it works on collection-like items
         if (config('laramie.suppress_events') !== true && !self::$isFetchingUser) {
-            Hook::fire(new PostFetch($model, $itemCollection, $this->getUser()));
+            $user = data_get($options, 'user') ?: $this->getUser();
+            Hook::fire(new PostFetch($model, $itemCollection, $user));
         }
 
         return $item;
@@ -1012,13 +1016,14 @@ class LaramieDataService
         return $data;
     }
 
-    public function save($model, LaramieModel $laramieModel, $validateJson = true, $maxPrefetchDepth = 5, $runSaveHooks = true)
+    public function save($model, LaramieModel $laramieModel, $validateJson = true, $maxPrefetchDepth = 5, $runSaveHooks = true, $options = [])
     {
         $item = null;
 
         DB::beginTransaction();
         try {
             $model = $this->getModelByKey($model);
+            $user = data_get($options, 'user') ?: $this->getUser();
 
             // Save a record of the original id. After saving, we'll reset the item's id back to the original so we have
             // context as to if the item is new in the PostSave event.
@@ -1030,7 +1035,7 @@ class LaramieDataService
              * saved based on the injected arguments.
              */
             if ($runSaveHooks && config('laramie.suppress_events') !== true) {
-                Hook::fire(new PreSave($model, $laramieModel, $this->getUser()));
+                Hook::fire(new PreSave($model, $laramieModel, $user));
             }
 
             $data = clone $laramieModel;
@@ -1097,7 +1102,7 @@ class LaramieDataService
             }
 
             $modelData = $data->toArray();
-            $modelData['user_id'] = $this->getUserUuid();
+            $modelData['user_id'] = data_get($user, 'id');
 
             if (object_get($data, '_origId')) {
                 // Update
@@ -1134,8 +1139,8 @@ class LaramieDataService
             $item->_wasNew = !object_get($data, '_origId');
 
             if ($runSaveHooks && config('laramie.suppress_events') !== true) {
-                Hook::fire(new PostSave($model, $item, $this->getUser()));
-                event(new ItemSaved($model, $item, $this->getUser()));
+                Hook::fire(new PostSave($model, $item, $user));
+                event(new ItemSaved($model, $item, $user));
             }
 
             DB::commit();

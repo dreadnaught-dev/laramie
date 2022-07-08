@@ -36,7 +36,7 @@ class LaramieModel implements \JsonSerializable
     protected static $globalHidden = [];
 
     protected $tableFields = ['id' => 1, 'user_id' => 1, 'type' => 1, 'data' => 1, 'created_at' => 1, 'updated_at' => 1];
-    protected $excludeAttributesOnSave = ['jsonClass' => 1, 'tableFields' => 1, 'excludeAttributesOnSave' => 1];
+    protected $excludeAttributesOnSave = ['jsonClass' => 1, 'tableFields' => 1, 'excludeAttributesOnSave' => 1, 'hidden' => 1];
     protected $jsonClass = null;
     protected $hidden = [];
 
@@ -514,6 +514,11 @@ class LaramieModel implements \JsonSerializable
     public static function filterQuery(bool $isFilterQuery)
     {
         return static::setOption('filterQuery', $isFilterQuery);
+    }
+
+    public static function asUser(LaramieModel $user)
+    {
+        return static::setOption('user', $user);
     }
 
     public static function getFilteredQueryBuilder()

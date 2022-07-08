@@ -51,6 +51,15 @@ class LaramieQueryBuilder
         };
     }
 
+    public function __call($name, $arguments)
+    {
+        if (method_exists($this, $name) && in_array($name, ['save', 'create'])) {
+            return $this->{$name}(...$arguments);
+        }
+
+        throw new Exception(sprintf('Call to undefined method %s::%s()', static::class, $name));
+    }
+
     public function query() {
         return $this;
     }
@@ -65,6 +74,11 @@ class LaramieQueryBuilder
     public function filterQuery(bool $isFilterQuery)
     {
         return $this->setOption('filterQuery', $isFilterQuery);
+    }
+
+    public function asUser(LaramieModel $user)
+    {
+        return $this->setOption('user', $user);
     }
 
     public function getFilteredQueryBuilder()
@@ -338,10 +352,17 @@ class LaramieQueryBuilder
             ->deleteById($this->callingClass::getJsonClass(), $id, $isDeleteHistory);
     }
 
-    public function save(LaramieModel $item, $validate = true, $runSaveHooks = true)
+    private function save(LaramieModel $item, $validate = true, $runSaveHooks = true)
     {
         return $this->callingClass::hydrateWithModel($this->dataService
-            ->save($this->callingClass::getJsonClass(), $item, $validate, $this->maxPrefetchDepth, $runSaveHooks));
+            ->save($this->callingClass::getJsonClass(), $item, $validate, $this->maxPrefetchDepth, $runSaveHooks, $this->searchOptions));
+    }
+
+    private function create(array $attributes, $validate = true, $runSaveHooks = true)
+    {
+        $tmp = $this->callingClass::load((object) $attributes);
+
+        return $this->save($tmp, $validate, $runSaveHooks);
     }
 
     // Allow updating of json data via query (may touch deeply-nested data as long as it's not computed, a reference field, or a repeatable aggregate (jsonb_set doesn't have decent facility for mass updating array data)
