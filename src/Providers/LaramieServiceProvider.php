@@ -84,7 +84,7 @@ class LaramieServiceProvider extends ServiceProvider
                     }
                 )
                 ->map(function ($item) {
-                    $item->html = object_get($item, 'message.html');
+                    $item->html = data_get($item, 'message.html');
                     $item->_user = $item->author->user;
 
                     return LaramieHelpers::transformCommentForDisplay($item);

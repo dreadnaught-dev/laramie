@@ -44,13 +44,13 @@ class LaramieListener
     {
         $config = $event->config;
 
-        $laramieRoleModel = object_get($config, 'models.laramieRole');
+        $laramieRoleModel = data_get($config, 'models.laramieRole');
 
         $models = collect($config->models);
 
         $nonSystemModels = $models
             ->filter(function ($e) {
-                return !object_get($e, 'isSystemModel');
+                return !data_get($e, 'isSystemModel');
             })
             ->sortBy(function ($e) {
                 return $e->namePlural;
@@ -61,7 +61,7 @@ class LaramieListener
         $laramieUpload->fields->preview->sql = str_replace('_admin_url_', config('laramie.admin_url'), $laramieUpload->fields->preview->sql);
 
         foreach ($nonSystemModels as $nonSystemModel) {
-            $showName = object_get($nonSystemModel, 'isSingular', false) ? $nonSystemModel->name : $nonSystemModel->namePlural;
+            $showName = data_get($nonSystemModel, 'isSingular', false) ? $nonSystemModel->name : $nonSystemModel->namePlural;
             $laramieRoleModel->fields->{$nonSystemModel->_type} = ModelLoader::processField($nonSystemModel->_type, (object) ['type' => 'boolean', 'label' => 'Can manage '.$showName]);
         }
     }
@@ -134,14 +134,14 @@ class LaramieListener
         foreach ($systemMetaFields as $metaField => $countGeneratorCallback) {
             $counts = null;
             $map = [];
-            if (array_get($listFields, $metaField)) {
+            if (data_get($listFields, $metaField)) {
                 $counts = $countGeneratorCallback();
                 foreach ($counts as $count) {
                     $map[$count->laramie_data_id] = $count;
                 }
                 foreach ($items as $item) {
-                    $count = array_get($map, $item->id, null);
-                    $item->{$metaField} = str_replace('{*count*}', object_get($count, 'count', 0), $item->{$metaField});
+                    $count = data_get($map, $item->id, null);
+                    $item->{$metaField} = str_replace('{*count*}', data_get($count, 'count', 0), $item->{$metaField});
                 }
             }
         }
@@ -169,7 +169,7 @@ class LaramieListener
                 }
                 break;
             case 'laramieUser':
-                if (!object_get($item, 'api.username')) {
+                if (!data_get($item, 'api.username')) {
                     $item->api = (object) ['enabled' => false, 'username' => str_random(Globals::API_TOKEN_LENGTH), 'password' => str_random(Globals::API_TOKEN_LENGTH)];
                 }
                 break;
@@ -177,7 +177,7 @@ class LaramieListener
                 if ($item->_isNew) {
                     $model->fields->status->isEditable = false;
                     $model->fields->recipient->isEditable = true;
-                } elseif (object_get($item, 'recipient.id') !== $user->id) {
+                } elseif (data_get($item, 'recipient.id') !== $user->id) {
                     $model->fields->status->type = 'hidden';
                 } else {
                     $model->fields->_authorName->isEditable = true;
@@ -197,7 +197,7 @@ class LaramieListener
                         'type' => data_get($relatedModel, '_type'),
                         'alias' => data_get($relatedModel, 'alias'),
                         'field' => data_get($item, 'throughField'),
-                        'quickSearch' => implode(', ', object_get($relatedModel, 'quickSearch')),
+                        'quickSearch' => implode(', ', data_get($relatedModel, 'quickSearch')),
                     ];
                 });
         }
@@ -220,7 +220,7 @@ class LaramieListener
 
         $dataService = $this->getLaramieDataService();
 
-        $postData['quickSearch'] = array_get($postData, 'quick-search');
+        $postData['quickSearch'] = data_get($postData, 'quick-search');
 
         // @note -- switching on the slugified version of the bulk action
         switch (str_slug($nameOfBulkAction)) {
@@ -249,17 +249,17 @@ class LaramieListener
 
             case 'export-to-csv':
                 $itemIds = [];
-                $listableFields = object_get($extra, 'listableFields', collect(['id'])) // should always be defined, but default to `id` just in case
+                $listableFields = data_get($extra, 'listableFields', collect(['id'])) // should always be defined, but default to `id` just in case
                     ->filter(function ($item) { // Don't include meta fields in export (versions, tags, comments).
-                        return object_get($item, 'isMetaField') !== true;
+                        return data_get($item, 'isMetaField') !== true;
                     });
 
                 // Have "all" matching records been selected? Great. But limit to `max_csv_records` just in case there are too many records
-                $isAllSelected = array_get($postData, 'bulk-action-all-selected') === '1';
+                $isAllSelected = data_get($postData, 'bulk-action-all-selected') === '1';
                 if ($isAllSelected) {
                     $postData['resultsPerPage'] = config('laramie.max_csv_records');
                 } else {
-                    $itemIds = collect(array_get($postData, 'bulk-action-ids', []))
+                    $itemIds = collect(data_get($postData, 'bulk-action-ids', []))
                         ->filter(function ($item) {
                             return $item && Uuid::isValid($item);
                         });
@@ -284,7 +284,7 @@ class LaramieListener
                 foreach ($records as $record) {
                     $csvOutput = [];
                     foreach ($csvFieldOrder as $key => $field) {
-                        $value = object_get($record, $key);
+                        $value = data_get($record, $key);
                         $csvOutput[] = LaramieHelpers::formatListValue($field, $value, false);
                     }
                     $csvData[] = $csvOutput;
@@ -292,7 +292,7 @@ class LaramieListener
                 $outputFile = storage_path(Uuid::uuid4()->toString().'.csv');
                 $writer = \League\Csv\Writer::createFromPath($outputFile, 'w+');
                 $writer->insertAll($csvData);
-                $extra->response = response()->download($outputFile, sprintf('%s_%s.csv', snake_case($model->namePlural), date('Ymd')))->deleteFileAfterSend(true);
+                $extra->response = response()->download($outputFile, sprintf('%s_%s.csv', \Str::snake($model->namePlural), date('Ymd')))->deleteFileAfterSend(true);
                 break;
         }
     }
@@ -317,7 +317,7 @@ class LaramieListener
         switch ($type) {
             case 'laramieUser':
                 // If we're saving a new user, we need to create a corresponding Laravel user
-                if (object_get($item, '_isNew')) {
+                if (data_get($item, '_isNew')) {
                     if (DB::table('users')
                         ->where('email', 'ilike', data_get($item, 'user'))
                         ->count() > 0
@@ -402,16 +402,16 @@ class LaramieListener
             case 'laramieUpload':
                 break;
             case '_laramieComment':
-                $plainText = object_get($item, 'comment.markdown');
+                $plainText = data_get($item, 'comment.markdown');
                 preg_match_all('/@(?<mentions>[a-z0-9\-\.\_]+)/i', $plainText, $matches);
-                $mentions = array_get($matches, 'mentions');
+                $mentions = data_get($matches, 'mentions');
                 foreach ($mentions as $mention) {
                     $tmpUser = $dataService->findByType('laramieUser', null, function ($query) use ($mention) {
                         $query->where(DB::raw('data->>\'user\''), 'ilike', $mention.'%');
                     })->first();
                     if ($tmpUser) {
                         $alert = LaramieModel::load((object) [
-                            'metaId' => object_get($item, 'metaId'),
+                            'metaId' => data_get($item, 'metaId'),
                             'recipient' => $tmpUser,
                             'author' => $dataService->getUser(),
                             'message' => $item->comment,
@@ -433,7 +433,7 @@ class LaramieListener
         $model = $event->model;
         $item = $event->item;
 
-        if (in_array(object_get($item, 'id'), [Globals::SuperAdminRoleId, Globals::AdminRoleId])) {
+        if (in_array(data_get($item, 'id'), [Globals::SuperAdminRoleId, Globals::AdminRoleId])) {
             throw new Exception('You may not delete one of the core roles.');
         }
 

@@ -69,31 +69,31 @@ class AssetController extends Controller
 
         $image = $this->getInterventionImage($imageKey);
 
-        if (array_get($request, 'scaleX') == '-1') {
+        if (data_get($request, 'scaleX') == '-1') {
             $image->flip('h');
         }
 
-        if (array_get($request, 'scaleY') == '-1') {
+        if (data_get($request, 'scaleY') == '-1') {
             $image->flip('v');
         }
 
-        if (array_get($request, 'rotate') != '0') {
-            $image->rotate(array_get($request, 'rotate'));
+        if (data_get($request, 'rotate') != '0') {
+            $image->rotate(data_get($request, 'rotate'));
         }
 
-        if (floor(array_get($request, 'width')) &&
-            floor(array_get($request, 'height'))
+        if (floor(data_get($request, 'width')) &&
+            floor(data_get($request, 'height'))
         ) {
             $image->crop(
-                floor(array_get($request, 'width')),
-                floor(array_get($request, 'height')),
-                floor(array_get($request, 'x')),
-                floor(array_get($request, 'y'))
+                floor(data_get($request, 'width')),
+                floor(data_get($request, 'height')),
+                floor(data_get($request, 'x')),
+                floor(data_get($request, 'y'))
             );
 
             // Resize the image if it has been zoomed (although this may be removed -- obvious behavior?)
-            if (array_get($request, 'zoom') !== '1') {
-                $newWidth = floor(array_get($request, 'width') * array_get($request, 'zoom'));
+            if (data_get($request, 'zoom') !== '1') {
+                $newWidth = floor(data_get($request, 'width') * data_get($request, 'zoom'));
                 $image->resize($newWidth, null, function ($constraint) {
                     $constraint->aspectRatio();
                 });
@@ -165,7 +165,7 @@ class AssetController extends Controller
     {
         preg_match('/(?<postfix>_.*$)/', $compositeKey, $matches);
         $key = $compositeKey;
-        $postfix = array_get($matches, 'postfix', '');
+        $postfix = data_get($matches, 'postfix', '');
         if ($postfix) {
             $key = preg_replace('/_.*$/', '', $compositeKey);
         }
@@ -189,7 +189,7 @@ class AssetController extends Controller
         } catch (\Exception $e) {
             $imageKeyParts = $this->getImageKeyAndPostfix($imageKey);
             $fileInfo = $this->dataService->getFileInfo($imageKeyParts->key);
-            $extension = strtolower(object_get($fileInfo, 'extension', ''));
+            $extension = strtolower(data_get($fileInfo, 'extension', ''));
 
             if (preg_match('/(doc|xls)x$/', $extension)) {
                 $extension = preg_replace('/x$/i', '', $extension);

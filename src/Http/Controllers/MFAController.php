@@ -38,7 +38,7 @@ class MFAController extends Controller
     {
         $user = $this->getLaramieUser();
 
-        $isValid = $this->google2fa->verifyKey(object_get($user, 'mfa.secret'), ($request->get('mfa') ?: ''));
+        $isValid = $this->google2fa->verifyKey(data_get($user, 'mfa.secret'), ($request->get('mfa') ?: ''));
 
         if ($isValid) {
             $request->session()->put('_mfa', 'allow');
@@ -135,14 +135,14 @@ class MFAController extends Controller
     {
         return $this->google2fa->getQRCodeInline(
             config('laramie.site_name'),
-            object_get($user, 'user'),
+            data_get($user, 'user'),
             $this->getUserSecret($request, $user)
         );
     }
 
     private function getUserSecret($request, $user)
     {
-        $secret = object_get($user, 'mfa.secret');
+        $secret = data_get($user, 'mfa.secret');
         $isResettingMfa = $request->has('mfa-reset');
 
         if ($isResettingMfa) {

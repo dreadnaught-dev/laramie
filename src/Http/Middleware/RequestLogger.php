@@ -59,7 +59,7 @@ class RequestLogger
     protected function log($request, $response)
     {
         $duration = ($this->end - $this->start) * 1000;
-        $user = object_get($request->user(), config('laramie.username'), 'non-user');
+        $user = data_get($request->user(), config('laramie.username'), 'non-user');
         $url = $request->fullUrl();
         $method = $request->getMethod();
         $ip = $request->getClientIp();

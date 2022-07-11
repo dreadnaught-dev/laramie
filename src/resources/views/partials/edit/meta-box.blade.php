@@ -1,6 +1,6 @@
 <div class="card">
     @php
-        $hideTags = object_get($user, 'prefs.hideTags', false) === true;
+        $hideTags = data_get($user, 'prefs.hideTags', false) === true;
     @endphp
     <header class="card-header">
         <p class="card-header-title">Tags / Comments</p>

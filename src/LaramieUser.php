@@ -56,7 +56,7 @@ class LaramieUser extends LaramieModel
 
     public function getRoles()
     {
-        return object_get($this, 'roles', []);
+        return data_get($this, 'roles', []);
     }
 
     public function isSuperAdmin()

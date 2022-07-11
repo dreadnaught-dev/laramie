@@ -8,7 +8,7 @@
                 This is a <em><strong>new</strong></em> item and hasn't been saved yet.
             @else
                 Last updated {{ \Carbon\Carbon::parse($item->updated_at, config('laramie.timezone'))->toDayDateTimeString() }}
-                @if (object_get($lastUserToUpdate, 'id'))
+                @if (data_get($lastUserToUpdate, 'id'))
                     by
                     @if ($user->isSuperAdmin() || $user->isAdmin())
                         <a href="{{ route('laramie::edit', ['modelKey' => 'laramieUser', 'id' => $lastUserToUpdate->id]) }}">{{ $lastUserToUpdate->user }}</a>

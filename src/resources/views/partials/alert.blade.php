@@ -3,9 +3,9 @@
 @endphp
 
 @foreach ($alerts as $alert)
-    <article class="message {{ object_get($alert, 'class', 'is-primary') }} dismissable-wrapper">
+    <article class="message {{ data_get($alert, 'class', 'is-primary') }} dismissable-wrapper">
         <div class="message-header">
-            <p>{{ object_get($alert, 'title', 'Notice') }}</p>
+            <p>{{ data_get($alert, 'title', 'Notice') }}</p>
             <a href="javascript:void()" class="delete js-dismissable"></a>
         </div>
         <div class="message-body">

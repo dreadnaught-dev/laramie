@@ -21,8 +21,8 @@ class LaramieHelpers
     public static function getCurrentUrlWithModifiedQS(array $qsParts)
     {
         $qs = request()->all();
-        $curSort = array_get($qs, 'sort', array_get($qsParts, 'sort'));
-        $curSortDirection = array_get($qs, 'sort-direction', array_get($qsParts, 'sort-direction'));
+        $curSort = data_get($qs, 'sort', data_get($qsParts, 'sort'));
+        $curSortDirection = data_get($qs, 'sort-direction', data_get($qsParts, 'sort-direction'));
         foreach ($qsParts as $key => $value) {
             $qs[$key] = $value;
         }
@@ -49,7 +49,7 @@ class LaramieHelpers
      */
     public static function formatListValue($field, $value, $isShowUnsupporteMessage = true)
     {
-        $dataType = object_get($field, 'dataType', $field->type);
+        $dataType = data_get($field, 'dataType', $field->type);
 
         // Add the ability for a listener to override _how_ a type of data is
         // formatted for display. Also allows for user-defined field types to
@@ -87,14 +87,14 @@ class LaramieHelpers
             case 'color':
                 return sprintf('<span style="color:%s">%s</span>', $value, $value);
             case 'range':
-                return sprintf('%s/%s', $value, object_get($field, 'max', 100));
+                return sprintf('%s/%s', $value, data_get($field, 'max', 100));
             case 'password':
-                return $value && object_get($value, 'encryptedValue') ? '********' : '';
+                return $value && data_get($value, 'encryptedValue') ? '********' : '';
             case 'reference':
                 $tmp = $field->subtype == 'single' ? [$value] : $value;
 
                 return collect($tmp)->map(function ($e) {
-                    return object_get($e, '_alias');
+                    return data_get($e, '_alias');
                 })->implode(', ');
             case 'boolean':
                 return $value ? 'Yes' : 'No';
@@ -113,7 +113,7 @@ class LaramieHelpers
                 // no break
             case 'file':
             case 'image':
-                return object_get($value, 'name');
+                return data_get($value, 'name');
             case 'textarea':
             case 'wysiwyg':
                 if ($isShowUnsupporteMessage) {
@@ -122,15 +122,15 @@ class LaramieHelpers
 
                 return $value;
             case 'markdown':
-                $markdown = object_get($value, 'markdown');
+                $markdown = data_get($value, 'markdown');
                 if ($isShowUnsupporteMessage) {
                     return substr($markdown, 0, 100).'...';
                 }
 
                 return $markdown;
             case 'timestamp':
-                $timestamp = object_get($value, 'timestamp');
-                $timezone = object_get($value, 'timezone');
+                $timestamp = data_get($value, 'timestamp');
+                $timezone = data_get($value, 'timezone');
                 if ($timestamp) {
                     return Carbon::createFromTimestamp($timestamp, $timezone)->toDateTimeString();
                 }
@@ -149,7 +149,7 @@ class LaramieHelpers
 
     public static function transformCommentForDisplay($comment)
     {
-        $comment->_userFirstInitial = strtoupper(substr(object_get($comment, '_user', '?'), 0, 1));
+        $comment->_userFirstInitial = strtoupper(substr(data_get($comment, '_user', '?'), 0, 1));
         $comment->_user = $comment->_user ?: 'Unknown';
         $comment->_color = self::getOrdinalColor(ord(strtolower($comment->_userFirstInitial)));
         $comment->lastModified = Carbon::parse($comment->updated_at, config('laramie.timezone'))->diffForHumans();
@@ -295,7 +295,7 @@ class LaramieHelpers
                     $image->save($tmpThumbnailPath);
                     // Save to Laramie's configured storage disk:
                     $thumbnail = new File($tmpThumbnailPath);
-                    Storage::disk($storageDisk)->putFileAs('', $thumbnail, static::applyPathPostfix($upload->path, '_'.$width), (object_get($upload, 'isPublic') ? 'public' : 'private'));
+                    Storage::disk($storageDisk)->putFileAs('', $thumbnail, static::applyPathPostfix($upload->path, '_'.$width), (data_get($upload, 'isPublic') ? 'public' : 'private'));
                 } catch (\Exception $e) {
                     if (!$swallowErrors) { throw $e; }
                 } finally {
