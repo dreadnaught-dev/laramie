@@ -4,257 +4,172 @@ declare(strict_types=1);
 
 namespace Laramie\Lib;
 
-class FieldSpec extends JsonBackedObject implements FieldContainer
+use Exception;
+use Illuminate\Support\Collection;
+
+class FieldSpec implements FieldContainer
 {
-    /* Attributes that pertain to all field types */
-    public function getDefault()
+    // common attributes that apply to all field types:
+    public ?string $default;
+    public string $extra;
+    public string $helpText;
+    public string $id; // @preston -- @todo should this be a uuid?
+    public bool $isEditable = true;
+    public bool $isListByDefault = true;
+    public bool $isListable = true;
+    public bool $isMetaField = false;
+    public bool $isRequired = false;
+    public bool $isSearchable = true;
+    public bool $isSortable = true;
+    public string $label;
+    public string $labelPlural;
+    public ?string $showWhen;
+    public ?string $sortBy;
+    public ?string $fieldName;
+    public string $type;
+    public string $validation;
+    public int $weight;
+
+    // "computed" field attributes
+    public ?string $dataType;
+    public ?bool $isDeferred;
+    public ?string $listTemplate;
+    public ?string $sql;
+
+    // "file" field attributes
+    public ?bool $canChooseFromLibrary;
+    public ?string $disk;
+    public ?bool $isPublic;
+    public ?bool $isTypeSpecific;
+    public ?string $subtype;
+
+    // "html" field attributes
+    public ?string $html;
+
+    // "hidden" field attributes
+    public ?bool $isVisibleOnEdit;
+
+    // "currency" field attributes
+    public ?string $currencyCode;
+
+    // "number / range / currency " field attributes
+    public ?float $max;
+    public ?float $min;
+    public ?float $step;
+    public ?bool $isIntegerOnly;
+
+    // "select / radio" field attributes
+    public ?array $options;
+
+    // "select" field attributes
+    public ?bool $asRadio;
+    public ?bool $isMultiple;
+    public ?bool $isSelect2;
+
+    // "reference" field attributes
+    public ?string $relatedModel;
+    public ?bool $hasMany;
+
+    // "aggregate" field attributes
+    public ?bool $asTab;
+    public ?Collection $fields;
+    public ?bool $isHideLabel;
+    public ?bool $isRepeatable;
+    public ?bool $isUnwrap;
+    public ?int $maxItems;
+    public ?int $minItems;
+
+    private bool $isListed = false;
+
+    public function __construct($jsonObject)
     {
-        return $this->get('default');
+        //$this->fields = collect([]);
+        //$this->dataType = data_get($jsonObject, 'dataType', data_get($jsonObject, 'type'));
+        //$this->isPublic = config('laramie.files_are_public_by_default', false);
+
+        foreach ($jsonObject as $key => $value) {
+            $value = match($key) {
+                // attributes to default to true:
+                'asTab',
+                'canChooseFromLibrary',
+                'isEditable',
+                'isListByDefault',
+                'isListable',
+                'isRepeatable',
+                'isSearchable',
+                'isSortable',
+                'isVisibleOnEdit' => $value !== false,
+
+                // attributes to default to false
+                'asRadio',
+                'isDeferred',
+                'isHideLabel',
+                'isIntegerOnly',
+                'isMetaField',
+                'isMultiple',
+                'isPublic',
+                'isRequired',
+                'isSelect2 ',
+                'isTypeSpecific',
+                'isUnwrap' => $value === true,
+
+                'fields' => $value
+                    ? collect($value)->map(function($item) { return new FieldSpec($item); })
+                    : collect((object) []),
+
+                default => $value,
+            };
+
+            $this->{$key} = $value;
+        }
     }
 
-    public function getExtra()
+    public function __call($name, $arguments)
     {
-        return $this->get('extra');
+        if (property_exists($this, $name)) {
+            return $this->{$name};
+        } elseif (strpos($name, 'get') === 0) {
+            $attributeName = \Str::camel(substr($name, 3));
+            if (property_exists($this, $attributeName)) {
+                return $this->{$attributeName};
+            }
+        }
+
+        throw new Exception("Property [{$name}] does not exist");
     }
 
-    public function getFieldName()
+    public function setIsListed(bool $value)
     {
-        return $this->get('_fieldName');
+        $this->isListed = $value;
     }
 
-    public function getHelpText()
+    public function getIsListed() : bool
     {
-        return $this->get('helpText');
-    }
-
-    public function getId()
-    {
-        return $this->get('id');
-    }
-
-    public function getLabel()
-    {
-        return $this->get('label');
-    }
-
-    public function getLabelPlural()
-    {
-        return $this->get('labelPlural');
-    }
-
-    public function getShowWhen()
-    {
-        return $this->get('showWhen');
-    }
-
-    public function getSortBy()
-    {
-        return $this->get('sortBy');
+        return $this->isListed === true;
     }
 
     public function getType()
     {
-        return $this->get('type');
+        return $this->type;
     }
 
-    public function getValidation()
+    public function getFields()
     {
-        return $this->get('validation');
+        return $this->fields;
     }
 
-    public function getWeight()
+    public function getField($fieldName)
     {
-        return $this->get('weight');
+        return $this->get($this->getFields(), $fieldName);
     }
 
-    public function isEditable()
+    public function addField(string $key, object $fieldInfo)
     {
-        return $this->get('isEditable') !== false;
-    } // default to true
-
-    public function isListByDefault()
-    {
-        return $this->get('isListByDefault') !== false;
-    } // default to true
-
-    public function isListable()
-    {
-        return $this->get('isListable') !== false;
-    } // default to true
-
-    public function isMetaField()
-    {
-        return $this->get('isMetaField') === true;
-    } // default to false
-
-    public function isRequired()
-    {
-        return $this->get('isRequired') === true;
-    } // default to false
-
-    public function isSearchable()
-    {
-        return $this->get('isSearchable') !== false;
-    } // default to true
-
-    public function isSortable()
-    {
-        return $this->get('isSortable') !== false;
-    } // default to true
-
-    /* Computed field attributes */
-    public function getDataType()
-    {
-        return $this->get('dataType', $this->getType());
-    }
-
-    public function getSql()
-    {
-        return $this->get('sql');
-    }
-
-    public function isDeferred()
-    {
-        return $this->get('isDeferred') === true;
-    }
-
-    public function getListTemplate()
-    {
-        return $this->get('listTemplate');
-    }
-
-    /* File field attributes */
-    public function canChooseFromLibrary()
-    {
-        return $this->get('canChooseFromLibrary') !== false;
-    }
-
-    public function getDisk()
-    {
-        return $this->get('disk');
-    }
-
-    public function getSubtype()
-    {
-        return $this->get('subtype');
-    }
-
-    public function isPublic()
-    {
-        return $this->get('isPublic', config('laramie.files_are_public_by_default', false));
-    }
-
-    public function isTypeSpecific()
-    {
-        return $this->get('isTypeSpecific') === true;
-    }
-
-    /* HTML field attributes */
-    public function getHtml()
-    {
-        return $this->get('html');
-    }
-
-    /* Hidden field attributes */
-    public function isVisibleOnEdit()
-    {
-        return $this->get('isVisibleOnEdit') !== false;
-    }
-
-    /* Currency / Number / Range field attributes */
-    public function getMax()
-    {
-        return $this->get('max');
-    }
-
-    public function getMin()
-    {
-        return $this->get('min');
-    }
-
-    public function getCurrencyCode()
-    {
-        return $this->get('currencyCode');
-    }
-
-    public function getStep()
-    {
-        return $this->get('step');
-    }
-
-    public function isIntegerOnly()
-    {
-        return $this->get('isIntegerOnly') === true;
-    }
-
-    /* Radio field attributes */
-    public function getOptions()
-    {
-        return $this->get('options', []);
-    }
-
-    /* Reference field attributes */
-    public function getRelatedModel()
-    {
-        return $this->get('relatedModel');
-    }
-    // getSubtype defined in file field section
-
-    /* Select field attributes */
-    public function asRadio()
-    {
-        return $this->get('asRadio') === true;
-    }
-
-    public function isMultiple()
-    {
-        return $this->get('isMultiple') === true;
-    }
-
-    public function isSelect2()
-    {
-        return $this->get('isSelect2') === true;
-    }
-    // getOptions defined in radio section
-
-    /* Aggregate field attributes */
-    public function asTab()
-    {
-        return $this->get('asTab');
-    }
-
-    public function getFieldsSpecs()
-    {
-        return collect($this->get('fields', (object) []))->map(function ($item) { return new FieldSpec($item); })->toArray();
-    }
-
-    public function getMaxItems()
-    {
-        return $this->get('maxItems');
-    }
-
-    public function getMinItems()
-    {
-        return $this->get('minItems');
+        $this->getFields()->{$key} = ModelLoader::processField($key, $fieldInfo);
     }
 
     public function getTemplate()
     {
-        return $this->get('_template');
-    }
-
-    public function isHideLabel()
-    {
-        return $this->get('isHideLabel');
-    }
-
-    public function isRepeatable()
-    {
-        return $this->get('isRepeatable');
-    }
-
-    public function isUnwrap()
-    {
-        return $this->get('isUnwrap') === true;
+        return preg_replace('/(^_+|_+$)/', '', preg_replace('/_+/', '_', preg_replace('/\{\{[^}]+\}\}/', '', $this->id)));
     }
 }

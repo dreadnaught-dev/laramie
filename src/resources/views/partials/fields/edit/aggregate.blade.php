@@ -52,7 +52,7 @@
                         </figure>
                     @endif
                     <div class="media-content">
-                        @foreach ($aggregateField->getFieldsSpecs() as $fieldKey => $field)
+                        @foreach ($aggregateField->getFields() as $fieldKey => $field)
                             @php
                                 $valueOrDefault = isset($item->{$field->getId()})
                                     ? data_get($item, $field->getId())

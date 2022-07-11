@@ -368,9 +368,9 @@ class LaramieQueryBuilder
             } else {
                 $path = preg_split('/(\.|=\>)/', $key);
 
-                // @preston -- stopped here. convert all references of getFields to getFieldsSpecs and update all fields iterated over to use FieldSpec methods.
-                // Once done, rename getFieldSpec and getFieldsSpecs to getField and getFields.
-                for ($i = 0, $fields = $model->getFieldsSpecs(); $i < count($path); $i++) {
+                // @preston -- stopped here. convert all references of getFields to getFields and update all fields iterated over to use FieldSpec methods.
+                // Once done, rename getFieldSpec and getFields to getField and getFields.
+                for ($i = 0, $fields = $model->getFields(); $i < count($path); $i++) {
                     $field = data_get($fields, $path[$i]);
 
                     $fieldType = $field->getType();
@@ -384,7 +384,7 @@ class LaramieQueryBuilder
                         if (data_get($field, 'isRepeatable')) {
                             throw new Exception('You may not update repeatable aggregate fields this way.');
                         }
-                        $fields = $field->getFieldsSpecs(); // select aggregate's fields to dive into
+                        $fields = $field->getFields(); // select aggregate's fields to dive into
                     }
                 }
 

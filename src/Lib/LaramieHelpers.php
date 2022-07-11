@@ -97,7 +97,7 @@ class LaramieHelpers
             case 'password':
                 return $value && data_get($value, 'encryptedValue') ? '********' : '';
             case 'reference':
-                $tmp = $field->getSubtype() == 'single' ? [$value] : $value;
+                $tmp = !$field->hasMany ? [$value] : $value;
 
                 return collect($tmp)->map(function ($e) {
                     return data_get($e, '_alias');

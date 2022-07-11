@@ -3,7 +3,7 @@
 @php
     $referencedModelKey = $field->getRelatedModel();
     $referencedModelNamePlural = $field->getLabelPlural();
-    $isSingleReference = $field->getSubtype() === 'single';
+    $isSingleReference = !$field->hasMany;
 
     $references = data_get($item, $field->getId(), []);
     if ($isSingleReference) {

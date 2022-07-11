@@ -11,7 +11,7 @@
     <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px;" tabindex="-1" />
 
     @php
-        $tabbedAggregates = collect($model->getFieldsSpecs())->filter(function($item){ return $item->isEditable() && $item->getType() == 'aggregate' && $item->asTab(); });
+        $tabbedAggregates = collect($model->getFields())->filter(function($item){ return $item->isEditable() && $item->getType() == 'aggregate' && $item->asTab(); });
         $hasTabs = count($tabbedAggregates) > 0;
     @endphp
 
@@ -34,7 +34,7 @@
         </div>
     @endif
 
-    @foreach ($model->getFieldsSpecs() as $fieldKey => $field)
+    @foreach ($model->getFields() as $fieldKey => $field)
         @if ($field->isEditable())
             @php
                 $valueOrDefault = isset($item->{$field->getId()})

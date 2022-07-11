@@ -55,18 +55,18 @@ class LaramieListener
 
         $nonSystemModels = $models
             ->filter(function ($item) {
-                return $item->isSystemModel() !== true;
+                return $item->isSystemModel !== true;
             })
             ->sortBy(function ($e) {
-                return $e->getNamePlural();
+                return $e->namePlural;
             });
 
         // Tweak laramie upload preview to reference appropriate admin url:
         $laramieUpload = data_get($models, 'laramieUpload');
-        $laramieUpload->getFieldSpec('preview')->set('sql', str_replace('_admin_url_', config('laramie.admin_url'), $laramieUpload->getFieldSpec('preview')->getSql()));
+        $laramieUpload->getField('preview')->sql = str_replace('_admin_url_', config('laramie.admin_url'), $laramieUpload->getField('preview')->getSql());
 
         foreach ($nonSystemModels as $nonSystemModel) {
-            $showName = data_get($nonSystemModel, 'isSingular', false) ? $nonSystemModel->getName() : $nonSystemModel->getNamePlural();
+            $showName = $nonSystemModel->isSingular ? $nonSystemModel->name : $nonSystemModel->namePlural;
             $laramieRoleModel->addField($nonSystemModel->getType(), (object) ['type' => 'select', 'label' => 'Can manage '.$showName, 'isMultiple' => true, 'isSelect2' => true, 'options' => [['All abilities', 'all'], ['List & View', 'read'], ['Create', 'create'], ['Update', 'update'], ['Delete', 'delete']]]);
         }
 
@@ -147,11 +147,11 @@ class LaramieListener
 
         if (count($factoryHash)) {
             foreach ($models as $model) {
-                if ($model->getFactory() !== LaramieModel::class) {
+                if ($model->factory !== LaramieModel::class) {
                     continue;
                 }
                 if (array_key_exists($model->getType(), $factoryHash)) {
-                    $model->set('factory', $factoryHash[$model->getType()]);
+                    $model->factory = $factoryHash[$model->getType()];
                 }
             }
         }
@@ -274,7 +274,7 @@ class LaramieListener
             return;
         }
 
-        $deferredFields = collect($model->getFieldsSpecs())
+        $deferredFields = $model->getFields()
             ->filter(function ($item) {
                 return $item->getType() === 'computed' && $item->isDeferred();
             });
@@ -440,7 +440,7 @@ class LaramieListener
                 $userRecord = DB::table('users')->where('id', $item->user_id)->first();
                 $jsonInfo = json_decode(data_get($userRecord, 'data'));
 
-                $modelFields = $model->getFieldsSpecs();
+                $modelFields = $model->getFields();
                 foreach ($modelFields as $fieldName => $field) {
                     // Don't store dummy info
                     if (
@@ -451,7 +451,7 @@ class LaramieListener
                     }
                     // We're not going through the main service for saving, so we need to do some finagling here:
                     if ($field->getType() === 'reference') {
-                        if ($field->getSubtype() === 'many') {
+                        if ($field->hasMany === 'many') {
                             $jsonInfo->{$fieldName} = collect(data_get($item, $fieldName))
                                 ->map(function ($item) { return data_get($item, 'id'); })
                                 ->toArray();

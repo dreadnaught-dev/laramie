@@ -9,7 +9,7 @@ use Laramie\Services\LaramieDataService;
 class RefSpec
 {
     private $data;
-    private ModelSpec $relatedModel;
+    private ModelSchema $relatedModel;
 
     public function __construct($jsonObject)
     {

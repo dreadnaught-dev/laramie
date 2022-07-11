@@ -22,7 +22,7 @@ use Laramie\Lib\FileInfo;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
 use Laramie\Lib\ModelLoader;
-use Laramie\Lib\ModelSpec;
+use Laramie\Lib\ModelSchema;
 use Ramsey\Uuid\Uuid;
 use Storage;
 
@@ -50,8 +50,8 @@ class LaramieDataService
                 throw new Exception(sprintf('Model type does not exist: `%s`.', $model));
             }
 
-            return new ModelSpec($modelConfig);
-        } elseif ($model instanceof ModelSpec) {
+            return new ModelSchema($modelConfig);
+        } elseif ($model instanceof ModelSchema) {
             return $model;
         }
 
@@ -94,7 +94,7 @@ class LaramieDataService
         $query = $this->augmentListQuery($query, $model, $options, $queryCallback);
         $resultsPerPage = data_get($options, 'resultsPerPage', config('laramie.results_per_page', 20));
 
-        $factory = data_get($options, 'factory', $model->getFactory());
+        $factory = data_get($options, 'factory', $model->factory);
 
         $laramieModels = $factory::load($resultsPerPage === 0 ? $query->get() : $query->paginate($resultsPerPage));
 
@@ -112,7 +112,7 @@ class LaramieDataService
 
         if ($isSpiderAggregates) {
             $laramieModels->each(function ($item) use ($model, $maxPrefetchDepth) {
-                $this->spiderAggregates($model, $item, $maxPrefetchDepth); // @TODO preston -- create common interface for aggregate fields and ModelSpec (FieldContainer)?
+                $this->spiderAggregates($model, $item, $maxPrefetchDepth); // @TODO preston -- create common interface for aggregate fields and ModelSchema (FieldContainer)?
             });
         }
 
@@ -178,7 +178,7 @@ class LaramieDataService
 
         $options = (array) $options;
 
-        $fieldCollection = collect($model->getFieldsSpecs());
+        $fieldCollection = $model->fields;
 
         $computedFields = $fieldCollection
             ->filter(function ($field) {
@@ -194,7 +194,7 @@ class LaramieDataService
 
         $singularReferenceFields = $fieldCollection
             ->filter(function ($field) {
-                return $field->getType() == 'reference' && $field->getSubtype() == 'single';
+                return $field->getType() == 'reference' && !$field->hasMany;
             })
             ->all();
 
@@ -210,8 +210,8 @@ class LaramieDataService
             })
             ->all();
 
-        $sort = data_get($options, 'sort') ?: $model->getDefaultSort();
-        $sortDirection = data_get($options, 'sortDirection') ?: $model->getDefaultSortDirection();
+        $sort = data_get($options, 'sort') ?: $model->defaultSort;
+        $sortDirection = data_get($options, 'sortDirection') ?: $model->defaultSortDirection;
 
         if ($sort) {
             $field = data_get($fieldCollection, $sort);
@@ -234,12 +234,12 @@ class LaramieDataService
                 // Sort singular reference fields by alias of relation
                 $field = data_get($singularReferenceFields, $sort);
                 $relatedModel = $this->getModelByKey($field->relatedModel);
-                $relatedAlias = $relatedModel->getFieldSpec($relatedModel->getAlias());
-                $fieldSql = $relatedAlias->getType() == 'computed' ? $relatedAlias->getSql() : sprintf('n2.data->>\'%s\'', $relatedAlias->getFieldName());
-                $query->orderBy(DB::raw('(select '.$fieldSql.' from laramie_data as n2 where (laramie_data.data->>\''.$field->_fieldName.'\')::uuid = n2.id)'), data_get($options, 'sortDirection', 'asc'));
+                $relatedAlias = $relatedModel->getField($relatedModel->getAlias());
+                $fieldSql = $relatedAlias->getType() === 'computed' ? $relatedAlias->getSql() : sprintf('n2.data->>\'%s\'', $relatedAlias->getFieldName());
+                $query->orderBy(DB::raw('(select '.$fieldSql.' from laramie_data as n2 where (laramie_data.data->>\''.$field->fieldName.'\')::uuid = n2.id)'), data_get($options, 'sortDirection', 'asc'));
             } elseif (in_array($sort, array_keys($numericFields))) {
                 $query->orderBy(DB::raw('(data #>> \'{"'.$sort.'"}\')::float'), data_get($options, 'sortDirection', 'asc'));
-            } elseif ($model->getFieldSpec($sort)) {
+            } elseif ($model->getField($sort)) {
                 // Otherwise, check to see if the sort is part one of the model's dynamic fields:
                 $query->orderBy(DB::raw('data #>> \'{"'.$sort.'"}\''), data_get($options, 'sortDirection', 'asc'));
             }
@@ -267,7 +267,7 @@ class LaramieDataService
                     }
 
                     // Check to see if we need to manipulate `$value` for searching (currently limited to date fields):
-                    $modelField = $model->getFieldSpec($filter->field);
+                    $modelField = $model->getField($filter->field);
                     if ($operation !== 'between-dates' && (in_array($filter->field, ['_created_at', '_updated_at'])
                         || in_array($modelField->getDataType(), ['dbtimestamp', 'timestamp', 'date', 'datetime-local']))) {
                         try {
@@ -338,7 +338,7 @@ class LaramieDataService
         }
 
         $quickSearch = data_get($options, 'quickSearch');
-        $quickSearchFields = $model->getQuickSearch();
+        $quickSearchFields = $model->quickSearch;
         if ($quickSearch && $quickSearchFields) {
             $quickSearchFields = collect($quickSearchFields)
                 ->map(function ($item) use ($model) { return $this->getSearchSqlFromFieldName($model, $item); })
@@ -376,7 +376,7 @@ class LaramieDataService
             return $field;
         }
 
-        $modelField = $model->getFieldSpec($field);
+        $modelField = $model->getField($field);
 
         $isComputedField = $modelField->getType() === 'computed';
         $modelFieldType = $modelField->getDataType();
@@ -419,12 +419,12 @@ class LaramieDataService
                 // If we're searching a reference field by a UUID, don't do the gymnastics of searching by its alias
                 $field = 'data->>\''.$field.'\'';
                 $relatedModel = $this->getModelByKey($modelField->getRelatedModel());
-                $relatedAlias = $relatedModel->getFieldSpec($relatedModel->getAlias());
+                $relatedAlias = $relatedModel->getField($relatedModel->getAlias());
 
                 // If the reference's alias is a computed field, modify the SQL, replacing `laramie_data` with `n2`, because we're nesting the subquery
                 $fieldSql = $relatedAlias->getType() == 'computed' ? preg_replace('/laramie_data\./', 'n2.', $relatedAlias->getSql()) : sprintf('n2.data->>\'%s\'', $relatedAlias->getFieldName());
 
-                if ($modelField->getSubtype() == 'many') {
+                if ($modelField->hasMany) {
                     // @optimize -- this subselect takes a long time for large tables. Change to something like `data->>'field' in (select id::text from laramie_data where type='$relatedType' and data->>'$field' ilike 'keywords%')
                     $field = '(select string_agg('.$fieldSql.', \'|\') from laramie_data as n2 where n2.id::text in (select * from json_array_elements_text((laramie_data.data->>\''.$modelField->getFieldName().'\')::json)))';
                 } else {
@@ -459,13 +459,13 @@ class LaramieDataService
     {
         // Set a convenience `_alias` attribute -- will be useful to save on logic where we'd otherwise be looking the alias up.
         foreach ($laramieModels as $laramieModel) {
-            $laramieModel->_alias = data_get($laramieModel, $model->getAlias());
+            $laramieModel->_alias = data_get($laramieModel, $model->alias);
         }
 
         if ($maxPrefetchDepth < 0 || $curDepth < $maxPrefetchDepth) {
             // Get a list of all references. We're breaking the references up by type so that we can run a find by type on them (so if an alias is a computed field, we'll have access to it).
             $referencedUuids = [];
-            $referenceFields = collect($model->getFieldsSpecs())
+            $referenceFields = $model->getFields()
                 ->filter(function ($field) {
                     return in_array($field->getType(), ['reference', 'file']);
                 })
@@ -623,14 +623,14 @@ class LaramieDataService
             return null;
         }
 
-        $factory = $model->getFactory();
+        $factory = $model->factory;
 
         $item = Arr::first($this->prefetchRelationships($model, [$factory::load($dbItem)], $maxPrefetchDepth, 0));
 
         // NOTE: we're only diving into aggregate relationships for single item
         // selection. What this means is that reference fields within deeply
         // nested aggregates won't be returned by `findByType`.
-        $this->spiderAggregates($model, $item, $maxPrefetchDepth); // @TODO preston -- create common interface for aggregate fields and ModelSpec (FieldContainer)?
+        $this->spiderAggregates($model, $item, $maxPrefetchDepth); // @TODO preston -- create common interface for aggregate fields and ModelSchema (FieldContainer)?
 
         $this->cachedItems[$item->id] = $item;
 
@@ -642,9 +642,9 @@ class LaramieDataService
         return $item;
     }
 
-    private function spiderAggregates($fieldContainer, $item, $maxPrefetchDepth) // @TODO preston -- create common interface for aggregate fields and ModelSpec (FieldContainer)?
+    private function spiderAggregates($fieldContainer, $item, $maxPrefetchDepth) // @TODO preston -- create common interface for aggregate fields and ModelSchema (FieldContainer)?
     {
-        $aggregateFields = collect($fieldContainer->getFieldsSpecs())
+        $aggregateFields = $fieldContainer->getFields()
             ->filter(function ($e) {
                 return $e->getType() === 'aggregate';
             })
@@ -815,7 +815,7 @@ class LaramieDataService
             ->where('type', $model->getType())
             ->addSelect('*');
 
-        $computedFields = collect($model->getFieldsSpecs())
+        $computedFields = $model->getFields()
             ->filter(function ($field) {
                 return $field->getType() == 'computed';
             })
@@ -834,7 +834,7 @@ class LaramieDataService
 
         foreach ($fieldHolder->fields as $key => $field) {
             if ($field->type == 'reference') {
-                if ($field->subtype == 'single') {
+                if (!$field->hasMany) {
                     $data->{$key} = is_string(data_get($data, $key)) && LaramieHelpers::isValidUuid($data->{$key})
                         ? $data->{$key}
                         : data_get($data, $key.'.id');
@@ -912,14 +912,14 @@ class LaramieDataService
 
             // Relation fields are transformed into the id(s) of the items they
             // represent before being persisted in the db.
-            $data = $this->flattenRelationships($model->toData(), $data); // @TODO preston -- create common interface for aggregate fields and ModelSpec (FieldContainer)?
+            $data = $this->flattenRelationships($model->toData(), $data); // @TODO preston -- create common interface for aggregate fields and ModelSchema (FieldContainer)?
 
             // Remove fields that aren't part of the the schema (old attributes
             // that may have been removed will still exist in archived versions of the
             // data). Basically what this means is that what gets saved in the db must
             // comply with the schema.
             $allowedFields = collect(array_keys(config('laramie.laramie_data_fields')))->filter(function($item) { return $item !== 'data'; })->toArray();
-            foreach ($model->getFieldsSpecs() as $key => $field) {
+            foreach ($model->getFields() as $key => $field) {
                 if (!in_array($field->getType(), ['computed', 'html'])) {
                     // Don't save computed/html fields (these will be calculated every time the item is accessed).
                     $allowedFields[] = $key;
@@ -941,7 +941,7 @@ class LaramieDataService
                 // what's getting saved adheres to a particular schema.
                 $errors = [];
                 $validator = new Validator();
-                $validator->check($data, $model->getJsonValidator());
+                $validator->check($data, $model->getJsonValidationSchema());
                 if (!$validator->isValid()) {
                     foreach ($validator->getErrors() as $error) {
                         $errors[] = sprintf('%s: %s', $error['property'], $error['message']);

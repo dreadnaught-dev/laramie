@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Laramie\Hooks;
 
 use Illuminate\Foundation\Auth\User;
-use Laramie\Lib\ModelSpec;
+use Laramie\Lib\ModelSchema;
 
 /*
  * Perform logic _before_ data is queried and the admin list page is presented to
@@ -14,7 +14,7 @@ use Laramie\Lib\ModelSpec;
  */
 class PreList
 {
-    public ModelSpec $model;
+    public ModelSchema $model;
     public User $user;
     public $extra;
 
@@ -25,7 +25,7 @@ class PreList
      * @param Illuminate\Database\Query\Builder $query the query that will be used to fetch db instances of the `$model`
      * @param Laramie\Lib\LaramieModel          $user  laramie's version of the logged in user
      */
-    public function __construct(ModelSpec $model, User $user, &$extra)
+    public function __construct(ModelSchema $model, User $user, &$extra)
     {
         $this->model = $model;
         $this->user = $user;

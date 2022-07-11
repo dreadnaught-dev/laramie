@@ -6,7 +6,7 @@
     $invertActiveSortDirection = $activeSortDirection === 'desc' ? 'asc' : 'desc';
     $quickSearch = request()->get('quick-search');
 
-    $filterableFields = collect($model->getFieldsSpecs())
+    $filterableFields = collect($model->getFields())
         ->filter(function($item){
             return $item->isSearchable()
                 || (
@@ -17,7 +17,7 @@
         })
         ->sortBy('label');
 
-    $metaFields = collect($model->getFieldsSpecs())
+    $metaFields = collect($model->getFields())
         ->filter(function($item){
             return $item->isMetaField()
                 && $item->isSearchable();

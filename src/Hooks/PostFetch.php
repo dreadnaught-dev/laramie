@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Laramie\Hooks;
 
 use Illuminate\Foundation\Auth\User;
-use Laramie\Lib\ModelSpec;
+use Laramie\Lib\ModelSchema;
 
 /*
  * Alter LaramieModels after they've been fetched from the db, but before
@@ -14,7 +14,7 @@ use Laramie\Lib\ModelSpec;
  */
 class PostFetch
 {
-    public ModelSpec $model;
+    public ModelSchema $model;
     public $items;
     public ?User $user;
     public $extra;
@@ -25,7 +25,7 @@ class PostFetch
      * @param stdClass                 $model JSON-decoded model definition (from laramie-models.json, etc).
      * @param Laramie\Lib\LaramieModel $user  laramie's version of the logged in user
      */
-    public function __construct(ModelSpec $model, &$items, User $user = null, &$extra = null)
+    public function __construct(ModelSchema $model, &$items, User $user = null, &$extra = null)
     {
         $this->model = $model;
         $this->items = $items;

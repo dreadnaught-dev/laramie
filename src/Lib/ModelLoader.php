@@ -49,7 +49,7 @@ class ModelLoader
             ->all();
 
         // Cache the "loaded" config by saving a hydrated version of it to storage
-        if ($configCachedTime < $configModifiedTime) {
+        if (true || $configCachedTime < $configModifiedTime) {
             $models = (object) [];
             $menu = (object) [];
 
@@ -98,7 +98,7 @@ class ModelLoader
                     $model = json_decode(file_get_contents($modelPath));
                 }
 
-                $model->_type = $key;
+                $model->type = $key;
 
                 $fields = data_get($model, 'fields', (object) []);
 
@@ -188,7 +188,7 @@ class ModelLoader
             }
 
             $models = collect($models)->map(function ($item) {
-                return new ModelSpec($item);
+                return new ModelSchema($item);
             });
 
             $validator = new Validator();
@@ -196,18 +196,16 @@ class ModelLoader
 
             Hook::fire(new AugmentModelValidator($modelValidator));
 
-            $baseFieldValidator = data_get($modelValidator, 'fields._base');
-
             $errors = [];
             foreach ($models as $m) {
-                $validator->check($m->toData(), $modelValidator->modelSchema);
+                $validator->check($m, $modelValidator->modelSchema);
                 if (!$validator->isValid()) {
                     foreach ($validator->getErrors() as $error) {
                         $errors[] = sprintf('%s: %s', $error['property'], $error['message']);
                     }
                 }
                 // recursively validate fields -- recursion only needed for aggregate fields
-                foreach ($m->getFieldsSpecs() as $fieldName => $field) {
+                foreach ($m->getFields() as $fieldName => $field) {
                     self::dfValidateField($m, $field, $modelValidator, $validator, $errors);
                 }
             }
@@ -229,10 +227,10 @@ class ModelLoader
 
             // Add json validation _after_ `ConfigLoaded` event in case fields were dynamically added in `ConfigLoaded` hook
             foreach ($config->models as $model) {
-                $model->setJsonValidator(static::getValidationSchema($model));
+                $model->setJsonValidationSchema(static::getValidationSchema($model));
             }
 
-            $config->models = $models->map(function ($item) { return $item->toData(); });
+            $config->models = $models;//$models->map(function ($item) { return $item->toData(); });
 
             // Save the processed config to storage so we don't have to that processing on every request.
             file_put_contents($cachedConfigPath, json_encode($config, JSON_PRETTY_PRINT));
@@ -250,17 +248,18 @@ class ModelLoader
         return array_filter(is_array($value) ? $value : [$value]);
     }
 
-    private static function dfValidateField(ModelSpec $model, FieldSpec $field, $schema, $validator, &$errors)
+    private static function dfValidateField(ModelSchema $model, FieldSpec $field, $schema, $validator, &$errors)
     {
         $type = $field->getType();
         if ($type == 'aggregate') {
-            foreach ($field->getFieldsSpecs() as $aggregateFieldName => $aggregateField) {
+            foreach ($field->getFields() as $aggregateFieldName => $aggregateField) {
+                //dd($aggregateFieldName, $aggregateField);
                 self::dfValidateField($model, $aggregateField, $schema, $validator, $errors);
             }
         }
         $fieldValidator = self::extend(data_get($schema, 'fields._base'), data_get($schema, 'fields.'.$type));
         $validator->reset();
-        $validator->check($field->toData(), $fieldValidator);
+        $validator->check($field, $fieldValidator);
         if (!$validator->isValid()) {
             foreach ($validator->getErrors() as $error) {
                 $errors[] = sprintf('%s -> %s -> %s %s: %s', $model->getName(), $field->getFieldName(), $field->getType(), $error['property'], $error['message']);
@@ -310,7 +309,7 @@ class ModelLoader
         $field->type = data_get($field, 'type', 'text'); // default fields to text types
 
         $field->id = $prefix.$fieldName.($field->type == 'aggregate' ? '_{{'.$fieldName.'Key}}' : '');
-        $field->_fieldName = $fieldName;
+        $field->fieldName = $fieldName;
 
         $label = data_get($field, 'label', static::getNameFromKey($fieldName));
         $field->label = $label;
@@ -384,14 +383,16 @@ class ModelLoader
             case 'reference':
             case 'reference-single':
             case 'reference-many':
-                if ($field->type == 'reference-many') {
-                    $field->subtype = 'many';
+                $field->type = 'reference';
+
+                $hasMany = $field->type === 'reference-many' || data_get($field, 'hasMany', false) === true;
+                if ($hasMany) {
+                    $field->hasMany = true;
                     $field->sortBy = data_get($field, 'sortBy'); // by default, don't allow sorting of reference fields -- only allow if the user has explicitly specified a sort.
                 } else {
-                    $field->subtype = data_get($field, 'subtype', 'single');
+                    $field->hasMany = false;
                     $field->sortBy = property_exists($field, 'sortBy') ? $field->sortBy : $fieldName; // Allow a field to specify null as sortBy. If null, that field won't be sortable.
                 }
-                $field->type = 'reference';
                 break;
             case 'file':
             case 'image':
@@ -418,7 +419,6 @@ class ModelLoader
                     throw new Exception('Aggregate fields are not listable. If you need to list data contained within an aggregate field, you must create a computed field.');
                 }
                 $field->isListable = false; // aggregate fields are not listable
-                $field->_template = preg_replace('/(^_+|_+$)/', '', preg_replace('/_+/', '_', preg_replace('/\{\{[^}]+\}\}/', '', $field->id)));
                 $field->isRepeatable = data_get($field, 'isRepeatable', false);
                 if ($field->isRepeatable) {
                     $field->minItems = max(data_get($field, 'minItems', 0), ($field->isRequired ? 1 : 0));
@@ -494,7 +494,7 @@ class ModelLoader
      *
      * @return mixed Object representing this models's json-validation schema
      */
-    public static function getValidationSchema(ModelSpec $model)
+    public static function getValidationSchema(ModelSchema $model)
     {
         $schema = (object) [
             '$schema' => 'http://json-schema.org/draft-04/schema#',
@@ -523,7 +523,7 @@ class ModelLoader
             ],
         ];
 
-        $fieldCollection = collect($model->getFieldsSpecs());
+        $fieldCollection = collect($model->getFields());
 
         $requiredFields = $fieldCollection
             ->filter(function ($item) {
@@ -635,7 +635,7 @@ class ModelLoader
             case 'file':
             case 'image':
             case 'reference':
-                if ($field->getSubtype() === 'many') {
+                if ($field->hasMany) {
                     // Multi reference
                     $validationType = (object) [
                         'type' => 'array',

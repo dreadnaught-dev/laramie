@@ -24,7 +24,7 @@ class Controller extends BaseController
     {
         return $listableFieldsCollection
             ->filter(function ($item) {
-                return $item->get('listed');
+                return $item->getIsListed();
             })
             ->all();
     }
@@ -39,13 +39,13 @@ class Controller extends BaseController
     {
         $prefs = $prefs !== null ? $prefs : (object) [];
 
-        return collect($model->getFieldsSpecs())
+        return collect($model->getFields())
             ->filter(function ($item) {
                 return $item->isListable();
             })
             ->each(function ($item) use ($prefs) {
-                $item->set('weight', data_get($prefs, $item->getId().'.weight', $item->getWeight()));
-                $item->set('listed', data_get($prefs, $item->getId().'.listed', $item->isListByDefault()));
+                $item->weight = data_get($prefs, $item->getId().'.weight', $item->getWeight()); // weight is a public property that can be set via json, but may also be overridden via prefs
+                $item->setIsListed(data_get($prefs, $item->getId().'.listed', $item->isListByDefault())); // isListed is a run-time property that is determined by prefs.
             })
             ->sortBy(function ($item) {
                 return $item->getWeight();

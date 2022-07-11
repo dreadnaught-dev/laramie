@@ -6,7 +6,7 @@ namespace Laramie\Hooks;
 
 use Illuminate\Foundation\Auth\User;
 use Laramie\Lib\LaramieModel;
-use Laramie\Lib\ModelSpec;
+use Laramie\Lib\ModelSchema;
 
 /*
  * Dynamically alter an modal/item that will be edited (based on user role, etc).
@@ -14,7 +14,7 @@ use Laramie\Lib\ModelSpec;
  */
 class TransformModelForEdit
 {
-    public ModelSpec $model;
+    public ModelSchema $model;
     public LaramieModel $item;
     public ?User $user;
 
@@ -25,7 +25,7 @@ class TransformModelForEdit
      * @param Laramie\Lib\LaramieModel $item  the db item that will be edited
      * @param Laramie\Lib\LaramieModel $user  laramie's version of the logged in user
      */
-    public function __construct(ModelSpec $model, LaramieModel $item, User $user = null, &$extra = null)
+    public function __construct(ModelSchema $model, LaramieModel $item, User $user = null, &$extra = null)
     {
         $this->model = $model;
         $this->item = $item;

@@ -7,35 +7,21 @@
             "fields"
         ],
         "properties": {
+            "additionalBulkActions": {
+                "type": "array",
+                "items": { "type": "string" }
+            },
+            "addNewText": { "type": "string" },
             "alias": { "type": "string" },
             "bulkActions": {
                 "type": "array",
                 "items": { "type": "string" }
             },
-            "additionalBulkActions": {
-                "type": "array",
-                "items": { "type": "string" }
-            },
-            "quickSearch": { "type": ["string", "array"] },
-            "mainTabLabel": { "type": "string" },
             "defaultSort": { "type": "string" },
             "defaultSortDirection": { "type": "string" },
-            "name": { "type": "string" },
-            "namePlural": { "type": "string" },
-            "isListable": { "type": "boolean" },
-            "isEditable": { "type": "boolean" },
-            "isDeletable": { "type": "boolean" },
-            "isSingular": { "type": "boolean" },
-            "isSystemModel": { "type": "boolean" },
-            "isDisableMeta": { "type": "boolean" },
-            "isDisableRevisions": { "type": "boolean" },
-            "listCss": { "type": ["string", "array"] },
-            "listJs": { "type": ["string", "array"] },
-            "listView": { "type": "string" },
             "editCss": { "type": ["string", "array"] },
             "editJs": { "type": ["string", "array"] },
             "editView": { "type": "string" },
-            "addNewText": { "type": "string" },
             "factory": { "type": "string" },
             "fields": {
                 "oneOf": [
@@ -43,6 +29,21 @@
                     { "type": "string" }
                 ]
             },
+            "isDeletable": { "type": "boolean" },
+            "isDisableMeta": { "type": "boolean" },
+            "isDisableRevisions": { "type": "boolean" },
+            "isEditable": { "type": "boolean" },
+            "isListable": { "type": "boolean" },
+            "isSingular": { "type": "boolean" },
+            "isSystemModel": { "type": "boolean" },
+            "listCss": { "type": ["string", "array"] },
+            "listJs": { "type": ["string", "array"] },
+            "listView": { "type": "string" },
+            "mainTabLabel": { "type": "string" },
+            "name": { "type": "string" },
+            "namePlural": { "type": "string" },
+            "quickSearch": { "type": ["string", "array"] },
+            "type": { "type": "string" },
             "refs": {
                 "type": "array",
                 "items": {
@@ -83,6 +84,7 @@
             "properties": {
                 "id": { "type": "string" },
                 "type": { "type": "string" },
+                "fieldName": { "type": "string" },
                 "isListByDefault": { "type": "boolean" },
                 "isRequired": { "type": "boolean" },
                 "label": { "type": "string" },
@@ -102,8 +104,8 @@
                 },
                 "isSortable": { "type": "boolean" },
                 "isMetaField": { "type": "boolean" },
-                "showWhen": { "type": "string" },
-                "default": { "type": "string" }
+                "showWhen": { "oneOf": [ { "type": "string" }, { "type": "null" } ] },
+                "default": { "oneOf": [ { "type": "string" }, { "type": "null" } ] }
             },
             "patternProperties": {
                 "^_" : [ ],
@@ -127,21 +129,21 @@
                 "sql"
             ],
             "properties": {
-                "dataType": { "type": "string" },
-                "isDeferred": { "type": "boolean" },
-                "listTemplate": { "type": "string" },
-                "sql": { "type": "string" }
+                "dataType": { "type": ["string", "null"] },
+                "isDeferred": { "type": ["boolean", "null"] },
+                "listTemplate": { "type": ["string", "null"] },
+                "sql": { "type": ["string", "null"] }
             }
         },
         "boolean": {},
         "checkbox": {},
         "file": {
             "properties": {
-                "isPublic": { "type": "boolean" },
-                "subtype": { "enum": [ "file", "image" ] },
-                "canChooseFromLibrary": { "type": "boolean" },
-                "isTypeSpecific": { "type": "boolean" },
-                "disk": { "type": "string" }
+                "isPublic": { "type": ["boolean", "null"] },
+                "subtype": { "enum": [ "file", "image", null ] },
+                "canChooseFromLibrary": { "type": ["boolean", "null"] },
+                "isTypeSpecific": { "type": ["boolean", "null"] },
+                "disk": { "type": ["string", "null"] }
             }
         },
         "html": {
@@ -149,43 +151,43 @@
                 "html"
             ],
             "properties": {
-                "html": { "type": "string" }
+                "html": { "type": ["string", "null"] }
             }
         },
         "markdown": {},
         "hidden": {
             "properties": {
-                "isVisibleOnEdit": { "type": "boolean" }
+                "isVisibleOnEdit": { "type": ["boolean", "null"] }
             }
         },
         "currency": {
             "properties": {
-                "currencyCode": { "type": "string" },
-                "min": { "type": "number" },
-                "max": { "type": "number" },
-                "step": { "type": "number" },
-                "isIntegerOnly": { "type": "boolean" }
+                "currencyCode": { "type": ["string", "null"] },
+                "min": { "type": ["number", "null"] },
+                "max": { "type": ["number", "null"] },
+                "step": { "type": ["number", "null"] },
+                "isIntegerOnly": { "type": ["boolean", "null"] }
             }
         },
         "number": {
             "properties": {
-                "min": { "type": "number" },
-                "max": { "type": "number" },
-                "step": { "type": "number" },
-                "isIntegerOnly": { "type": "boolean" }
+                "min": { "type": ["number", "null"] },
+                "max": { "type": ["number", "null"] },
+                "step": { "type": ["number", "null"] },
+                "isIntegerOnly": { "type": ["boolean", "null"] }
             }
         },
         "password": {},
         "radio": {
             "properties": {
-                "options": { "type": "array" }
+                "options": { "type": ["array", "null"] }
             }
         },
         "range": {
             "properties": {
-                "min": { "type": "number" },
-                "max": { "type": "number" },
-                "step": { "type": "number" }
+                "min": { "type": ["number", "null"] },
+                "max": { "type": ["number", "null"] },
+                "step": { "type": ["number", "null"] }
             }
         },
         "reference": {
@@ -193,16 +195,16 @@
                 "relatedModel"
             ],
             "properties": {
-                "relatedModel": { "type": "string" },
-                "subtype": { "enum": [ "single", "many" ] }
+                "relatedModel": { "type": ["string", "null"] },
+                "hasMany": { "type": ["boolean", "null"] }
             }
         },
         "select": {
             "properties": {
-                "options": { "type": "array" },
-                "isSelect2": { "type": "boolean" },
-                "isMultiple": { "type": "boolean" },
-                "asRadio": { "type": "boolean" }
+                "options": { "type": ["array", "null"] },
+                "isSelect2": { "type": ["boolean", "null"] },
+                "isMultiple": { "type": ["boolean", "null"] },
+                "asRadio": { "type": ["boolean", "null"] }
             }
         },
         "textarea": {},
@@ -210,13 +212,13 @@
         "wysiwyg": {},
         "aggregate": {
             "properties": {
-                "asTab": { "type": "boolean" },
-                "fields": { "type": "object" },
-                "isRepeatable": { "type": "boolean" },
-                "minItems": { "type": "integer" },
-                "maxItems": { "type": "integer" },
-                "isUnwrap": { "type": "boolean" },
-                "isHideLabel": { "type": "boolean" }
+                "asTab": { "type": ["boolean", "null"] },
+                "fields": { "type": ["object", "null"] },
+                "isRepeatable": { "type": ["boolean", "null"] },
+                "minItems": { "type": ["integer", "null"] },
+                "maxItems": { "type": ["integer", "null"] },
+                "isUnwrap": { "type": ["boolean", "null"] },
+                "isHideLabel": { "type": ["boolean", "null"] }
             }
         }
     }

@@ -6,7 +6,7 @@ namespace Laramie\Hooks;
 
 use Illuminate\Foundation\Auth\User;
 use Laramie\Lib\LaramieModel;
-use Laramie\Lib\ModelSpec;
+use Laramie\Lib\ModelSchema;
 
 /*
  * Called before editing an item in the admin (and only the admin). Can be used
@@ -14,7 +14,7 @@ use Laramie\Lib\ModelSpec;
  */
 class PreEdit
 {
-    public ModelSpec $model;
+    public ModelSchema $model;
     public $item;
     public ?User $user;
 
@@ -25,7 +25,7 @@ class PreEdit
      * @param Laramie\Lib\LaramieModel $item  the db item that will be edited
      * @param Laramie\Lib\LaramieModel $user  laramie's version of the logged in user
      */
-    public function __construct(ModelSpec $model, LaramieModel $item, User $user = null, &$extra = null)
+    public function __construct(ModelSchema $model, LaramieModel $item, User $user = null, &$extra = null)
     {
         $this->model = $model;
         $this->item = $item;

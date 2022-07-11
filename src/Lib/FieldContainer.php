@@ -6,5 +6,5 @@ namespace Laramie\Lib;
 
 interface FieldContainer
 {
-    public function getFieldsSpecs();
+    public function getFields();
 }

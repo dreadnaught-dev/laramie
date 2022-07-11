@@ -6,14 +6,14 @@ namespace Laramie\Hooks;
 
 use Illuminate\Foundation\Auth\User;
 use Laramie\Lib\LaramieModel;
-use Laramie\Lib\ModelSpec;
+use Laramie\Lib\ModelSchema;
 
 /**
  * Do some work after an item has been deleted.
  */
 class PostDelete
 {
-    public ModelSpec $model;
+    public ModelSchema $model;
     public $item;
     public ?User $user;
 
@@ -24,7 +24,7 @@ class PostDelete
      * @param Laramie\Lib\LaramieModel $item  the db item that was deleted
      * @param Laramie\Lib\LaramieModel $user  laramie's version of the logged in user
      */
-    public function __construct(ModelSpec $model, LaramieModel $item, User $user = null)
+    public function __construct(ModelSchema $model, LaramieModel $item, User $user = null)
     {
         $this->model = $model;
         $this->item = $item;

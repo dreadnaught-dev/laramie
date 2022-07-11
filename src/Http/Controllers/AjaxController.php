@@ -10,7 +10,7 @@ use Laramie\AdminModels\LaramieAlert;
 use Laramie\AdminModels\LaramieComment;
 use Laramie\AdminModels\LaramieTag;
 use Laramie\Lib\LaramieHelpers;
-use Laramie\Lib\ModelSpec;
+use Laramie\Lib\ModelSchema;
 use Laramie\Services\LaramieDataService;
 use Str;
 
@@ -71,7 +71,7 @@ class AjaxController extends Controller
         return $paginator;
     }
 
-    protected function doSearch(ModelSpec $outerModel, ModelSpec $model, Request $request)
+    protected function doSearch(ModelSchema $outerModel, ModelSchema $model, Request $request)
     {
         // Ensure that if items are selected, they're valid uuids
         $uuidCollection = collect(preg_split('/\s*[,|]\s*/', $request->get('selectedItems')))
@@ -351,7 +351,7 @@ class AjaxController extends Controller
         $data = json_decode($item->origData() ?: '{}');
 
         // Single reference -- only one allowed at a time
-        if ($referenceField->getSubtype() === 'single') {
+        if (!$referenceField->hasMany) {
             $data->{$referenceFieldName} = $isSelected
                 ? $referenceItemId
                 : null;
