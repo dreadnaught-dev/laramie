@@ -3,6 +3,7 @@
 namespace Laramie\Lib;
 
 use Exception;
+use Arr;
 use Str;
 
 use Laramie\Globals;
@@ -454,7 +455,7 @@ class ModelLoader
 
                         return (object) array_merge((array) $tmp, ['text' => $text, 'value' => $value]);
                     } elseif ($type == 'array') {
-                        return (object) ['text' => array_first($item), 'value' => array_last($item)];
+                        return (object) ['text' => Arr::first($item), 'value' => Arr::last($item)];
                     } else {
                         throw new Exception('Select / radio `options` must be a valid array.');
                     }
