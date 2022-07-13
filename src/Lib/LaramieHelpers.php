@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Intervention\Image\ImageManager;
 use Illuminate\Http\File;
 use Storage;
+use Ramsey\Uuid\Uuid;
 
 use Laramie\Globals;
 
@@ -345,5 +346,10 @@ class LaramieHelpers
             })
             ->values()
             ->all();
+    }
+
+    public static function isValidUuid(?string $value)
+    {
+        return $value && Uuid::isValid($value);
     }
 }

@@ -78,7 +78,7 @@ class LaramieDataService
 
             self::$isFetchingUser = true;
 
-            self::$cachedUser = Uuid::isValid($laramieUserId)
+            self::$cachedUser = LaramieHelpers::isValidUuid($laramieUserId)
                 ? LaramieUser::filterQuery(false)->find($laramieUserId)
                 : null;
 
@@ -435,8 +435,8 @@ class LaramieDataService
             $field = 'date_part(\'epoch\', (data->>\''.$field.'\')::timestamp)::int';
         } elseif ($modelFieldType == 'reference') {
             // If the value we're searching by is a valid uuid (or collection of uuids), don't try to search by alias
-            if (Uuid::isValid($value)
-                || (collect($value)->every(function($item){ return Uuid::isValid($item); }))
+            if (LaramieHelpers::isValidUuid($value)
+                || (collect($value)->every(function($item){ return LaramieHelpers::isValidUuid($item); }))
             )
             {
                 $field = 'data->>\''.$field.'\'';
@@ -504,7 +504,7 @@ class LaramieDataService
                     $refs = ($refs && is_array($refs)) ? $refs : [$refs];
                     $refs = collect($refs)
                         ->filter(function ($item) {
-                            return $item && Uuid::isValid($item);
+                            return $item && LaramieHelpers::isValidUuid($item);
                         })
                         ->all();
                     $referencedUuids[$field->relatedModel] = array_merge(data_get($referencedUuids, $field->relatedModel, []), $refs);
@@ -664,7 +664,7 @@ class LaramieDataService
 
     public function deleteMeta($id)
     {
-        if (Uuid::isValid($id)) {
+        if (LaramieHelpers::isValidUuid($id)) {
             $item = DB::table('laramie_data_meta')
                 ->where('id', $id)
                 ->first();
@@ -701,7 +701,7 @@ class LaramieDataService
 
     private function createMeta($modelId, $type, $data)
     {
-        if (Uuid::isValid($modelId)) {
+        if (LaramieHelpers::isValidUuid($modelId)) {
             $modelData = [
                 'id' => Uuid::uuid1()->toString(),
                 'user_id' => $this->getUserUuid(),
@@ -733,7 +733,7 @@ class LaramieDataService
 
     public function findById($model, $id = null, $maxPrefetchDepth = 5)
     {
-        $id = is_string($model) && Uuid::isValid($model)
+        $id = is_string($model) && LaramieHelpers::isValidUuid($model)
             ? $model
             : $id;
 
@@ -741,7 +741,7 @@ class LaramieDataService
             return $this->cachedItems[$id];
         }
 
-        if (is_string($model) && Uuid::isValid($model)) {
+        if (is_string($model) && LaramieHelpers::isValidUuid($model)) {
             $model = data_get(DB::table('laramie_data')
                 ->where('type', $model->_type)
                 ->select(['type'])
@@ -760,7 +760,7 @@ class LaramieDataService
             return null;
         }
 
-        if (!Uuid::isValid($id)) {
+        if (!LaramieHelpers::isValidUuid($id)) {
             throw new Exception('Id must be a valid UUID ' . $id);
         }
 
@@ -781,6 +781,8 @@ class LaramieDataService
         $this->spiderAggregates($model, $item, $maxPrefetchDepth);
 
         $this->cachedItems[$item->id] = $item;
+
+        //echo($model->name . '<br>');
 
         $itemCollection = collect([$item]); // Wrap the single item in a collection to give `PostFetch` a consistent interface -- it works on collection-like items
         if (config('laramie.suppress_events') !== true && !self::$isFetchingUser) {
@@ -813,7 +815,7 @@ class LaramieDataService
 
         try {
             $this->spiderAggregatesHelper($aggregateFields, $item, $maxPrefetchDepth);
-        } catch (Exception $e) { /* Might have gotten here because the schema of the model changed between edits. */
+        } catch (\Throwable $e) { /* Might have gotten here because the schema of the model changed between edits. */
         }
     }
 
@@ -883,7 +885,7 @@ class LaramieDataService
 
     public function findItemRevisions($id)
     {
-        if (Uuid::isValid($id)) {
+        if (LaramieHelpers::isValidUuid($id)) {
             return DB::table('laramie_data_archive as a')
                 ->leftJoin('laramie_data as ld', 'a.user_id', '=', 'ld.id')
                 ->where('laramie_data_id', $id)
@@ -897,7 +899,7 @@ class LaramieDataService
 
     public function findPreviousItem($itemId, $olderThanRevisionId)
     {
-        if (Uuid::isValid($itemId)) {
+        if (LaramieHelpers::isValidUuid($itemId)) {
             $query = DB::table('laramie_data_archive')
                 ->where('laramie_data_id', '=', $itemId)
                 ->orderBy('created_at', 'desc');
@@ -913,7 +915,7 @@ class LaramieDataService
 
     public function getItemRevision($id)
     {
-        if (Uuid::isValid($id)) {
+        if (LaramieHelpers::isValidUuid($id)) {
             return LaramieModel::load(DB::table('laramie_data_archive')
                 ->where('id', $id)
                 ->first());
@@ -943,7 +945,7 @@ class LaramieDataService
 
     public function deleteRevision($id)
     {
-        if (Uuid::isValid($id)) {
+        if (LaramieHelpers::isValidUuid($id)) {
             DB::table('laramie_data_archive')
                 ->where('id', $id)
                 ->delete();
@@ -979,13 +981,13 @@ class LaramieDataService
         foreach ($fieldHolder->fields as $key => $field) {
             if ($field->type == 'reference') {
                 if ($field->subtype == 'single') {
-                    $data->{$key} = is_string(data_get($data, $key)) && Uuid::isValid($data->{$key})
+                    $data->{$key} = is_string(data_get($data, $key)) && LaramieHelpers::isValidUuid($data->{$key})
                         ? $data->{$key}
                         : data_get($data, $key.'.id');
                 } else {
                     $data->{$key} = collect(data_get($data, $key))
                         ->map(function ($e) {
-                            return is_string($e) && Uuid::isValid($e)
+                            return is_string($e) && LaramieHelpers::isValidUuid($e)
                                 ? $e
                                 : data_get($e, 'id');
                         })
@@ -994,7 +996,7 @@ class LaramieDataService
                         ->all();
                 }
             } elseif ($field->type == 'file') {
-                $data->{$key} = is_string(data_get($data, $key)) && Uuid::isValid($data->{$key})
+                $data->{$key} = is_string(data_get($data, $key)) && LaramieHelpers::isValidUuid($data->{$key})
                     ? $data->{$key}
                     : data_get($data, $key.'.uploadKey');
             } elseif ($field->type == 'aggregate') {
@@ -1159,7 +1161,7 @@ class LaramieDataService
         $model = $this->getModelByKey($model);
         $item = $this->findByIdSuperficial($model, $id);
 
-        if (!Uuid::isValid($id)) {
+        if (!LaramieHelpers::isValidUuid($id)) {
             return false;
         }
 
@@ -1255,7 +1257,7 @@ class LaramieDataService
 
     public function getFileInfo($id)
     {
-        if (Uuid::isValid($id)) {
+        if (LaramieHelpers::isValidUuid($id)) {
             $laramieUpload = $this->getBaseQuery($this->getModelByKey('laramieUpload'))
                 ->where('id', $id)
                 ->first();
@@ -1304,7 +1306,7 @@ class LaramieDataService
                 if (!$isAllSelected) {
                     $itemIds = collect(data_get($postData, 'bulk-action-ids', []))
                         ->filter(function ($item) {
-                            return $item && Uuid::isValid($item);
+                            return $item && LaramieHelpers::isValidUuid($item);
                         });
                     $query->whereIn(DB::raw('id::text'), $itemIds);
                 }

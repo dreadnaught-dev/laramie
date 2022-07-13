@@ -408,7 +408,7 @@ class AdminController extends Controller
         $report->user = $this->dataService->getUser();
         $report->relatedModel = $model->_type;
         $report->name = $reportName;
-        $report->key = str_random(10);
+        $report->key = \Str::random(10);
         $report->filterString = $filterString;
 
         $report = $this->dataService->save($reportModel, $report);
@@ -434,7 +434,7 @@ class AdminController extends Controller
         // If there's an error on the post, `item` will have been flashed to the session
         $item = session('item') ?: $this->dataService->findById($model, $id, 1);
 
-        if (Uuid::isValid($id) && $item === null) {
+        if (LaramieHelpers::isValidUuid($id) && $item === null) {
             abort(404);
         }
 
@@ -453,7 +453,7 @@ class AdminController extends Controller
 
         $lastEditor = null;
         $lastEditorId = data_get($item, 'user_id');
-        if (Uuid::isValid($lastEditorId)) {
+        if (LaramieHelpers::isValidUuid($lastEditorId)) {
             $lastEditor = $this->dataService->findByIdSuperficial('laramieUser', $lastEditorId);
         }
         $metaId = session('metaId') ?: ($item->_isUpdate ? $item->id : Uuid::uuid1()->toString());
@@ -555,7 +555,18 @@ class AdminController extends Controller
 
         $validationMessageOverrides = collect(\Lang::get('validation'))
             ->map(function ($item) {
-                return str_ireplace('the :attribute', 'This', $item);
+                if (is_array($item)) {
+                    return collect($item)
+                        ->map(function($item) {
+                            return is_string($item)
+                                ? str_ireplace('the :attribute', 'This', $item)
+                                : $item;
+                        })
+                        ->toArray();
+                }
+                return is_string($item)
+                    ? str_ireplace('the :attribute', 'This', $item)
+                    : $item;
             })
             ->toArray();
 
@@ -739,14 +750,14 @@ class AdminController extends Controller
                 $tmp = null;
                 $uuid = $value;
                 $tmpModel = $this->dataService->getModelByKey($field->relatedModel);
-                if ($field->subtype == 'single' && $uuid && Uuid::isValid($uuid)) {
+                if ($field->subtype == 'single' && $uuid && LaramieHelpers::isValidUuid($uuid)) {
                     // Single refs, non-array value of uuid
                     $tmp = $this->dataService->findById($tmpModel, $uuid);
                 } else {
                     // Multi refs, array value of uuids
                     $tmp = collect(preg_split('/\s*[,|]\s*/', $uuid))
                         ->filter(function ($item) {
-                            return $item && Uuid::isValid($item);
+                            return $item && LaramieHelpers::isValidUuid($item);
                         })
                         ->map(function ($e) use ($tmpModel) {
                             return $this->dataService->findById($tmpModel, $e);

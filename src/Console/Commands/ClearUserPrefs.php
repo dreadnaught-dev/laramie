@@ -3,12 +3,9 @@
 namespace Laramie\Console\Commands;
 
 use DB;
-
 use Illuminate\Console\Command;
-
 use Laramie\LaramieUser;
-
-use Ramsey\Uuid\Uuid;
+use Laramie\Lib\LaramieHelpers;
 
 class ClearUserPrefs extends Command
 {
@@ -37,7 +34,7 @@ class ClearUserPrefs extends Command
         $userArg = $this->argument('user');
         $keys = collect($this->argument('keys'));
 
-        $userLookupField = Uuid::isValid($userArg)
+        $userLookupField = LaramieHelpers::isValidUuid($userArg)
             ? 'id'
             : 'user';
 

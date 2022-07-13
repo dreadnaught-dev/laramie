@@ -170,7 +170,7 @@ class LaramieListener
                 break;
             case 'laramieUser':
                 if (!data_get($item, 'api.username')) {
-                    $item->api = (object) ['enabled' => false, 'username' => str_random(Globals::API_TOKEN_LENGTH), 'password' => str_random(Globals::API_TOKEN_LENGTH)];
+                    $item->api = (object) ['enabled' => false, 'username' => \Str::random(Globals::API_TOKEN_LENGTH), 'password' => \Str::random(Globals::API_TOKEN_LENGTH)];
                 }
                 break;
             case 'laramieAlert':
@@ -261,7 +261,7 @@ class LaramieListener
                 } else {
                     $itemIds = collect(data_get($postData, 'bulk-action-ids', []))
                         ->filter(function ($item) {
-                            return $item && Uuid::isValid($item);
+                            return $item && LaramieHelpers::isValidUuid($item);
                         });
                 }
 

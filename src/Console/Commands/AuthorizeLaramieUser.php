@@ -85,8 +85,8 @@ class AuthorizeLaramieUser extends Command
             $laramieModel = new LaramieModel();
             $laramieModel->api = (object) [
                 'enabled' => false,
-                'username' => str_random(Globals::API_TOKEN_LENGTH),
-                'password' => str_random(Globals::API_TOKEN_LENGTH),
+                'username' => \Str::random(Globals::API_TOKEN_LENGTH),
+                'password' => \Str::random(Globals::API_TOKEN_LENGTH),
             ];
 
             $google2fa = new Google2FA();

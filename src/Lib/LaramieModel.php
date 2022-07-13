@@ -5,7 +5,6 @@ namespace Laramie\Lib;
 use Exception;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Ramsey\Uuid\Uuid;
 
 /**
  * LaramieModel makes JSON data stored in dbo.laramie_data accessible (and has
@@ -152,7 +151,7 @@ class LaramieModel implements \JsonSerializable
         }
 
         $this->_origId = $this->id;
-        $this->_isNew = $this->id == null || !Uuid::isValid($this->id);
+        $this->_isNew = $this->id == null || !LaramieHelpers::isValidUuid($this->id);
         $this->_isUpdate = !$this->_isNew;
         $this->_origData = $this->data;
 

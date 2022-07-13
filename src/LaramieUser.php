@@ -23,8 +23,8 @@ class LaramieUser extends LaramieModel
 
         $tmp->api = (object) [
             'enabled' => $enableApi,
-            'username' => str_random(Globals::API_TOKEN_LENGTH),
-            'password' => str_random(Globals::API_TOKEN_LENGTH),
+            'username' => \Str::random(Globals::API_TOKEN_LENGTH),
+            'password' => \Str::random(Globals::API_TOKEN_LENGTH),
         ];
 
         $google2fa = new Google2FA();
