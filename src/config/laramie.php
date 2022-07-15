@@ -121,7 +121,7 @@ return [
     | Exporting records to CSV can be a processor intensive function. Set limit higher if needed
     |
     */
-    'max_csv_records' => 5000,
+    'max_bulk_records' => 5000,
 
     /*
     |--------------------------------------------------------------------------
@@ -189,7 +189,8 @@ return [
     /*
     |--------------------------------------------------------------------------
     | When saving, you may apply a prefix to the file to help organize things.
-    | By default, files will be placed in a directory with the id of the user saving.
+    | By default, files will be placed in a directory with the id of the user
+    | saving. This may be altered by the ModifyFileInfoPreSave hook.
     |--------------------------------------------------------------------------
     */
     'file_prefix' => '{*user.id*}/',

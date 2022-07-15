@@ -254,10 +254,10 @@ class LaramieListener
                         return data_get($item, 'isMetaField') !== true;
                     });
 
-                // Have "all" matching records been selected? Great. But limit to `max_csv_records` just in case there are too many records
+                // Have "all" matching records been selected? Great. But limit to `max_bulk_records` just in case there are too many records
                 $isAllSelected = data_get($postData, 'bulk-action-all-selected') === '1';
                 if ($isAllSelected) {
-                    $postData['resultsPerPage'] = config('laramie.max_csv_records');
+                    $postData['resultsPerPage'] = config('laramie.max_bulk_records');
                 } else {
                     $itemIds = collect(data_get($postData, 'bulk-action-ids', []))
                         ->filter(function ($item) {
@@ -279,7 +279,7 @@ class LaramieListener
                 }
                 $csvData[] = $csvHeaders;
                 if ($isAllSelected && $records->hasMorePages()) {
-                    $csvData[] = ['This report exceeds the maximum number of records to export ('.config('laramie.max_csv_records').'). Please filter or sort your data if other records are needed.'];
+                    $csvData[] = ['This report exceeds the maximum number of records to export ('.config('laramie.max_bulk_records').'). Please filter or sort your data if other records are needed.'];
                 }
                 foreach ($records as $record) {
                     $csvOutput = [];
