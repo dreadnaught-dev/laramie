@@ -11,8 +11,8 @@
     "homepage": "https://github.com/dreadnaught-dev/laramie",
     "license": "GPL-3.0+",
     "require": {
-        "php": ">=7.0.10",
-        "bacon/bacon-qr-code": "1.0.3",
+        "php": "^8.0.2",
+        "bacon/bacon-qr-code": "^2.0",
         "cogpowered/finediff": "^0.3.1",
         "erusev/parsedown": "^1.6",
         "guzzlehttp/guzzle": "^6.3",
