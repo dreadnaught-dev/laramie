@@ -2,7 +2,7 @@
 
 @push('extra-header')
     <link href="/laramie/admin/css/trix.css" rel="stylesheet">
-    {!! object_get($model, 'editCss', '') !!}
+    {!! data_get($model, 'editCss', '') !!}
 @endpush
 
 @push('scripts')
@@ -50,7 +50,7 @@
 
     @include('laramie::handlebars.meta-tags-comments')
 
-    {!! implode('', object_get($model, 'editJs', [])) !!}
+    {!! implode('', data_get($model, 'editJs', [])) !!}
 
     @if ($item->_isUpdate)
         <form id="delete-form" action="{{ route('laramie::delete-item', ['modelKey' => $model->_type, 'id' => $item->id]) }}" method="POST" style="display: none;">

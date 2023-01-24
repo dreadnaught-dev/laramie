@@ -2,7 +2,9 @@
 
 namespace Laramie\Lib;
 
+use Arr;
 use Exception;
+use Str;
 
 use Laramie\Globals;
 use Laramie\Hook;
@@ -65,7 +67,7 @@ class ModelLoader
             // Combine menus
             $configs
                 ->map(function ($config) {
-                    return object_get($config, 'menu');
+                    return data_get($config, 'menu');
                 })
                 ->filter()
                 ->each(function ($pluginMenu) use ($menu) {
@@ -77,7 +79,7 @@ class ModelLoader
             // Combine models
             $configs
                 ->map(function ($config) {
-                    return object_get($config, 'models');
+                    return data_get($config, 'models');
                 })
                 ->filter()
                 ->each(function ($pluginModels) use ($models) {
@@ -98,7 +100,7 @@ class ModelLoader
 
                 $model->{'_type'} = $key;
 
-                $fields = object_get($model, 'fields', (object) []);
+                $fields = data_get($model, 'fields', (object) []);
 
                 // If a field is a string, it's referencing a JSON definition, load it and swap it in
                 foreach ($fields as $tmpKey => $tmpField) {
@@ -110,27 +112,27 @@ class ModelLoader
 
                 // Set some required name attributes (although they're not necessarily required by the JSON schema)
                 list($singularName, $pluralName) = static::getPrettyNamesFromKey($key);
-                $model->name = object_get($model, 'name', $singularName);
-                $model->namePlural = object_get($model, 'namePlural', $pluralName);
-                $model->isListable = object_get($model, 'isListable', true) !== false;
-                //$model->isMetaField = object_get($model, 'isMetaField', false) === true; // NOTE: keeping here for reference, but it's only used on the list page for excluding meta fields (atm only tags/comments/versions); we don't necessarily need to add another attribute to each field for it.
-                $model->isEditable = object_get($model, 'isEditable', true) !== false;
-                $model->isSystemModel = object_get($model, 'isSystemModel', false) === true;
-                $model->isSingular = object_get($model, 'isSingular', false) === true;
+                $model->name = data_get($model, 'name', $singularName);
+                $model->namePlural = data_get($model, 'namePlural', $pluralName);
+                $model->isListable = data_get($model, 'isListable', true) !== false;
+                //$model->isMetaField = data_get($model, 'isMetaField', false) === true; // NOTE: keeping here for reference, but it's only used on the list page for excluding meta fields (atm only tags/comments/versions); we don't necessarily need to add another attribute to each field for it.
+                $model->isEditable = data_get($model, 'isEditable', true) !== false;
+                $model->isSystemModel = data_get($model, 'isSystemModel', false) === true;
+                $model->isSingular = data_get($model, 'isSingular', false) === true;
 
-                $model->editJs = static::ensureArray(object_get($model, 'editJs', ''));
-                $model->editCss = static::ensureArray(object_get($model, 'editCss', ''));
-                $model->listJs = static::ensureArray(object_get($model, 'listJs', ''));
-                $model->listCss = static::ensureArray(object_get($model, 'listCss', ''));
+                $model->editJs = static::ensureArray(data_get($model, 'editJs', ''));
+                $model->editCss = static::ensureArray(data_get($model, 'editCss', ''));
+                $model->listJs = static::ensureArray(data_get($model, 'listJs', ''));
+                $model->listCss = static::ensureArray(data_get($model, 'listCss', ''));
 
                 // The model `alias` is the field used to identify the model (gererally the
                 // first field on the list page, is shown when items are being pulled in to a
                 // relationship, etc); It should refer to one of the model's non reference fields.
                 // If it's not set, pick out the first text field. If there isn't one, use the id.
-                if (!object_get($model, 'alias')) {
+                if (!data_get($model, 'alias')) {
                     $fieldKeyToUseAsAlias = null;
                     foreach ($fields as $fieldName => $field) {
-                        if (object_get($field, 'type') === 'text') {
+                        if (data_get($field, 'type') === 'text') {
                             $fieldKeyToUseAsAlias = $fieldName;
                             break;
                         }
@@ -139,12 +141,12 @@ class ModelLoader
                 }
 
                 $defaultBulkActions = config('laramie.default_bulk_actions');
-                $modelBulkActions = array_merge(object_get($model, 'bulkActions', $defaultBulkActions), object_get($model, 'additionalBulkActions', []));
+                $modelBulkActions = array_merge(data_get($model, 'bulkActions', $defaultBulkActions), object_get($model, 'additionalBulkActions', []));
                 if ($modelBulkActions != $defaultBulkActions) {
                     $model->bulkActions = $modelBulkActions;
                 }
 
-                $quickSearch = object_get($model, 'quickSearch', $model->alias);
+                $quickSearch = data_get($model, 'quickSearch', $model->alias);
                 $model->quickSearch = gettype($quickSearch) != 'array'
                     ? [$quickSearch]
                     : $quickSearch;
@@ -157,18 +159,18 @@ class ModelLoader
 
                 // Don't allow reference fields to be used as aliases -- we run into an issue
                 // with prefetching relationships and potentially going down a recursive rabbit hole
-                if (preg_match('/^reference/', object_get($fields, $model->alias.'.type'))) {
+                if (preg_match('/^reference/', data_get($fields, $model->alias.'.type'))) {
                     throw new Exception('Sorry, you may not use a reference field as an alias. You may use a computed field if you need additional flexibility');
                 }
 
                 // Don't allow aggregate fields to be used as aliases -- we run into an issue
                 // with prefetching relationships and potentially going down a recursive rabbit hole
-                if (preg_match('/^aggregate/', object_get($fields, $model->alias.'.type'))) {
+                if (preg_match('/^aggregate/', data_get($fields, $model->alias.'.type'))) {
                     throw new Exception('Sorry, you may not use an aggregate field as an alias. You may use a computed field if you need additional flexibility');
                 }
 
                 // Add some utility computed fields
-                if (config('laramie.disable_meta') !== true && object_get($model, 'disableMeta', false) !== true) {
+                if (config('laramie.disable_meta') !== true && data_get($model, 'disableMeta', false) !== true) {
                     $fields->_id = data_get($fields, '_id', (object) ['type' => 'computed', 'dataType' => 'string', 'label' => 'Id', 'sql' => '(id::text)', 'listByDefault' => false, 'weight' => 900]);
                     $fields->_created_at = data_get($fields, '_created_at', (object) ['type' => 'computed', 'dataType' => 'dbtimestamp', 'label' => 'Created at', 'sql' => '(created_at)', 'listByDefault' => false, 'weight' => 910]);
                     $fields->_updated_at = data_get($fields, '_updated_at', (object) ['type' => 'computed', 'dataType' => 'dbtimestamp', 'label' => 'Updated at', 'sql' => '(updated_at)', 'listByDefault' => false, 'weight' => 920]);
@@ -186,8 +188,8 @@ class ModelLoader
                 }
 
                 // Default sort "column" and direction
-                $model->defaultSort = object_get($model, 'defaultSort', 'created_at');
-                $model->defaultSortDirection = object_get($model, 'defaultSortDirection', preg_match('/_at$/', $model->defaultSort) ? 'desc' : 'asc');
+                $model->defaultSort = data_get($model, 'defaultSort', 'created_at');
+                $model->defaultSortDirection = data_get($model, 'defaultSortDirection', preg_match('/_at$/', $model->defaultSort) ? 'desc' : 'asc');
 
                 // Save the processed model back to the models object
                 $models->{$key} = $model;
@@ -206,7 +208,7 @@ class ModelLoader
 
             Hook::fire(new AugmentModelValidator($modelValidator));
 
-            $baseFieldValidator = object_get($modelValidator, 'fields._base');
+            $baseFieldValidator = data_get($modelValidator, 'fields._base');
 
             $errors = [];
             foreach ($models as $m) {
@@ -263,7 +265,7 @@ class ModelLoader
                 self::dfValidateField($model, $aggregateField, $schema, $validator, $errors);
             }
         }
-        $fieldValidator = self::extend(object_get($schema, 'fields._base'), object_get($schema, 'fields.'.$type));
+        $fieldValidator = self::extend(data_get($schema, 'fields._base'), object_get($schema, 'fields.'.$type));
         $validator->reset();
         $validator->check($field, $fieldValidator);
         if (!$validator->isValid()) {
@@ -313,22 +315,22 @@ class ModelLoader
     public static function processField($fieldName, $field, $modelAlias = null, $prefix = '')
     {
         list($fieldSingularName, $fieldPluralName) = static::getPrettyNamesFromKey($fieldName);
-        $field->type = object_get($field, 'type', 'text'); // default fields to text types
+        $field->type = data_get($field, 'type', 'text'); // default fields to text types
 
         $field->id = $prefix.$fieldName.($field->type == 'aggregate' ? '_{{'.$fieldName.'Key}}' : '');
         $field->_fieldName = $fieldName;
 
-        $field->label = object_get($field, 'label', $fieldSingularName);
-        $field->labelPlural = object_get($field, 'labelPlural', $fieldPluralName); // Used in relationships
-        $field->listByDefault = object_get($field, 'listByDefault', $field->type !== 'password');
+        $field->label = data_get($field, 'label', $fieldSingularName);
+        $field->labelPlural = data_get($field, 'labelPlural', $fieldPluralName); // Used in relationships
+        $field->listByDefault = data_get($field, 'listByDefault', $field->type !== 'password');
 
-        $weight = $fieldName == $modelAlias ? -1 : object_get($field, 'weight', 100);
+        $weight = $fieldName == $modelAlias ? -1 : data_get($field, 'weight', 100);
         $field->weight = is_int($weight) ? $weight : 100; // Weight determines where the field is diplayed -- provides a default ordering to the sort page and the order on the edit page
-        $field->extra = object_get($field, 'extra', '');
-        $field->helpText = object_get($field, 'helpText', '');
-        $field->required = object_get($field, 'required', false) == true;
+        $field->extra = data_get($field, 'extra', '');
+        $field->helpText = data_get($field, 'helpText', '');
+        $field->required = data_get($field, 'required', false) == true;
 
-        $validationString = object_get($field, 'validation', '');
+        $validationString = data_get($field, 'validation', '');
         $validationRules = explode('|', $validationString);
         if ($field->required && !in_array('required', $validationRules)) {
             $validationRules[] = 'required';
@@ -343,7 +345,7 @@ class ModelLoader
                     $validationRules[] = 'boolean';
                     break;
                 case 'computed':
-                    $sql = object_get($field, 'sql');
+                    $sql = data_get($field, 'sql');
                     if (!$sql) {
                         throw new Exception('Computed field missing `sql` property');
                     }
@@ -358,16 +360,16 @@ class ModelLoader
                 case 'currency':
                 case 'number':
                 case 'range':
-                    if (object_get($field, 'isIntegerOnly')) {
+                    if (data_get($field, 'isIntegerOnly')) {
                         $validationRules[] = 'integer';
                     } else {
                         $validationRules[] = 'numeric';
                     }
-                    if (is_numeric(object_get($field, 'min'))) {
-                        $validationRules[] = 'min:'.object_get($field, 'min');
+                    if (is_numeric(data_get($field, 'min'))) {
+                        $validationRules[] = 'min:'.data_get($field, 'min');
                     }
-                    if (is_numeric(object_get($field, 'max'))) {
-                        $validationRules[] = 'max:'.object_get($field, 'max');
+                    if (is_numeric(data_get($field, 'max'))) {
+                        $validationRules[] = 'max:'.data_get($field, 'max');
                     }
                     break;
                 case 'password':
@@ -391,9 +393,9 @@ class ModelLoader
             case 'reference-many':
                 if ($field->type == 'reference-many') {
                     $field->subtype = 'many';
-                    $field->sortBy = object_get($field, 'sortBy'); // by default, don't allow sorting of reference fields -- only allow if the user has explicitly specified a sort.
+                    $field->sortBy = data_get($field, 'sortBy'); // by default, don't allow sorting of reference fields -- only allow if the user has explicitly specified a sort.
                 } else {
-                    $field->subtype = object_get($field, 'subtype', 'single');
+                    $field->subtype = data_get($field, 'subtype', 'single');
                     $field->sortBy = property_exists($field, 'sortBy') ? $field->sortBy : $fieldName; // Allow a field to specify null as sortBy. If null, that field won't be sortable.
                 }
                 $field->type = 'reference';
@@ -405,29 +407,29 @@ class ModelLoader
                 }
                 $field->type = 'file';
                 $field->relatedModel = 'laramieUpload';
-                $field->isPublic = object_get($field, 'isPublic', config('laramie.files_are_public_by_default')) !== false; // @note -- add there's a config param to set default file visibility (public meaning it's available outside of the admin).
+                $field->isPublic = data_get($field, 'isPublic', config('laramie.files_are_public_by_default')) !== false; // @note -- add there's a config param to set default file visibility (public meaning it's available outside of the admin).
                 break;
             case 'computed':
-                $field->isEditable = object_get($field, 'isEditable', false); // set this to false by default for computed fields
+                $field->isEditable = data_get($field, 'isEditable', false); // set this to false by default for computed fields
                 break;
             case 'html':
-                $field->isListable = object_get($field, 'isListable', false); // html should generally not be listed, they're purely for presentation
+                $field->isListable = data_get($field, 'isListable', false); // html should generally not be listed, they're purely for presentation
                 $field->isSearchable = false;
                 break;
             case 'password':
-                $field->isListable = object_get($field, 'isListable') === true; // password fields _can_ be listable, but will only show asterisks
+                $field->isListable = data_get($field, 'isListable') === true; // password fields _can_ be listable, but will only show asterisks
                 $field->isSearchable = false;
                 break;
             case 'aggregate':
-                if (object_get($field, 'isListable') === true) {
+                if (data_get($field, 'isListable') === true) {
                     throw new Exception('Aggregate fields are not listable. If you need to list data contained within an aggregate field, you must create a computed field.');
                 }
                 $field->isListable = false; // aggregate fields are not listable
                 $field->_template = preg_replace('/(^_+|_+$)/', '', preg_replace('/_+/', '_', preg_replace('/\{\{[^}]+\}\}/', '', $field->id)));
-                $field->isRepeatable = object_get($field, 'isRepeatable', false);
+                $field->isRepeatable = data_get($field, 'isRepeatable', false);
                 if ($field->isRepeatable) {
-                    $field->minItems = max(object_get($field, 'minItems', 0), ($field->required ? 1 : 0));
-                    $field->maxItems = object_get($field, 'maxItems', 0);
+                    $field->minItems = max(data_get($field, 'minItems', 0), ($field->required ? 1 : 0));
+                    $field->maxItems = data_get($field, 'maxItems', 0);
 
                     if ($field->minItems === 1 && $field->maxItems === 1) {
                         $field->isRepeatable = false;
@@ -437,7 +439,7 @@ class ModelLoader
             case 'select':
             case 'radio':
                 // Allow for several options arrays, but transform them to consistent interface (i.e., [{'text' => 'displayed option text', 'value' => 'saved to db'}]).
-                $options = collect(object_get($field, 'options', []));
+                $options = collect(data_get($field, 'options', []));
                 // Determine transform needed based on first option:
                 $mappedOptions = $options->map(function ($item) {
                     $type = gettype($item);
@@ -445,15 +447,15 @@ class ModelLoader
                         return (object) ['text' => $item, 'value' => $item];
                     } elseif ($type == 'object' || ($type == 'array' && static::isAssoc($item))) {
                         $tmp = (object) $item;
-                        $text = object_get($tmp, 'text', object_get($tmp, 'key'));
-                        $value = object_get($tmp, 'value') ?: $text;
+                        $text = data_get($tmp, 'text', object_get($tmp, 'key'));
+                        $value = data_get($tmp, 'value') ?: $text;
                         if (!$text || !$value) {
                             throw new Exception('Select / radio `options` must be a valid array.');
                         }
 
                         return (object) array_merge((array) $tmp, ['text' => $text, 'value' => $value]);
                     } elseif ($type == 'array') {
-                        return (object) ['text' => array_first($item), 'value' => array_last($item)];
+                        return (object) ['text' => Arr::first($item), 'value' => array_last($item)];
                     } else {
                         throw new Exception('Select / radio `options` must be a valid array.');
                     }
@@ -463,13 +465,13 @@ class ModelLoader
                 break;
         }
 
-        $field->isEditable = object_get($field, 'isEditable') !== false; // Set isEditable to true by default (set to false by default for computed fields).
-        $field->isListable = object_get($field, 'isListable') !== false; // Set isListable to true by default
+        $field->isEditable = data_get($field, 'isEditable') !== false; // Set isEditable to true by default (set to false by default for computed fields).
+        $field->isListable = data_get($field, 'isListable') !== false; // Set isListable to true by default
         $field->sortBy = property_exists($field, 'sortBy') ? $field->sortBy : $fieldName; // Allow a field to specify null as sortBy. If null, that field won't be sortable.
-        $field->isSortable = object_get($field, 'isSortable') !== false && $field->sortBy !== null;
+        $field->isSortable = data_get($field, 'isSortable') !== false && $field->sortBy !== null;
 
         if ($field->type == 'aggregate') {
-            $subfields = object_get($field, 'fields', []);
+            $subfields = data_get($field, 'fields', []);
 
             // Check for aggregate fields that reference a string definition. Augment the aggregate field with them.
             $tmp = [];
@@ -583,14 +585,14 @@ class ModelLoader
             case 'number':
             case 'range':
                 $validationType = (object) ['type' => 'number'];
-                if (object_get($field, 'isIntegerOnly')) {
+                if (data_get($field, 'isIntegerOnly')) {
                     $validationType->multipleOf = 1.0;
                 }
-                if (is_numeric(object_get($field, 'min'))) {
-                    $validationType->minimum = object_get($field, 'min');
+                if (is_numeric(data_get($field, 'min'))) {
+                    $validationType->minimum = data_get($field, 'min');
                 }
-                if (is_numeric(object_get($field, 'max'))) {
-                    $validationType->maximum = object_get($field, 'max');
+                if (is_numeric(data_get($field, 'max'))) {
+                    $validationType->maximum = data_get($field, 'max');
                 }
                 break;
             case 'integer':
@@ -640,7 +642,7 @@ class ModelLoader
             case 'file':
             case 'image':
             case 'reference':
-                if (object_get($field, 'subtype') == 'many') {
+                if (data_get($field, 'subtype') == 'many') {
                     // Multi reference
                     $validationType = (object) [
                         'type' => 'array',
@@ -714,10 +716,10 @@ class ModelLoader
      */
     private static function getPrettyNamesFromKey($key)
     {
-        $tmp = array_values(array_filter(explode('_', snake_case($key))));
-        $singularName = title_case(implode(' ', $tmp));
-        $tmp[count($tmp) - 1] = str_plural($tmp[count($tmp) - 1]);
-        $pluralName = title_case(implode(' ', $tmp));
+        $tmp = array_values(array_filter(explode('_', Str::snake($key))));
+        $singularName = Str::title(implode(' ', $tmp));
+        $tmp[count($tmp) - 1] = Str::plural($tmp[count($tmp) - 1]);
+        $pluralName = Str::title(implode(' ', $tmp));
 
         // Do a superficial adjustment of titles for consistency see `MLA Style Capitalization Rules`, etc
         $overrides = [

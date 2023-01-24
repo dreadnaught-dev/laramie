@@ -62,7 +62,7 @@
                     <div class="field">
                         <label class="label" for="alt">Alt text</label>
                         <div class="control">
-                            <input type="text" class="input is-text" id="alt" name="alt" value="{{ object_get($item, 'alt') }}">
+                            <input type="text" class="input is-text" id="alt" name="alt" value="{{ data_get($item, 'alt') }}">
                         </div>
                     </div>
 

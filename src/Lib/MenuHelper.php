@@ -50,21 +50,21 @@ class MenuHelper
             $node = $this->menu;
         }
 
-        if (object_get($node, 'isVisible') === false) {
+        if (data_get($node, 'isVisible') === false) {
             return;
         }
 
         foreach ($node as $key => $value) {
-            if ($key == 'isVisible' || object_get($value, 'isVisible') === false) {
+            if ($key == 'isVisible' || data_get($value, 'isVisible') === false) {
                 continue;
             }
-            if (!object_get($value, 'isLeaf')) {
+            if (!data_get($value, 'isLeaf')) {
                 echo '<li><a>'.$key.'</a><ul>';
                 $this->printMenu($value);
                 echo '</ul></li>';
             } else {
                 $isActive = false; // $currentRoute->hasParameter('modelKey') && $currentRoute->parameter('modelKey') == $modelKeyOrChild;
-                echo '<li><a class="'.($isActive ? 'is-active' : '').'" href="'.route('laramie::list', ['modelKey' => object_get($value, 'modelName')]).'">'.$key.'</a></li>';
+                echo '<li><a class="'.($isActive ? 'is-active' : '').'" href="'.route('laramie::list', ['modelKey' => data_get($value, 'modelName')]).'">'.$key.'</a></li>';
             }
         }
     }

@@ -4,6 +4,7 @@ namespace Laramie;
 
 use Arr;
 use DB;
+use Str;
 use Illuminate\Console\Command;
 
 use App\User;
@@ -23,8 +24,8 @@ class LaramieUser extends LaramieModel
 
         $tmp->api = (object) [
             'enabled' => $enableApi,
-            'username' => str_random(Globals::API_TOKEN_LENGTH),
-            'password' => str_random(Globals::API_TOKEN_LENGTH),
+            'username' => Str::random(Globals::API_TOKEN_LENGTH),
+            'password' => Str::random(Globals::API_TOKEN_LENGTH),
         ];
 
         $google2fa = new Google2FA();
@@ -56,7 +57,7 @@ class LaramieUser extends LaramieModel
 
     public function getRoles()
     {
-        return object_get($this, 'roles', []);
+        return data_get($this, 'roles', []);
     }
 
     public function isSuperAdmin()

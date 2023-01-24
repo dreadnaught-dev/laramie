@@ -35,7 +35,7 @@ class Controller extends BaseController
     {
         $prefs = $prefs !== null ? $prefs : (object) [];
 
-        return collect(object_get($model, 'fields', (object) []))
+        return collect(data_get($model, 'fields', (object) []))
             ->filter(function ($e) use($prefs) {
                 // If there are prefs set for the user for the model, but they are missing a field, interpret that as not listed.
                 if (count((array)$prefs) > 0 && data_get($prefs, $e->_fieldName) === null) {
@@ -45,8 +45,8 @@ class Controller extends BaseController
                 return $e->isListable;
             })
             ->each(function ($e) use ($prefs) {
-                $e->weight = object_get($prefs, $e->id.'.weight', $e->weight);
-                $e->listed = object_get($prefs, $e->id.'.listed', $e->listByDefault);
+                $e->weight = data_get($prefs, $e->id.'.weight', $e->weight);
+                $e->listed = data_get($prefs, $e->id.'.listed', $e->listByDefault);
             })
             ->sortBy(function ($e) {
                 return $e->weight;

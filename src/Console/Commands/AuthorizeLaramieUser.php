@@ -2,7 +2,10 @@
 
 namespace Laramie\Console\Commands;
 
+use Arr;
 use DB;
+use Str;
+
 use Illuminate\Console\Command;
 use Laramie\Globals;
 use Laramie\Lib\LaramieHelpers;
@@ -85,8 +88,8 @@ class AuthorizeLaramieUser extends Command
             $laramieModel = new LaramieModel();
             $laramieModel->api = (object) [
                 'enabled' => false,
-                'username' => str_random(Globals::API_TOKEN_LENGTH),
-                'password' => str_random(Globals::API_TOKEN_LENGTH),
+                'username' => Str::random(Globals::API_TOKEN_LENGTH),
+                'password' => Str::random(Globals::API_TOKEN_LENGTH),
             ];
 
             $google2fa = new Google2FA();
@@ -100,7 +103,7 @@ class AuthorizeLaramieUser extends Command
             $laramieModel->password = $laramiePassword;
         } else {
             // The user already exists
-            $laramieModel = array_first($existingUsers);
+            $laramieModel = Arr::first($existingUsers);
         }
 
         $laramieModel->status = 'Active';

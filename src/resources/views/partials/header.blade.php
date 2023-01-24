@@ -56,7 +56,7 @@
                                 <div class="content">
                                     <p class="is-size-7 is-marginless">
                                         <strong>{{$alert->_user}}</strong> {{$alert->lastModified}}
-                                        @if (object_get($alert, 'metaId'))
+                                        @if (data_get($alert, 'metaId'))
                                             <a class="is-italic" href="{{ route('laramie::alert-redirector', ['id' => $alert->metaId]) }}">view in context &rarr;</a>
                                         @endif
                                     </p>
