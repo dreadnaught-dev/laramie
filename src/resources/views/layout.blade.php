@@ -15,7 +15,7 @@
         window.globals = window.globals || {};
         window.globals._token = '{{ csrf_token() }}';
         window.globals.cropperBase = '{{ preg_replace('/new$/', '', route('laramie::cropper', ['imageKey' => 'new'])) }}';
-        window.globals.fileDownloadBase = '{{ preg_replace('/new$/', '', route('laramie::file-download', ['key' => 'new'])) }}';
+        window.globals.fileDownloadBase = '{{ preg_replace('/new$/', '', route('laramie::file-download', ['assetKey' => 'new'])) }}';
         window.globals.adminUrl = '{{ config('laramie.admin_url') }}';
         window.globals.systemUsers = {!! json_encode($systemUsers) !!};
     </script>
