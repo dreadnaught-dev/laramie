@@ -3,6 +3,7 @@
 namespace Laramie\Lib;
 
 use Exception;
+use Str;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 

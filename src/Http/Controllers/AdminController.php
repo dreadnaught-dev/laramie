@@ -555,7 +555,9 @@ class AdminController extends Controller
 
         $validationMessageOverrides = collect(\Lang::get('validation'))
             ->map(function ($item) {
-                return str_ireplace('the :attribute', 'This', $item);
+                return is_string($item)
+                    ? str_ireplace('the :attribute', 'This', $item)
+                    : $item;
             })
             ->toArray();
 
