@@ -5,7 +5,7 @@
     <p>Scan the barcode with <a target="_blank" href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&hl=en_US">
     Google Authenticator</a> (or whatever OTP software you would like to use) to setup multifactor auth.</p>
 
-    <form action="{{ url()->full() }}" method="post">
+    <form method="post">
         @csrf
 
         <figure class="image">
