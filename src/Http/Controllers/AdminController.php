@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Exception;
 use Validator;
 use Str;
-use Ramsey\Uuid\Uuid;
 use cogpowered\FineDiff\Granularity\Word;
 use cogpowered\FineDiff\Diff;
 
@@ -435,7 +434,7 @@ class AdminController extends Controller
         // If there's an error on the post, `item` will have been flashed to the session
         $item = session('item') ?: $this->dataService->findById($model, $id, 1);
 
-        if (Uuid::isValid($id) && $item === null) {
+        if (Str::isUuid($id) && $item === null) {
             abort(404);
         }
 
@@ -454,10 +453,10 @@ class AdminController extends Controller
 
         $lastEditor = null;
         $lastEditorId = data_get($item, 'user_id');
-        if (Uuid::isValid($lastEditorId)) {
+        if (Str::isUuid($lastEditorId)) {
             $lastEditor = $this->dataService->findByIdSuperficial('laramieUser', $lastEditorId);
         }
-        $metaId = session('metaId') ?: ($item->_isUpdate ? $item->id : Uuid::uuid1()->toString());
+        $metaId = session('metaId') ?: ($item->_isUpdate ? $item->id : Str::orderedUuid());
         $selectedTab = session('selectedTab') ?: '_main';
         $errorMessages = session('errorMessages') ?: null;
 
@@ -740,14 +739,14 @@ class AdminController extends Controller
                 $tmp = null;
                 $uuid = $value;
                 $tmpModel = $this->dataService->getModelByKey($field->relatedModel);
-                if ($field->subtype == 'single' && $uuid && Uuid::isValid($uuid)) {
+                if ($field->subtype == 'single' && $uuid && Str::isUuid($uuid)) {
                     // Single refs, non-array value of uuid
                     $tmp = $this->dataService->findById($tmpModel, $uuid);
                 } else {
                     // Multi refs, array value of uuids
                     $tmp = collect(preg_split('/\s*[,|]\s*/', $uuid))
                         ->filter(function ($item) {
-                            return $item && Uuid::isValid($item);
+                            return $item && Str::isUuid($item);
                         })
                         ->map(function ($e) use ($tmpModel) {
                             return $this->dataService->findById($tmpModel, $e);

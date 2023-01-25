@@ -8,8 +8,6 @@ use Illuminate\Console\Command;
 
 use Laramie\LaramieUser;
 
-use Ramsey\Uuid\Uuid;
-
 class ClearUserPrefs extends Command
 {
     protected $signature = 'laramie:clear-user-prefs {user} {keys?*}';
@@ -37,7 +35,7 @@ class ClearUserPrefs extends Command
         $userArg = $this->argument('user');
         $keys = collect($this->argument('keys'));
 
-        $userLookupField = Uuid::isValid($userArg)
+        $userLookupField = Str::isUuid($userArg)
             ? 'id'
             : 'user';
 
