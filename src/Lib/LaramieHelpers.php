@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Intervention\Image\ImageManager;
 use Illuminate\Http\File;
 use Storage;
+use Str;
 
 use Laramie\Globals;
 
@@ -176,10 +177,7 @@ class LaramieHelpers
      */
     public static function markdownToHtml($markdown)
     {
-        $parsedown = new \Parsedown();
-        $parsedown->setUrlsLinked(false);
-
-        return $parsedown->text($markdown);
+        return Str::markdown($markdown ?: '');
     }
 
     public static function getInterventionImageDriver()

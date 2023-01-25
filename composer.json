@@ -14,7 +14,6 @@
         "php": "^8.1",
         "bacon/bacon-qr-code": "^2.0",
         "cogpowered/finediff": "^0.3.1",
-        "erusev/parsedown": "^1.7",
         "guzzlehttp/guzzle": "^7.5",
         "intervention/image": "^2.7",
         "justinrainbow/json-schema": "^5.2",
