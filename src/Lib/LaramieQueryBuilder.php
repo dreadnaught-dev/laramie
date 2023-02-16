@@ -189,12 +189,12 @@ class LaramieQueryBuilder
 
     public function whereTag(string $tag)
     {
-        return $this->whereRaw(DB::raw('(select 1 from laramie_data_meta ldm where ldm.laramie_data_id = laramie_data.id and ldm.type ilike ? and data->>\'text\' ilike ? limit 1) = 1'), ['tag', $tag]);
+        return $this->whereRaw('(select 1 from laramie_data_meta ldm where ldm.laramie_data_id = laramie_data.id and ldm.type ilike ? and data->>\'text\' ilike ? limit 1) = 1', ['tag', $tag]);
     }
 
     public function whereNotTag(string $tag)
     {
-        return $this->whereRaw(DB::raw('(select 1 from laramie_data_meta ldm where ldm.laramie_data_id = laramie_data.id and ldm.type ilike ? and data->>\'text\' ilike ? limit 1) != 1'), ['tag', $tag]);
+        return $this->whereRaw('(select 1 from laramie_data_meta ldm where ldm.laramie_data_id = laramie_data.id and ldm.type ilike ? and data->>\'text\' ilike ? limit 1) != 1', ['tag', $tag]);
     }
 
     public function orderBy($column, string $direction = 'asc')

@@ -152,7 +152,7 @@ class LaramieModel implements \JsonSerializable
         }
 
         $this->_origId = $this->id;
-        $this->_isNew = $this->id == null || !Str::isUuid($this->id);
+        $this->_isNew = $this->id == null || !LaramieHelpers::isUuid($this->id);
         $this->_isUpdate = !$this->_isNew;
         $this->_origData = $this->data;
 

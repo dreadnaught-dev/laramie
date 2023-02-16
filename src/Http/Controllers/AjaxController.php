@@ -70,12 +70,12 @@ class AjaxController extends Controller
         // Ensure that if items are selected, they're valid uuids
         $uuidCollection = collect(preg_split('/\s*[,|]\s*/', $request->get('selectedItems')))
             ->filter(function ($item) {
-                return $item && Str::isUuid($item);
+                return $item && LaramieHelpers::isUuid($item);
             });
 
         // `$outerItemId` refers to the id of the item being edited (may be null).
         $outerItemId = $request->get('itemId');
-        if (!Str::isUuid($outerItemId)) {
+        if (!LaramieHelpers::isUuid($outerItemId)) {
             $outerItemId = null;
         }
         $invertSearch = $request->get('invertSearch') === 'true';
@@ -132,7 +132,7 @@ class AjaxController extends Controller
                 }
                 // If searching laramieUploads, limit returned extensions if the subtype is `image`.
                 if ($model->_type == 'laramieUpload' && $lookupSubtype == 'image') {
-                    $query->whereRaw(\DB::raw('data->>\'extension\' in (\''.implode("','", config('laramie.allowed_image_types')).'\')'));
+                    $query->whereRaw('data->>\'extension\' in (\''.implode("','", config('laramie.allowed_image_types')).'\')');
                 }
                 // If a tag was passed, only show items that were tagged accordingly
                 if ($tag){
@@ -304,12 +304,12 @@ class AjaxController extends Controller
     public function modifyRef(Request $request, $modelKey)
     {
         $itemId = $request->get('itemId');
-        if (!Str::isUuid($itemId)) {
+        if (!LaramieHelpers::isUuid($itemId)) {
             $itemId = null;
         }
 
         $referenceItemId = $request->get('referenceId');
-        if (!Str::isUuid($referenceItemId)) {
+        if (!LaramieHelpers::isUuid($referenceItemId)) {
             $referenceItemId = null;
         }
 

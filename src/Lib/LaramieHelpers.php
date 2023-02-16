@@ -344,4 +344,29 @@ class LaramieHelpers
             ->values()
             ->all();
     }
+
+    public static function isUuid($strUuid)
+    {
+        return $strUuid && Str::isUuid($strUuid);
+    }
+
+    public static function orderedUuid()
+    {
+        return (string) Str::orderedUuid();
+    }
+
+    public static function uuid1()
+    {
+        return static::orderedUuid();
+    }
+
+    public static function uuid()
+    {
+        return (string) Str::uuid();
+    }
+
+    public static function uuid4()
+    {
+        return static::uuid();
+    }
 }

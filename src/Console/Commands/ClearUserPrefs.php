@@ -7,6 +7,7 @@ use DB;
 use Illuminate\Console\Command;
 
 use Laramie\LaramieUser;
+use Laramie\Lib\LaramieHelpers;
 
 class ClearUserPrefs extends Command
 {
@@ -35,7 +36,7 @@ class ClearUserPrefs extends Command
         $userArg = $this->argument('user');
         $keys = collect($this->argument('keys'));
 
-        $userLookupField = Str::isUuid($userArg)
+        $userLookupField = LaramieHelpers::isUuid($userArg)
             ? 'id'
             : 'user';
 

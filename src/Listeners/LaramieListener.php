@@ -261,7 +261,7 @@ class LaramieListener
                 } else {
                     $itemIds = collect(data_get($postData, 'bulk-action-ids', []))
                         ->filter(function ($item) {
-                            return $item && Str::isUuid($item);
+                            return $item && LaramieHelpers::isUuid($item);
                         });
                 }
 
@@ -289,7 +289,7 @@ class LaramieListener
                     }
                     $csvData[] = $csvOutput;
                 }
-                $outputFile = storage_path(Str::uuid().'.csv');
+                $outputFile = storage_path(LaramieHelpers::uuid().'.csv');
                 $writer = \League\Csv\Writer::createFromPath($outputFile, 'w+');
                 $writer->insertAll($csvData);
                 $extra->response = response()->download($outputFile, sprintf('%s_%s.csv', Str::snake($model->namePlural), date('Ymd')))->deleteFileAfterSend(true);
@@ -336,7 +336,7 @@ class LaramieListener
                     // Ensure the email is unique
                     if (DB::table('laramie_data')
                         ->where('type', 'laramieUser')
-                        ->where('id', '!=', data_get($item, 'id', Str::uuid()))
+                        ->where('id', '!=', data_get($item, 'id', LaramieHelpers::uuid()))
                         ->where(DB::raw('data->>\'user\''), 'ilike', data_get($item, 'user'))
                         ->count() > 0
                     ) {
