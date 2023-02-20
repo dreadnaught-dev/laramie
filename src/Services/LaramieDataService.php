@@ -867,7 +867,9 @@ class LaramieDataService
                     }
                 }
             }
-            $item->{$aggregateKey} = $aggregateData;
+            if ($item) {
+                $item->{$aggregateKey} = $aggregateData;
+            }
         }
     }
 
