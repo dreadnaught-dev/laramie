@@ -14,7 +14,7 @@
     }
 @endphp
 
-<div class="aggregate-outer-wrapper has-margin-bottom {{ data_get($aggregateField, 'asTab') ? 'is-tab tab-'.str_slug($aggregateField->label) . ($selectedTab == str_slug($aggregateField->label) ? ' is-active' : '') : '' }}"
+<div class="aggregate-outer-wrapper has-margin-bottom {{ data_get($aggregateField, 'asTab') ? 'is-tab tab-'.\Str::slug($aggregateField->label) . ($selectedTab == \Str::slug($aggregateField->label) ? ' is-active' : '') : '' }}"
     {!! $showWhen ? 'data-show-when="'.$showWhen.'"' : '' !!}
 >
     @if (data_get($aggregateField, 'hideLabel') !== true)
