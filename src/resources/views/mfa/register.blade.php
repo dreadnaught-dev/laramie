@@ -9,7 +9,7 @@
         @csrf
 
         <figure class="image">
-            <img style="width: 200px; height: 200px; margin: 0 auto;" src="{{ $qrCodeImage }}">
+            <img style="width: 200px; height: 200px; margin: 0 auto;" src="{{ $inlineQRCode }}">
         </figure>
 
         <p>Once you've scanned the barcode above, enter the code from the MFA application to verify your account.</p>

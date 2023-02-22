@@ -6,6 +6,11 @@ use DB;
 use Illuminate\Http\Request;
 use PragmaRX\Google2FA\Google2FA;
 use Laramie\Services\LaramieDataService;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\Image\ImagickImageBackEnd;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
+
 
 use Laramie\LaramieUser;
 
@@ -96,7 +101,7 @@ class MFAController extends Controller
         $user = $this->getLaramieUser();
 
         return view('laramie::mfa.register')
-            ->with('qrCodeImage', $this->getQRCodeImage($request, $user));
+            ->with('inlineQRCode', $this->getInlineQRCode($request, $user));
     }
 
     public function postRegister(Request $request)
@@ -127,17 +132,28 @@ class MFAController extends Controller
         }
 
         return view('laramie::mfa.register')
-            ->with('qrCodeImage', $this->getQRCodeImage($request, $user))
+            ->with('inlineQRCode', $this->getInlineQRCode($request, $user))
             ->withErrors('Invalid OTP Code');
     }
 
-    private function getQRCodeImage($request, $user)
+    private function getInlineQRCode($request, $user)
     {
-        return $this->google2fa->getQRCodeInline(
+        $g2faUrl = $this->google2fa->getQRCodeUrl(
             config('laramie.site_name'),
             data_get($user, 'user'),
             $this->getUserSecret($request, $user)
         );
+
+        $writer = new Writer(
+            new ImageRenderer(
+                new RendererStyle(400),
+                new ImagickImageBackEnd()
+            )
+        );
+
+        $qrImage = base64_encode($writer->writeString($g2faUrl));
+
+        return sprintf('data:image/png;base64,%s', $qrImage);
     }
 
     private function getUserSecret($request, $user)
