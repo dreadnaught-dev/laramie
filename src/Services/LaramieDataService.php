@@ -62,6 +62,11 @@ class LaramieDataService
         return $this->jsonConfig->models;
     }
 
+    public static function clearCachedUser()
+    {
+        self::$cachedUser = null;
+    }
+
     public function getUser()
     {
         if (!self::$cachedUser) {
