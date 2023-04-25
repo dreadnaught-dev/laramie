@@ -111,7 +111,7 @@ class LaramieUser extends LaramieModel
             }
             else {
                 LaramieDataService::clearCachedUser();
-                session()->flash('_laramie', $laramieUser->id);
+                session()->now('_laramie', $laramieUser->id);
             }
         }
 
