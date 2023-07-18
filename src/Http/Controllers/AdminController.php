@@ -282,7 +282,7 @@ class AdminController extends Controller
 
         foreach ($fieldsFromRequest as $key => $value) {
             $key = preg_replace('/^_lf_/', '', $key);
-            if (array_key_exists($key, $model->fields)) {
+            if (array_key_exists($key, (array) $model->fields)) {
                 $listFields[$key] = (object) ['weight' => $weight, 'listed' => $value == 1];
                 $weight += 10;
             }

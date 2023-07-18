@@ -268,7 +268,7 @@ class LaramieDataService
                 $query->orderBy($sort, $sortDirection);
             } elseif (in_array($sort, array_keys($timestampFields))) {
                 $timestampSort = $sortDirection.' nulls '.($sortDirection == 'asc' ? 'first' : 'last');
-                $query->orderByRaw(DB::raw('(data #>> \'{'.$sort.',timestamp}\')::integer '.$timestampSort));
+                $query->orderByRaw('(data #>> \'{'.$sort.',timestamp}\')::integer '.$timestampSort);
             } elseif (in_array($sort, array_keys($markdownFields))) {
                 // Sort markdown fields by inner markdown
                 $query->orderBy(DB::raw('(data #>> \'{"'.$sort.'","markdown"}\')'), data_get($options, 'sortDirection', 'asc'));
