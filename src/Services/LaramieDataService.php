@@ -386,6 +386,9 @@ class LaramieDataService
 
             $query->where(function ($query) use ($quickSearchFields, $quickSearch) {
                 foreach ($quickSearchFields as $field) {
+                    if (preg_match('/[@]/', $quickSearch)) {
+                        $query->orWhere(DB::raw($field), 'ilike', '%'.preg_replace('/[@]/', '', $quickSearch).'%');
+                    }
                     $query->orWhere(DB::raw($field), 'ilike', '%'.$quickSearch.'%');
                 }
             });
