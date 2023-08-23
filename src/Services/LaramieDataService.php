@@ -710,7 +710,7 @@ class LaramieDataService
         }
     }
 
-    private function createMeta($modelId, $type, $data)
+    public function createMeta($modelId, $type, $data)
     {
         if (LaramieHelpers::isUuid($modelId)) {
             $modelData = [
