@@ -15,8 +15,6 @@ use Laramie\Lib\FileInfo;
 use Laramie\Lib\LaramieHelpers;
 use Laramie\Lib\LaramieModel;
 use Laramie\Lib\ModelLoader;
-use Laramie\Events\ItemSaved;
-use Laramie\Events\ItemDeleted;
 use Laramie\Hooks\FilterQuery;
 use Laramie\Hooks\ModifyFileInfoPreSave;
 use Laramie\Hooks\PostDelete;
@@ -706,7 +704,6 @@ class LaramieDataService
         if ($comment && config('laramie.suppress_events') !== true) {
             // @note: the `_laramieComment` model does not exist, it is simply being used pass info on to a listener
             Hook::fire(new PostSave((object) ['model' => 'LaramieMeta', '_type' => '_laramieComment'], LaramieModel::load((object) ['metaId' => $comment['id'], 'comment' => json_decode($comment['data'])]), $this->getUser()));
-            event(new ItemSaved((object) ['model' => 'LaramieMeta', '_type' => '_laramieComment'], LaramieModel::load((object) ['metaId' => $comment['id'], 'comment' => json_decode($comment['data'])]), $this->getUser()));
         }
     }
 
@@ -1151,7 +1148,6 @@ class LaramieDataService
 
             if ($runSaveHooks && config('laramie.suppress_events') !== true) {
                 Hook::fire(new PostSave($model, $item, $user));
-                event(new ItemSaved($model, $item, $user));
             }
 
             DB::commit();
@@ -1199,7 +1195,6 @@ class LaramieDataService
 
             if (config('laramie.suppress_events') !== true) {
                 Hook::fire(new PostDelete($model, $item, $this->getUser()));
-                event(new ItemDeleted($model, $item, $this->getUser()));
             }
 
             DB::commit();

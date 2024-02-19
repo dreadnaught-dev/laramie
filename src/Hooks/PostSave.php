@@ -11,7 +11,7 @@ use Laramie\Lib\LaramieModel;
  *
  * This is a synchronous _hook_. So while you can perform post-save actions
  * here (like sending email, etc), any long-running post-save tasks should be
- * handled by the `ItemSaved` _event_ (can be asynch).
+ * dispatched to an async job.
  */
 class PostSave
 {

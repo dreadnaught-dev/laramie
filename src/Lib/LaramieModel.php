@@ -31,6 +31,8 @@ class LaramieModel implements \JsonSerializable
     public $updated_at = null;
     public $_isNew = true;
     public $_isUpdate = false;
+    public $_origId = null;
+    public $_origData = null;
 
     protected static $dataService = null;
     protected static $globalHidden = [];
