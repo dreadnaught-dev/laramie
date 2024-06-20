@@ -401,7 +401,9 @@ class LaramieDataService
 
         // Specifically for quick search where no alias is provided on the model (or id is specified as a quick search field):
         if (in_array($field, ['id'])) {
-            return $field.'::text';
+            return ($value && is_string($value) && LaramieHelpers::isUuid($value))
+                ? $field
+                : $field.'::text';
         }
 
         if (in_array($field, ['created_at', 'updated_at'])) {
