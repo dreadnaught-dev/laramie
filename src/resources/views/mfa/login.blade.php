@@ -18,6 +18,16 @@
             @endif
         </div>
 
+        <div class="field">
+            <p class="control">
+                <label class="checkbox">
+                    <input type="hidden" name="remember" value="0">
+                    <input type="checkbox" class="is-checkbox" id="remember" name="remember" value="1">
+                    Remember this device?
+                </label>
+            </p>
+        </div>
+
         <div class="field is-grouped">
             <div class="control">
                 <button class="button is-link">Verify</button>

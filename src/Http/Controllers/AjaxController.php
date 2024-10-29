@@ -155,6 +155,10 @@ class AjaxController extends Controller
                             // for, we'll also search by id and tags
                             $searchField = data_get($model, 'fields.'.$searchFieldName);
 
+                            if (!$searchField) {
+                                continue;
+                            }
+
                             // Is the search field is set to an html field? search by whatever the field is pointing to for sorting
                             if ($searchField->type == 'html') {
                                 if (data_get($searchField, 'sortBy') && data_get($model, 'fields.'.data_get($searchField, 'sortBy'))) {

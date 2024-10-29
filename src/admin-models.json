@@ -61,7 +61,8 @@
                         "enabled": { "type": "checkbox", "label": "Enabled?" },
                         "registrationCompleted": { "type": "checkbox", "label": "MFA registration completed?" },
                         "secret": { "type": "text" },
-                        "recoveryCodes": { "type": "hidden", "helpText": "Recovery codes can be used to access your account in the event you lose access to your device and cannot generate two-factor authentication codes. These codes allow access to your account similar to a password, and should be secured in the same way." }
+                        "recoveryCodes": { "type": "hidden", "helpText": "Recovery codes can be used to access your account in the event you lose access to your device and cannot generate two-factor authentication codes. These codes allow access to your account similar to a password, and should be secured in the same way." },
+                        "rememberedDevices": { "type": "hidden" }
                     }
                 },
                 "filters": { "type": "text", "isListable": false, "isEditable": false },

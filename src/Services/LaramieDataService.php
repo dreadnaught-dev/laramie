@@ -103,7 +103,7 @@ class LaramieDataService
 
     public function saveUserPrefs($prefs)
     {
-        DB::statement('update laramie_data set data = jsonb_set(data, \'{prefs}\', \''.json_encode($prefs).'\', true) where id = ?', [$this->getUser()->id]);
+        DB::statement('update laramie_data set data = jsonb_set(data, \'{prefs}\', \''.str_replace("'", "''", json_encode($prefs)).'\', true) where id = ?', [$this->getUser()->id]);
     }
 
     public function findTypeByTag($model, $tag)

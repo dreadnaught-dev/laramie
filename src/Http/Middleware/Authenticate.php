@@ -75,7 +75,18 @@ class Authenticate
                     $request->session()->put('url.intended', url()->current());
                     // Is the user registered? Attempt to authenticate them. Otherwise, register them:
                     if (data_get($user, 'mfa.registrationCompleted')) {
-                        return redirect()->to(route('laramie::mfa-login'));
+                        $mfaDeviceId = $request->cookie('mfa_remember_token');
+                        $now = \Carbon\CarbonImmutable::now()->timestamp;
+                        $hasValidSavedMfa = $mfaDeviceId && collect(data_get($user, 'mfa.savedDevices', []))->first(function($item) use($mfaDeviceId, $now) {
+                            return data_get($item, 'id') === $mfaDeviceId
+                                && data_get($item, 'expiration') >= $now;
+                        });
+                        if (!$hasValidSavedMfa) {
+                            return redirect()->to(route('laramie::mfa-login'));
+                        }
+                        else {
+                            $request->session()->put('_mfa', 'allow');
+                        }
                     } else {
                         return redirect()->to(route('laramie::mfa-register'));
                     }
@@ -83,9 +94,9 @@ class Authenticate
 
                 // Save all the above processing to the user's session so we don't have to do it on every request
                 $request->session()->put('_laramie', $user->id);
-                $userUuid = $user->id; 
-                
-                Hook::fire(new LaramieUserAuthenticated($user));               
+                $userUuid = $user->id;
+
+                Hook::fire(new LaramieUserAuthenticated($user));
             }
         }
 

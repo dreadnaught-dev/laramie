@@ -102,7 +102,7 @@ class LaramieUser extends LaramieModel
     }
 
     public static function loginOnceUsingId($id) {
-        $laramieUser = static::filterQuery(false)->find($id);
+        $laramieUser = static::filterQuery(false)->depth(1)->find($id);
         $laravelUser = Arr::first(\DB::select('select id from users where '.config('laramie.username').' like ?', [data_get($laramieUser, 'user')]));
         $success = auth()->onceUsingId(data_get($laravelUser, 'id', -1));
         if ($success) {

@@ -44,9 +44,32 @@ class MFAController extends Controller
         $user = $this->getLaramieUser();
 
         $isValid = $this->google2fa->verifyKey(data_get($user, 'mfa.secret'), ($request->get('mfa') ?: ''));
+        $rememberMe = $request->get('remember', false) === '1';
 
         if ($isValid) {
             $request->session()->put('_mfa', 'allow');
+
+            // If an MFA "remember device" checkbox has been checked, create a
+            // random "device identifier" -- which we'll save to a cookie and the
+            // user with an expiration date (2 weeks).
+            // When a user logs in and they have MFA enabled, we'll first check
+            // if this cookie exists, and if so, if it matches an entry saved in
+            // the user's prefs (and isn't expired).
+            if ($rememberMe) {
+                $randomDeviceId = \Str::random(10);
+                $rememberMeMinutes = 14 * 24 * 60;
+                $mfa = $user->mfa ?: (object) [];
+                $savedDevices = collect(data_get($mfa, 'savedDevices') ?: []);
+                $savedDevices->push((object) ['id' => $randomDeviceId, 'expiration' => \Carbon\CarbonImmutable::now()->addMinutes($rememberMeMinutes)->timestamp]);
+                // Remove old mfa "remember me" entries
+                $savedDevices = $savedDevices->filter(function($item) {
+                    return data_get($item, 'expiration') && $item->expiration >= \Carbon\CarbonImmutable::now()->timestamp;
+                });
+                $mfa->savedDevices = $savedDevices->values()->toArray();
+                $user->mfa = $mfa;
+                $user->save(false, false);
+                \Cookie::queue('mfa_remember_token', $randomDeviceId, $rememberMeMinutes, null, null, true, true);
+            }
 
             return redirect()->intended(route('laramie::dashboard'));
         }
