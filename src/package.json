@@ -4,33 +4,21 @@
   "author": "Preston Clark",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
-    "@babel/core": "^7.8.6",
     "@fortawesome/fontawesome-free": "^5.12.1",
     "bulma": "^0.7.5",
     "cropperjs": "^1.5.6",
     "dragula": "^3.7.2",
-    "fixme": "^0.5.0",
-    "gulp": "^4.0.2",
-    "gulp-babel": "^8.0.0",
-    "gulp-dart-sass": "^0.9.1",
-    "gulp-noop": "^1.0.0",
-    "gulp-plumber": "^1.2.1",
-    "gulp-uglify": "^3.0.2",
-    "gulp-watch": "^5.0.1",
     "handlebars": "^4.7.3",
     "jquery": "^3.4.1",
+    "sass": "^1.80.4",
+    "select2": "^4.0.13",
     "tributejs": "^4.1.3",
-    "trix": "^1.2.2"
+    "trix": "^2.1.7"
   },
   "scripts": {
-    "watch": "gulp default",
-    "copy-vendor": "gulp copy-vendor",
-    "prettier": "gulp prettier",
-    "notes": "gulp notes"
+    "build:styles": "node ./scripts/styles.mjs 2>/dev/null",
+    "build:scripts": "node ./scripts/scripts.mjs 2>/dev/null"
   },
   "dependencies": {
-    "gulp-prettier": "^2.3.0",
-    "prettier": "^1.19.1",
-    "select2": "^4.0.13"
   }
 }

@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use Exception;
 use Validator;
 use Str;
-use cogpowered\FineDiff\Granularity\Word;
-use cogpowered\FineDiff\Diff;
+use FineDiff\Granularity\Word;
+use FineDiff\Diff;
 
 use Laramie\Hook;
 use Laramie\Lib\LaramieHelpers;

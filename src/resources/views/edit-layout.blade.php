@@ -12,7 +12,7 @@
     </script>
 
     <script src="/laramie/admin/js/edit.js"></script>
-    <script src="/laramie/admin/js/trix.js"></script>
+    <script src="/laramie/admin/js/trix.esm.js" type="module"></script>
 
     @include('laramie::handlebars.reference-options')
 
