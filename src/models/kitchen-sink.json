@@ -1,14 +1,14 @@
 {
     "menu": {
         "Blog": {
-            "Comments": "Comment",
-            "Posts": "Post"
+            "Comments": "comment",
+            "Posts": "post"
         },
-        "Contacts": "Contact",
-        "Homepage": "Homepage"
+        "Contacts": "contact",
+        "Homepage": "homepage"
     },
     "models": {
-        "Comment": {
+        "comment": {
             "alias": "excerpt",
             "fields": {
                 "content": {
@@ -53,7 +53,7 @@
                 }
             }
         },
-        "Contact": {
+        "contact": {
             "alias": "message",
             "fields": {
                 "email": {
@@ -71,7 +71,7 @@
                 }
             }
         },
-        "Homepage": {
+        "homepage": {
             "fields": {
                 "featuredImage": {
                     "label": "Featured Image/Video",
@@ -111,7 +111,7 @@
             },
             "isSingular": true
         },
-        "Post": {
+        "post": {
             "alias": "title",
             "fields": {
                 "allowComments": {
