@@ -639,7 +639,7 @@ class AdminController extends Controller
      *
      * @return mixed $value
      */
-    private function updateField($field, $prefix = null)
+    public function updateField($field, $prefix = null)
     {
         $request = request();
         $fieldName = $prefix.$field->_fieldName;
