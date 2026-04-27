@@ -894,15 +894,20 @@ class LaramieDataService
         return Arr::first([LaramieModel::load($query->first())]);
     }
 
-    public function findItemRevisions($id)
+    public function findItemRevisions($id, $queryCallback = null)
     {
         if (LaramieHelpers::isUuid($id)) {
-            return DB::table('laramie_data_archive as a')
+            $query = DB::table('laramie_data_archive as a')
                 ->leftJoin('laramie_data as ld', 'a.user_id', '=', 'ld.id')
                 ->where('laramie_data_id', $id)
                 ->select(['a.id', 'a.updated_at', DB::raw('ld.data#>>\'{user}\' as user')])
-                ->orderBy('a.created_at', 'desc')
-                ->get();
+                ->orderBy('a.created_at', 'desc');
+
+            if ($queryCallback && is_callable($queryCallback)) {
+                $queryCallback($query);
+            }
+
+            return $query->get();
         }
 
         return [];
@@ -1116,15 +1121,7 @@ class LaramieDataService
 
             if (data_get($data, '_origId')) {
                 // Update
-                $archiveId = LaramieHelpers::orderedUuid();
-                DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [$archiveId, $data->id]);
                 DB::table('laramie_data')->where('id', $data->id)->update($modelData);
-                // Delete the newly inserted archived version if it exactly matches
-                // the updated version. We can potentially mitigate this step by
-                // leveraging the _origData attribute on $data before inserting
-                // the archive version in the first place, but whitespace doesn't
-                // match up between $data->_origData and $modelData['data']...
-                DB::statement('delete from laramie_data_archive where id = ? and data = (select data from laramie_data where id = ?)', [$archiveId, $data->id]);
             } else {
                 // Insert
                 $modelData['type'] = $model->_type;
@@ -1151,6 +1148,15 @@ class LaramieDataService
             if ($runSaveHooks && config('laramie.suppress_events') !== true) {
                 Hook::fire(new PostSave($model, $item, $user));
             }
+
+            // Delete older archive records for this item (within a configurable window of time).
+            if ($mins = config('laramie.version_granularity')) {
+                DB::statement('delete from laramie_data_archive where laramie_data_id = ? and created_at >= now() - interval \''.$mins.' minutes\'', [$data->id]);
+            }
+
+            // Add the latest version. Having it in the archive table (even though it's redundant) simplifies diffs / etc.
+            $archiveId = LaramieHelpers::orderedUuid();
+            DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [$archiveId, $data->id]);
 
             DB::commit();
         } catch (\Illuminate\Database\QueryException $e) {
@@ -1187,8 +1193,6 @@ class LaramieDataService
                 DB::table('laramie_data_archive')
                     ->where('laramie_data_id', $id)
                     ->delete();
-            } else {
-                DB::statement('insert into laramie_data_archive (id, user_id, laramie_data_id, type, data, created_at, updated_at) select ?, user_id, id, type, data, now(), updated_at from laramie_data where id = ?', [LaramieHelpers::orderedUuid(), $id]);
             }
 
             DB::table('laramie_data')
